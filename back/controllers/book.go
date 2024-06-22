@@ -1,7 +1,7 @@
-package controller
+package controllers
 
 import (
-	"back/model"
+	"back/models"
 	"back/service"
 	"net/http"
 	"strconv"
@@ -10,7 +10,7 @@ import (
 )
 
 func BookAdd(c *gin.Context) {
-	book := model.Book{}
+	book := models.Book{}
 	err := c.Bind(&book)
 	if err != nil {
 		c.String(http.StatusBadRequest, "Bad request")
@@ -37,7 +37,7 @@ func BookList(c *gin.Context) {
 }
 
 func BookUpdate(c *gin.Context) {
-	book := model.Book{}
+	book := models.Book{}
 	err := c.Bind(&book)
 	if err != nil {
 		c.String(http.StatusBadRequest, "Bad request")

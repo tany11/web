@@ -1,4 +1,4 @@
-package model
+package models
 
 type Book struct {
 	Id      int64  `xorm:"pk autoincr int(64)" form:"id" json:"id"`

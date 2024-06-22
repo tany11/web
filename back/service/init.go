@@ -1,7 +1,7 @@
 package service
 
 import (
-	"back/model"
+	"back/models"
 	"errors"
 	"fmt"
 	"log"
@@ -19,6 +19,7 @@ func init() {
 	DbHost := os.Getenv("DB_ADDRESS")
 	DbName := os.Getenv("DB_NAME")
 	DsName := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8", DbUser, DbPassword, DbHost, DbName)
+	fmt.Printf("Connecting to database with DSN: %s\n", DsName)
 	err := errors.New("")
 	DbEngine, err = xorm.NewEngine(driverName, DsName)
 	if err != nil && err.Error() != "" {
@@ -30,7 +31,7 @@ func init() {
 	}
 	DbEngine.ShowSQL(true)
 	DbEngine.SetMaxOpenConns(2)
-	err = DbEngine.Sync2(new(model.Book))
+	err = DbEngine.Sync2(new(models.Book))
 	if err != nil {
 		log.Fatalf("Failed to synchronize database table: %v", err)
 	}

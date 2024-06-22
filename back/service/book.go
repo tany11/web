@@ -1,12 +1,10 @@
 package service
 
-import (
-	"back/model"
-)
+import "back/models"
 
 type BookService struct{}
 
-func (BookService) SetBook(book *model.Book) error {
+func (BookService) SetBook(book *models.Book) error {
 	_, err := DbEngine.Insert(book)
 	if err != nil {
 		return err
@@ -14,8 +12,8 @@ func (BookService) SetBook(book *model.Book) error {
 	return nil
 }
 
-func (BookService) GetBookList() []model.Book {
-	tests := make([]model.Book, 0)
+func (BookService) GetBookList() []models.Book {
+	tests := make([]models.Book, 0)
 	err := DbEngine.Distinct("id", "title", "content").Limit(10, 0).Find(&tests)
 	if err != nil {
 		panic(err)
@@ -23,7 +21,7 @@ func (BookService) GetBookList() []model.Book {
 	return tests
 }
 
-func (BookService) UpdateBook(newBook *model.Book) error {
+func (BookService) UpdateBook(newBook *models.Book) error {
 	_, err := DbEngine.Id(newBook.Id).Update(newBook)
 	if err != nil {
 		return err
@@ -32,7 +30,7 @@ func (BookService) UpdateBook(newBook *model.Book) error {
 }
 
 func (BookService) DeleteBook(id int) error {
-	book := new(model.Book)
+	book := new(models.Book)
 	_, err := DbEngine.Id(id).Delete(book)
 	if err != nil {
 		return err
