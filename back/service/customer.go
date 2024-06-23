@@ -27,6 +27,18 @@ func (s *CustomerService) GetByID(id int64) (*models.Customer, error) {
 	return customer, nil
 }
 
+func (s *CustomerService) GetByPhone(phonenumber int) (*models.Customer, error) {
+	customer := &models.Customer{PhoneNumber: phonenumber}
+	has, err := DbEngine.Get(customer)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return customer, nil
+}
+
 func (s *CustomerService) Update(customer *models.Customer) error {
 	_, err := DbEngine.ID(customer.ID).Update(customer)
 	return err

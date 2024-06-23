@@ -50,6 +50,37 @@ func (ctrl CustomerController) GetCustomer(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": customer})
 }
 
+// 電話番号から住所と名前を取得します
+// func (ctrl CustomerController) GetCustomerPhone(c *gin.Context) {
+// 	var customer models.Customer
+// 	if _, err := ctrl.DB.Where("phone_number = ?", c.Param("phone")).Get(&customer); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+//		c.JSON(http.StatusOK, gin.H{"data": customer})
+//	}
+func (ctrl CustomerController) GetCustomerPhone(c *gin.Context) {
+	phoneNumber := c.Param("phone")
+	if phoneNumber == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "電話番号が指定されていません"})
+		return
+	}
+
+	var customer models.Customer
+	has, err := ctrl.DB.Where("phone_number = ?", phoneNumber).Get(&customer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if !has {
+		c.JSON(http.StatusNotFound, gin.H{"error": "顧客が見つかりません"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": customer})
+}
+
 // Customerを更新します
 func (ctrl CustomerController) UpdateCustomer(c *gin.Context) {
 	var customer models.Customer

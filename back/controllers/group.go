@@ -42,7 +42,7 @@ func (ctrl GroupLoginController) GetAllGroupLogins(c *gin.Context) {
 // 特定のGroupLoginを取得します
 func (ctrl GroupLoginController) GetGroupLogin(c *gin.Context) {
 	var groupLogin models.GroupLogin
-	if _, err := ctrl.DB.Where("id = ?", c.Param("id")).Get(&groupLogin); err != nil {
+	if _, err := ctrl.DB.Where("email = ?", c.Param("email")).Get(&groupLogin); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

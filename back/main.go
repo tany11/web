@@ -31,6 +31,7 @@ func main() {
 		v1.POST("/customers", customerController.CreateCustomer)
 		v1.GET("/customers", customerController.GetAllCustomers)
 		v1.GET("/customers/:id", customerController.GetCustomer)
+		v1.GET("/customers/phone/:phone", customerController.GetCustomerPhone)
 		v1.PUT("/customers/:id", customerController.UpdateCustomer)
 		v1.DELETE("/customers/:id", customerController.DeleteCustomer)
 
@@ -38,7 +39,7 @@ func main() {
 		orderController := controllers.OrderController{DB: service.DbEngine}
 		v1.POST("/orders", orderController.CreateOrder)
 		v1.GET("/orders", orderController.GetAllOrders)
-		v1.GET("/orders/:id", orderController.GetOrder)
+		v1.GET("/orders/:email", orderController.GetOrder)
 		v1.PUT("/orders/:id", orderController.UpdateOrder)
 		v1.DELETE("/orders/:id", orderController.DeleteOrder)
 

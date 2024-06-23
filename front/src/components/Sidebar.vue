@@ -1,23 +1,55 @@
 <template>
-    <div class="sidebar">
-      <nav>
-        <ul>
-          <li><router-link to="/dashboard">ダッシュボード</router-link></li>
-          <li><router-link to="/profile">プロフィール</router-link></li>
-          <li><a @click="logout">ログアウト</a></li>
-        </ul>
-      </nav>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'Sidebar',
-    methods: {
-      logout() {
-        this.$store.dispatch('logout')
-        this.$router.push('/login')
-      }
-    }
-  }
-  </script>
+  <div class="sidebar">
+    <nav>
+      <ul>
+        <li><router-link to="/dashboard">ダッシュボード</router-link></li>
+        <li><router-link to="/order">受注</router-link></li>
+        <li><router-link to="/staff">スタッフ管理</router-link></li>
+        <li><router-link to="/cast">キャスト管理</router-link></li>
+      </ul>
+    </nav>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'Sidebar'
+}
+</script>
+
+<style scoped>
+.sidebar {
+  width: 250px;
+  background-color: #34495E;
+  height: calc(100vh - 60px); /* ヘッダーの高さを引いた高さに設定 */
+  position: fixed;
+  left: 0;
+  top: 60px; /* ヘッダーの高さ分下げる */
+  overflow-y: auto;
+}
+
+nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+nav ul li {
+  padding: 10px;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: white;
+  display: block;
+  padding: 10px;
+  transition: background-color 0.3s;
+}
+
+nav ul li a:hover {
+  background-color: #41B883;
+}
+
+nav ul li a.router-link-active {
+  background-color: #41B883;
+}
+</style>
