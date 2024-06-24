@@ -2,35 +2,33 @@ package routers
 
 import (
 	"back/controllers"
+	"back/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-xorm/xorm"
 )
 
-func SetupRouter(dbEngine *xorm.Engine) *gin.Engine {
-	r := gin.Default()
-
-	// APIのバージョン1のルートグループを作成
-	v1 := r.Group("/api/v1")
+func SetupRouter(engine *gin.Engine) {
+	v1 := engine.Group("/api/v1")
 	{
 		// CustomerControllerのルーティング
-		customerController := controllers.CustomerController{DB: dbEngine}
+		customerController := controllers.CustomerController{DB: service.DbEngine}
 		v1.POST("/customers", customerController.CreateCustomer)
 		v1.GET("/customers", customerController.GetAllCustomers)
 		v1.GET("/customers/:id", customerController.GetCustomer)
+		v1.GET("/customers/phone/:phone", customerController.GetCustomerPhone)
 		v1.PUT("/customers/:id", customerController.UpdateCustomer)
 		v1.DELETE("/customers/:id", customerController.DeleteCustomer)
 
 		// OrderControllerのルーティング
-		orderController := controllers.OrderController{DB: dbEngine}
+		orderController := controllers.OrderController{DB: service.DbEngine}
 		v1.POST("/orders", orderController.CreateOrder)
 		v1.GET("/orders", orderController.GetAllOrders)
-		v1.GET("/orders/:id", orderController.GetOrder)
+		v1.GET("/orders/:email", orderController.GetOrder)
 		v1.PUT("/orders/:id", orderController.UpdateOrder)
 		v1.DELETE("/orders/:id", orderController.DeleteOrder)
 
 		// StoreControllerのルーティング
-		storeController := controllers.StoreController{DB: dbEngine}
+		storeController := controllers.StoreController{DB: service.DbEngine}
 		v1.POST("/stores", storeController.CreateStore)
 		v1.GET("/stores", storeController.GetAllStores)
 		v1.GET("/stores/:id", storeController.GetStore)
@@ -38,7 +36,7 @@ func SetupRouter(dbEngine *xorm.Engine) *gin.Engine {
 		v1.DELETE("/stores/:id", storeController.DeleteStore)
 
 		// GroupLoginControllerのルーティング
-		groupController := controllers.GroupLoginController{DB: dbEngine}
+		groupController := controllers.GroupLoginController{DB: service.DbEngine}
 		v1.POST("/groups", groupController.CreateGroupLogin)
 		v1.GET("/groups", groupController.GetAllGroupLogins)
 		v1.GET("/groups/:id", groupController.GetGroupLogin)
@@ -46,7 +44,7 @@ func SetupRouter(dbEngine *xorm.Engine) *gin.Engine {
 		v1.DELETE("/groups/:id", groupController.DeleteGroupLogin)
 
 		// CastLoginControllerのルーティング
-		castController := controllers.CastLoginController{DB: dbEngine}
+		castController := controllers.CastLoginController{DB: service.DbEngine}
 		v1.POST("/casts", castController.CreateCastLogin)
 		v1.GET("/casts", castController.GetAllCastLogins)
 		v1.GET("/casts/:id", castController.GetCastLogin)
@@ -54,5 +52,4 @@ func SetupRouter(dbEngine *xorm.Engine) *gin.Engine {
 		v1.DELETE("/casts/:id", castController.DeleteCastLogin)
 	}
 
-	return r
 }

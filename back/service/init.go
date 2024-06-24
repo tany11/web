@@ -2,7 +2,6 @@ package service
 
 import (
 	"back/models"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -20,9 +19,9 @@ func init() {
 	DbName := os.Getenv("DB_NAME")
 	DsName := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8", DbUser, DbPassword, DbHost, DbName)
 	fmt.Printf("Connecting to database with DSN: %s\n", DsName)
-	err := errors.New("")
+	var err error
 	DbEngine, err = xorm.NewEngine(driverName, DsName)
-	if err != nil && err.Error() != "" {
+	if err != nil {
 		log.Fatal(err.Error())
 	}
 	err = DbEngine.Ping()
@@ -31,7 +30,22 @@ func init() {
 	}
 	DbEngine.ShowSQL(true)
 	DbEngine.SetMaxOpenConns(2)
-	err = DbEngine.Sync2(new(models.Book))
+	if err := DbEngine.Sync2(new(models.GroupLogin)); err != nil {
+		log.Fatalf("Failed to sync GroupLogin: %v", err)
+	}
+	if err := DbEngine.Sync2(new(models.CastLogin)); err != nil {
+		log.Fatalf("Failed to sync CastLogin: %v", err)
+	}
+	if err := DbEngine.Sync2(new(models.Customer)); err != nil {
+		log.Fatalf("Failed to sync Customer: %v", err)
+	}
+	if err := DbEngine.Sync2(new(models.Order)); err != nil {
+		log.Fatalf("Failed to sync Customer: %v", err)
+	}
+	if err := DbEngine.Sync2(new(models.Store)); err != nil {
+		log.Fatalf("Failed to sync Customer: %v", err)
+	}
+
 	if err != nil {
 		log.Fatalf("Failed to synchronize database table: %v", err)
 	}

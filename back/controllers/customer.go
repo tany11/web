@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"back/models"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -50,16 +51,6 @@ func (ctrl CustomerController) GetCustomer(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": customer})
 }
 
-// 電話番号から住所と名前を取得します
-// func (ctrl CustomerController) GetCustomerPhone(c *gin.Context) {
-// 	var customer models.Customer
-// 	if _, err := ctrl.DB.Where("phone_number = ?", c.Param("phone")).Get(&customer); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-//		c.JSON(http.StatusOK, gin.H{"data": customer})
-//	}
 func (ctrl CustomerController) GetCustomerPhone(c *gin.Context) {
 	phoneNumber := c.Param("phone")
 	if phoneNumber == "" {
@@ -69,6 +60,7 @@ func (ctrl CustomerController) GetCustomerPhone(c *gin.Context) {
 
 	var customer models.Customer
 	has, err := ctrl.DB.Where("phone_number = ?", phoneNumber).Get(&customer)
+	log.Printf("Query result: has=%v, customer=%+v, error=%v", has, customer, err)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
