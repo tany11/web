@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar">
+  <div class="sidebar" :class="{ 'sidebar-open': isOpen }">
     <nav>
       <ul>
         <li><router-link to="/dashboard">ダッシュボード</router-link></li>
@@ -13,7 +13,13 @@
 
 <script>
 export default {
-  name: 'Sidebar'
+  name: 'Sidebar',
+  props: {
+    isOpen: {
+      type: Boolean,
+      default: false
+    }
+  }
 }
 </script>
 
@@ -21,11 +27,17 @@ export default {
 .sidebar {
   width: 250px;
   background-color: #34495E;
-  height: calc(100vh - 60px); /* ヘッダーの高さを引いた高さに設定 */
+  height: 100vh;
   position: fixed;
-  left: 0;
-  top: 60px; /* ヘッダーの高さ分下げる */
+  left: -250px;
+  top: 0;
   overflow-y: auto;
+  transition: left 0.3s ease-in-out;
+  padding-top: 60px;
+}
+
+.sidebar-open {
+  left: 0;
 }
 
 nav ul {

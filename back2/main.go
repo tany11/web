@@ -1,10 +1,10 @@
 package main
 
 import (
-	middleware "back/middlewares"
-	"back/models"
-	"back/routers"
-	"back/service"
+	middleware "back2/middlewares"
+	"back2/models"
+	"back2/router"
+	"back2/service"
 	"log"
 
 	"github.com/gin-contrib/cors"
@@ -30,7 +30,7 @@ func main() {
 	engine.Use(cors.New(config))
 
 	// ルーターのセットアップ
-	routers.SetupRouter(engine)
+	router.SetupRouter(engine)
 
 	// サーバーの起動
 	if err := engine.Run(":3000"); err != nil {

@@ -1,8 +1,8 @@
 package routers
 
 import (
-	"back/controllers"
-	"back/service"
+	"back2/controllers"
+	"back2/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -53,8 +53,7 @@ func SetupRouter(engine *gin.Engine) {
 		v1.DELETE("/casts/:id", castController.DeleteCastLogin)
 
 		// StaffLoginControllerのルーティング
-		staffService := service.NewStaffLoginService(service.DbEngine)
-		staffController := controllers.NewStaffLoginController(staffService)
+		staffController := controllers.StaffLoginController{DB: service.DbEngine}
 		v1.POST("/staff", staffController.CreateStaffLogin)
 		v1.GET("/staff", staffController.GetAllStaffLogins)
 		v1.GET("/staff/:id", staffController.GetStaffLogin)

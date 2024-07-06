@@ -40,14 +40,27 @@ func init() {
 		log.Fatalf("Failed to sync Customer: %v", err)
 	}
 	if err := DbEngine.Sync2(new(models.Order)); err != nil {
-		log.Fatalf("Failed to sync Customer: %v", err)
+		log.Fatalf("Failed to sync Order: %v", err)
 	}
 	if err := DbEngine.Sync2(new(models.Store)); err != nil {
-		log.Fatalf("Failed to sync Customer: %v", err)
+		log.Fatalf("Failed to sync Store: %v", err)
+	}
+	if err := DbEngine.Sync2(new(models.StaffLogin)); err != nil {
+		log.Fatalf("Failed to sync StaffLogin: %v", err)
 	}
 
 	if err != nil {
 		log.Fatalf("Failed to synchronize database table: %v", err)
 	}
 	fmt.Println("init data base ok")
+}
+
+var dbEngine *xorm.Engine
+
+func SetDbEngine(engine *xorm.Engine) {
+	dbEngine = engine
+}
+
+func GetDbEngine() *xorm.Engine {
+	return dbEngine
 }

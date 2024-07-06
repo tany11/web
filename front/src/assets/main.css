@@ -1,35 +1,119 @@
 @import './base.css';
 
-#app {
+/* #app {
   margin: 0 auto;
   font-weight: normal;
   padding-left: 250px;
   /* サイドバーの幅と同じ */
-}
+/* } */
 
-a,
+*/
+/* a,
 .green {
   text-decoration: none;
   color: hsla(160, 100%, 37%, 1);
   transition: 0.4s;
   padding: 3px;
-}
+} */
 
-@media (hover: hover) {
+/* @media (hover: hover) {
   a:hover {
     background-color: hsla(160, 100%, 37%, 0.2);
   }
-}
+} */
 
-@media (min-width: 1024px) {
+/* @media (min-width: 1024px) {
   body {
     display: flex;
     place-items: center;
-  }
+  } */
 
-  #app {
+/* #app {
     display: grid;
     grid-template-columns: 1fr 1fr;
     padding: 0 2rem;
   }
+} */
+
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  font-weight: normal;
+}
+
+.order-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.order-form {
+  width: 45%;
+}
+
+.order-display {
+  width: 45%;
+}
+
+.sidebar {
+  width: 250px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background-color: var(--vt-c-black-soft);
+  color: var(--vt-c-text-dark-1);
+  padding: 20px;
+}
+
+.main-content {
+  margin-left: 250px;
+  padding: 20px;
+}
+
+@media (max-width: 1024px) {
+  .order-container {
+    flex-direction: column;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .order-form,
+  .order-display {
+    width: 100%;
+  }
+
+  .sidebar {
+    width: 100%;
+    position: static;
+    margin-bottom: 20px;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+}
+
+.order-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.order-form {
+  width: 45%;
+}
+
+.order-display {
+  width: 45%;
+}
+
+.pagination {
+  margin-bottom: 10px;
+}
+
+.order-box {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 5px;
 }

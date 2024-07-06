@@ -2,25 +2,30 @@ package controllers
 
 import (
 	"back/models"
+	"back/service"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-xorm/xorm"
 )
 
 type CastLoginController struct {
-	DB *xorm.Engine
+	Service *service.CastLoginService
+}
+
+func NewCastLoginController(service *service.CastLoginService) *CastLoginController {
+	return &CastLoginController{Service: service}
 }
 
 // 新しいCastLoginを作成します
-func (ctrl CastLoginController) CreateCastLogin(c *gin.Context) {
+func (ctrl *CastLoginController) CreateCastLogin(c *gin.Context) {
 	var castLogin models.CastLogin
 	if err := c.ShouldBindJSON(&castLogin); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if _, err := ctrl.DB.Insert(&castLogin); err != nil {
+	if err := ctrl.Service.Create(&castLogin); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -29,9 +34,12 @@ func (ctrl CastLoginController) CreateCastLogin(c *gin.Context) {
 }
 
 // すべてのCastLoginを取得します
-func (ctrl CastLoginController) GetAllCastLogins(c *gin.Context) {
-	var castLogins []models.CastLogin
-	if err := ctrl.DB.Find(&castLogins); err != nil {
+func (ctrl *CastLoginController) GetAllCastLogins(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
+
+	castLogins, err := ctrl.Service.List(page, pageSize)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -40,10 +48,14 @@ func (ctrl CastLoginController) GetAllCastLogins(c *gin.Context) {
 }
 
 // 特定のCastLoginを取得します
-func (ctrl CastLoginController) GetCastLogin(c *gin.Context) {
-	var castLogin models.CastLogin
-	if _, err := ctrl.DB.Where("id = ?", c.Param("id")).Get(&castLogin); err != nil {
+func (ctrl *CastLoginController) GetCastLogin(c *gin.Context) {
+	castLogin, err := ctrl.Service.GetByID(c.Param("id"))
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if castLogin == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "CastLogin not found"})
 		return
 	}
 
@@ -51,19 +63,21 @@ func (ctrl CastLoginController) GetCastLogin(c *gin.Context) {
 }
 
 // CastLoginを更新します
-func (ctrl CastLoginController) UpdateCastLogin(c *gin.Context) {
+func (ctrl *CastLoginController) UpdateCastLogin(c *gin.Context) {
 	var castLogin models.CastLogin
-	if _, err := ctrl.DB.Where("id = ?", c.Param("id")).Get(&castLogin); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	if err := c.ShouldBindJSON(&castLogin); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if _, err := ctrl.DB.Id(castLogin.ID).Update(&castLogin); err != nil {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+	castLogin.ID = id
+
+	if err := ctrl.Service.Update(&castLogin); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -72,8 +86,14 @@ func (ctrl CastLoginController) UpdateCastLogin(c *gin.Context) {
 }
 
 // CastLoginを削除します
-func (ctrl CastLoginController) DeleteCastLogin(c *gin.Context) {
-	if _, err := ctrl.DB.Id(c.Param("id")).Delete(&models.CastLogin{}); err != nil {
+func (ctrl *CastLoginController) DeleteCastLogin(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	if err := ctrl.Service.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
