@@ -1,0 +1,61 @@
+package repository
+
+import (
+	"back2/internal/domain/entity"
+	"back2/internal/domain/repository"
+
+	"github.com/go-xorm/xorm"
+)
+
+type XormStaffRepository struct {
+	engine *xorm.Engine
+}
+
+func NewXormStaffRepository(engine *xorm.Engine) repository.StaffRepository {
+	return &XormStaffRepository{engine: engine}
+}
+
+func (r *XormStaffRepository) Create(staff *entity.Staff) error {
+	_, err := r.engine.Insert(staff)
+	return err
+}
+
+func (r *XormStaffRepository) GetByID(id int64) (*entity.Staff, error) {
+	staff := new(entity.Staff)
+	has, err := r.engine.ID(id).Get(staff)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return staff, nil
+}
+
+func (r *XormStaffRepository) GetByStaffID(staffID string) (*entity.Staff, error) {
+	staff := new(entity.Staff)
+	has, err := r.engine.Where("staff_id = ?", staffID).Get(staff)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return staff, nil
+}
+
+func (r *XormStaffRepository) List(groupID, offset, limit int) ([]*entity.Staff, error) {
+	staffs := make([]*entity.Staff, 0)
+	err := r.engine.Where("group_id = ?", groupID).Limit(limit, offset).Find(&staffs)
+	return staffs, err
+}
+
+func (r *XormStaffRepository) Update(staff *entity.Staff) error {
+	_, err := r.engine.ID(staff.ID).Update(staff)
+	return err
+}
+
+func (r *XormStaffRepository) Delete(id int64) error {
+	_, err := r.engine.ID(id).Delete(new(entity.Staff))
+	return err
+}

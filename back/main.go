@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	gin.SetMode(gin.DebugMode)
 	// データベース接続の初期化
 	dbEngine, err := initDatabase()
 	if err != nil {

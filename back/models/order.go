@@ -11,14 +11,14 @@ type Order struct {
 	CustomerID     int       `xorm:"notnull"`                      //顧客ID
 	CustomerName   string    `xorm:"notnull"`                      //顧客名
 	ModelName      string    `xorm:"text"`                         //モデル
-	CastID         int       `xorm:"notnull"`                      //キャストID
+	CastID         int       `xorm:"text"`                         //キャストID
 	OrderAmount    int       `xorm:"notnull"`                      //注文金額
 	PostalCode     string    `xorm:"text"`                         //郵便番号
 	Address        string    `xorm:"text"`                         //住所
-	DriverID       int       `xorm:"notnull"`                      //ドライバー
-	ReservationFee int       `xorm:"notnull"`                      //指名料
-	TravelCost     int       `xorm:"notnull"`                      //交通費
-	OtherFee       int       `xorm:"notnull"`                      //出張費
+	DriverID       int       `xorm:"Text"`                         //ドライバー
+	ReservationFee int       `xorm:"text"`                         //指名料
+	TravelCost     int       `xorm:"text"`                         //交通費
+	OtherFee       int       `xorm:"text"`                         //出張費
 	OrderDate      time.Time `xorm:"created"`                      //注文日
 	UpdatedAt      time.Time `xorm:"updated"`                      //更新日
 	Status         string    `xorm:"varchar(20) default 'active'"` //ステータス
