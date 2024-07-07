@@ -9,10 +9,10 @@ type Staff struct {
 	StaffLastName  string
 	StaffFirstName string
 	PasswordHash   string
-	Email          string
 	LineID         string
-	PhoneNumber    string
-	Position       string
+	StaffFlg       string
+	DriverFlg      string
+	WebFlg         string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	LastLogin      time.Time

@@ -131,3 +131,8 @@ func (h *StaffHandler) Authenticate(c *gin.Context) {
 	staff.PasswordHash = "" // パスワードハッシュをレスポンスから除外
 	c.JSON(http.StatusOK, gin.H{"data": staff})
 }
+
+func (h *StaffHandler) GetByEmail(c *gin.Context) {
+
+	c.JSON(http.StatusOK, nil)
+}

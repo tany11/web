@@ -32,9 +32,9 @@ func (r *XormStaffRepository) GetByID(id int64) (*entity.Staff, error) {
 	return staff, nil
 }
 
-func (r *XormStaffRepository) GetByStaffID(staffID string) (*entity.Staff, error) {
+func (r *XormStaffRepository) GetByStaffIID(staffID string) (*entity.Staff, error) {
 	staff := new(entity.Staff)
-	has, err := r.engine.Where("staff_id = ?", staffID).Get(staff)
+	has, err := r.engine.Where("staff_i_d = ?", staffID).Get(staff)
 	if err != nil {
 		return nil, err
 	}
@@ -58,4 +58,16 @@ func (r *XormStaffRepository) Update(staff *entity.Staff) error {
 func (r *XormStaffRepository) Delete(id int64) error {
 	_, err := r.engine.ID(id).Delete(new(entity.Staff))
 	return err
+}
+
+func (r *XormStaffRepository) GetByEmail(email string) (*entity.Staff, error) {
+	staff := new(entity.Staff)
+	has, err := r.engine.Where("email = ?", email).Get(staff)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return staff, nil
 }

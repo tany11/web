@@ -40,18 +40,18 @@ func SetupRouter(
 		v1.DELETE("/orders/:id", orderHandler.Delete)
 
 		// Group routes
-		v1.POST("/groups", groupHandler.Create)
-		v1.GET("/groups", groupHandler.GetAll)
-		v1.GET("/groups/:id", groupHandler.Get)
-		v1.PUT("/groups/:id", groupHandler.Update)
-		v1.DELETE("/groups/:id", groupHandler.Delete)
+		v1.POST("/group", groupHandler.Create)
+		v1.GET("/group", groupHandler.GetAll)
+		v1.GET("/group/:id", groupHandler.Get)
+		v1.PUT("/group/:id", groupHandler.Update)
+		v1.DELETE("/group/:id", groupHandler.Delete)
 
 		// Cast routes
-		v1.POST("/casts", castHandler.Create)
-		v1.GET("/casts", castHandler.GetAll)
-		v1.GET("/casts/:id", castHandler.Get)
-		v1.PUT("/casts/:id", castHandler.Update)
-		v1.DELETE("/casts/:id", castHandler.Delete)
+		v1.POST("/cast", castHandler.Create)
+		v1.GET("/cast", castHandler.GetAll)
+		v1.GET("/cast/:id", castHandler.Get)
+		v1.PUT("/cast/:id", castHandler.Update)
+		v1.DELETE("/cast/:id", castHandler.Delete)
 
 		// Staff routes
 		v1.POST("/staff", staffHandler.Create)

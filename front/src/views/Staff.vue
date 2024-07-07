@@ -30,15 +30,15 @@
 
             <div class="form-group">
                 <label>役職 *</label>
-                <div class="radio-group">
+                <div class="checkbox-group">
                     <label>
-                        <input type="radio" v-model="position" value="office" required> 内勤
+                        <input type="checkbox" v-model="officeFlg"> 内勤
                     </label>
                     <label>
-                        <input type="radio" v-model="position" value="driver" required> ドライバー
+                        <input type="checkbox" v-model="driverFlg"> ドライバー
                     </label>
                     <label>
-                        <input type="radio" v-model="position" value="web" required> Webスタッフ
+                        <input type="checkbox" v-model="webFlg"> Webスタッフ
                     </label>
                 </div>
             </div>
@@ -62,7 +62,9 @@ export default {
         const password = ref('')
         const lineId = ref('')
         const phoneNumber = ref('')
-        const position = ref('')
+        const officeFlg = ref(false)
+        const driverFlg = ref(false)
+        const webFlg = ref(false)
         const registrationResult = ref('')
         const resultClass = ref('')
 
@@ -72,7 +74,7 @@ export default {
                 password.value.trim() !== '' &&
                 lineId.value.trim() !== '' &&
                 phoneNumber.value.trim() !== '' &&
-                position.value !== ''
+                (officeFlg.value || driverFlg.value || webFlg.value)
         })
 
         const submitForm = async () => {
@@ -87,7 +89,9 @@ export default {
                 passwordHash: password.value,
                 lineId: lineId.value,
                 phoneNumber: phoneNumber.value,
-                position: position.value
+                officeFlg: officeFlg.value ? "1" : "0",
+                driverFlg: driverFlg.value ? "1" : "0",
+                webFlg: webFlg.value ? "1" : "0"
             }
 
             try {
@@ -95,7 +99,6 @@ export default {
                 console.log('スタッフが登録されました', response.data)
                 registrationResult.value = 'スタッフが正常に登録されました。'
                 resultClass.value = 'success'
-                // フォームをリセット
                 resetForm()
             } catch (error) {
                 console.error('登録エラー', error)
@@ -103,21 +106,27 @@ export default {
                 resultClass.value = 'error'
             }
         }
+
         const resetForm = () => {
             staffLastName.value = ''
             staffFirstName.value = ''
             password.value = ''
             lineId.value = ''
             phoneNumber.value = ''
-            position.value = ''
+            officeFlg.value = false
+            driverFlg.value = false
+            webFlg.value = false
         }
+
         return {
             staffLastName,
             staffFirstName,
             password,
             lineId,
             phoneNumber,
-            position,
+            officeFlg,
+            driverFlg,
+            webFlg,
             submitForm,
             isFormValid,
             registrationResult,

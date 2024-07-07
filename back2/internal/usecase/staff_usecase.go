@@ -4,6 +4,10 @@ import (
 	"back2/internal/domain/entity"
 	"back2/internal/domain/errors"
 	"back2/internal/domain/repository"
+	"fmt"
+	"log"
+	"math/rand"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,6 +26,15 @@ func (uc *StaffUseCase) Create(staff *entity.Staff) error {
 		return err
 	}
 	staff.PasswordHash = string(hashedPassword)
+	staff.GroupID = 1
+
+	// Generate unique staff ID
+	staffID, err := uc.generateStaffUniqueRandomID()
+	if err != nil {
+		return err
+	}
+	staff.StaffID = staffID
+
 	return uc.repo.Create(staff)
 }
 
@@ -29,8 +42,8 @@ func (uc *StaffUseCase) GetByID(id int64) (*entity.Staff, error) {
 	return uc.repo.GetByID(id)
 }
 
-func (uc *StaffUseCase) GetByStaffID(staffID string) (*entity.Staff, error) {
-	return uc.repo.GetByStaffID(staffID)
+func (uc *StaffUseCase) GetByStaffIID(staffID string) (*entity.Staff, error) {
+	return uc.repo.GetByStaffIID(staffID)
 }
 
 func (uc *StaffUseCase) List(groupID, page, pageSize int) ([]*entity.Staff, error) {
@@ -54,7 +67,7 @@ func (uc *StaffUseCase) Delete(id int64) error {
 }
 
 func (uc *StaffUseCase) Authenticate(staffID, password string) (*entity.Staff, error) {
-	staff, err := uc.repo.GetByStaffID(staffID)
+	staff, err := uc.repo.GetByStaffIID(staffID)
 	if err != nil {
 		return nil, err
 	}
@@ -68,4 +81,27 @@ func (uc *StaffUseCase) Authenticate(staffID, password string) (*entity.Staff, e
 	}
 
 	return staff, nil
+}
+
+func (uc *StaffUseCase) GetByEmail(email string) (*entity.Staff, error) {
+	return uc.repo.GetByEmail(email)
+}
+
+func (uc *StaffUseCase) generateStaffUniqueRandomID() (string, error) {
+	rand.Seed(time.Now().UnixNano())
+
+	for i := 0; i < 100; i++ {
+		id := fmt.Sprintf("S%06d", rand.Intn(1000000))
+		staff, err := uc.repo.GetByStaffIID(id)
+		if err != nil {
+			log.Printf("IDの存在確認中にエラーが発生: %v\n", err)
+			return "", fmt.Errorf("IDの存在確認中にエラーが発生: %w", err)
+		}
+		if staff == nil {
+			log.Printf("生成されたユニークID: %s\n", id)
+			return id, nil
+		}
+	}
+	log.Println("ユニークなIDの生成に失敗しました")
+	return "", fmt.Errorf("ユニークなIDの生成に失敗しました")
 }
