@@ -10,7 +10,7 @@ type Staff struct {
 	StaffFirstName string
 	PasswordHash   string
 	LineID         string
-	StaffFlg       string
+	OfficeFlg      string
 	DriverFlg      string
 	WebFlg         string
 	CreatedAt      time.Time

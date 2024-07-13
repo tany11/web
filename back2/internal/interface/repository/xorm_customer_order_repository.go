@@ -15,8 +15,8 @@ func NewXormCustomerOrderRepository(engine *xorm.Engine) repository.CustomerRepo
 	return &XormCustomerRepository{engine: engine}
 }
 
-func (r *XormCustomerRepository) Create(order *entity.Customer) error {
-	_, err := r.engine.Insert(order)
+func (r *XormCustomerRepository) Create(customer *entity.Customer) error {
+	_, err := r.engine.Insert(customer)
 	return err
 }
 

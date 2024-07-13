@@ -13,5 +13,5 @@ type Cast struct {
 	UpdatedAt    time.Time `xorm:"updated"`
 	LastLogin    time.Time `xorm:"timestamp"`
 	Status       string    `xorm:"varchar(20) default 'active'"`
-	Birthdate    time.Time `xorm:"date"`
+	Birthdate    time.Time `xorm:"date" json:"birthdate" time_format:"2006-01-02"`
 }

@@ -32,6 +32,18 @@ func (r *XormCastRepository) GetByID(id int64) (*entity.Cast, error) {
 	return cast, nil
 }
 
+func (r *XormCastRepository) GetByCastIID(CastID string) (*entity.Cast, error) {
+	cast := new(entity.Cast)
+	has, err := r.engine.Where("cast_i_d = ?", CastID).Get(cast)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return cast, nil
+}
+
 func (r *XormCastRepository) List(groupID int, offset, limit int) ([]*entity.Cast, error) {
 	casts := make([]*entity.Cast, 0)
 	err := r.engine.Where("group_id = ?", groupID).Limit(limit, offset).Find(&casts)

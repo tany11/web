@@ -3,6 +3,7 @@ package repository
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/domain/repository"
+	"log"
 
 	"github.com/go-xorm/xorm"
 )
@@ -17,7 +18,11 @@ func NewXormOrderRepository(engine *xorm.Engine) repository.OrderRepository {
 
 func (r *XormOrderRepository) Create(order *entity.Orders) error {
 	_, err := r.engine.Insert(order)
-	return err
+	if err != nil {
+		log.Printf("データベースへの注文挿入に失敗しました。エラー: %v", err)
+		return err
+	}
+	return nil
 }
 
 func (r *XormOrderRepository) GetByID(id int64) (*entity.Orders, error) {
@@ -34,7 +39,7 @@ func (r *XormOrderRepository) GetByID(id int64) (*entity.Orders, error) {
 
 func (r *XormOrderRepository) List(groupID, offset, limit int) ([]*entity.Orders, error) {
 	orders := make([]*entity.Orders, 0)
-	err := r.engine.Where("group_id = ?", groupID).Limit(limit, offset).Find(&orders)
+	err := r.engine.Where("group_i_d = ?", groupID).Limit(limit, offset).Find(&orders)
 	return orders, err
 }
 

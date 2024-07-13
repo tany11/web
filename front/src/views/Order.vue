@@ -6,7 +6,7 @@
             <ul>
                 <li>
                     <label for="store-name">店名:</label>
-                    <select id="store-name" name="store-name">
+                    <select id="store-name" name="store-name" v-model="StoreName">
                         <option value="store1">Store 1</option>
                         <option value="store2">Store 2</option>
                         <!-- Add more options as needed -->
@@ -14,43 +14,43 @@
                 </li>
                 <li>
                     <label for="phone-number">電話番号:</label>
-                    <input type="text" id="phone-number" name="phone-number" v-model="phoneNumber"
+                    <input type="text" id="phone-number" name="phone-number" v-model="PhoneNumber"
                         @blur="fetchCustomerInfo">
                 </li>
                 <li>
                     <label for="customer-name">お客様名:</label>
-                    <input type="text" id="customer-name" name="customer-name" v-model="customerName">
+                    <input type="text" id="customer-name" name="customer-name" v-model="CustomerName">
                 </li>
                 <li>
                     <label for="model-name">モデル名:</label>
-                    <input type="text" id="model-name" name="model-name">
+                    <input type="text" id="model-name" name="model-name" v-model="ModelName">
                 </li>
                 <li>
                     <label for="actual-model">実モデル:</label>
-                    <input type="text" id="actual-model" name="actual-model">
+                    <input type="text" id="actual-model" name="actual-model" v-model="ActualModel">
                 </li>
                 <li>
                     <label for="course-name">コース名:</label>
-                    <input type="text" id="course-name" name="course-name">
+                    <input type="text" id="course-name" name="course-name" v-model="CourseMin">
                     <label for="course-duration">分:</label>
                 </li>
                 <li>
                     <label for="price">料金:</label>
-                    <input type="text" id="price" name="price">
+                    <input type="text" id="price" name="price" v-model="Price">
                 </li>
                 <!-- 自宅orホテルのプルダウンもほしいか -->
                 <li>
                     <label for="postal-code">郵便番号:</label>
-                    <input type="text" id="postal-code" name="postal-code" v-model="postalCode" @blur="fetchAddress">
+                    <input type="text" id="postal-code" name="postal-code" v-model="PostalCode" @blur="fetchAddress">
                 </li>
                 <!-- 住所を使用してHomesとGoogleMapのURLもほしい -->
                 <li>
                     <label for="address">住所:</label>
-                    <input type="text" id="address" name="address" v-model="address">
+                    <input type="text" id="address" name="address" v-model="Address">
                 </li>
                 <li>
                     <label for="delivery">送り:</label>
-                    <select id="delivery" name="delivery">
+                    <select id="delivery" name="delivery" v-model="DriverID">
                         <option value="option1">Option 1</option>
                         <option value="option2">Option 2</option>
                         <!-- Add more options as needed -->
@@ -58,19 +58,19 @@
                 </li>
                 <li>
                     <label for="nomination-fee">指名料:</label>
-                    <input type="text" id="nomination-fee" name="nomination-fee">
+                    <input type="text" id="nomination-fee" name="nomination-fee" v-model="ReservationFee">
                 </li>
                 <li>
                     <label for="transportation-fee">交通費:</label>
-                    <input type="text" id="transportation-fee" name="transportation-fee">
+                    <input type="text" id="transportation-fee" name="transportation-fee" v-model="TransportationFee">
                 </li>
                 <li>
                     <label for="travel-expenses">出張費:</label>
-                    <input type="text" id="travel-expenses" name="travel-expenses">
+                    <input type="text" id="travel-expenses" name="travel-expenses" v-model="TravelCost">
                 </li>
                 <li>
                     <label for="media">媒体:</label>
-                    <select id="media" name="media">
+                    <select id="media" name="media" v-model="Media">
                         <option value="media1">Media 1</option>
                         <option value="media2">Media 2</option>
                         <!-- Add more options as needed -->
@@ -78,7 +78,7 @@
                 </li>
                 <li>
                     <label for="notes">備考:</label>
-                    <select id="notes" name="notes">
+                    <select id="notes" name="notes" v-model="Notes">
                         <option value="note1">Note 1</option>
                         <option value="note2">Note 2</option>
                         <!-- Add more options as needed -->
@@ -86,7 +86,7 @@
                 </li>
                 <li>
                     <label for="card-handler">カード対応者:</label>
-                    <select id="card-handler" name="card-handler">
+                    <select id="card-handler" name="card-handler" v-model="CardstaffID">
                         <option value="handler1">Handler 1</option>
                         <option value="handler2">Handler 2</option>
                         <!-- Add more options as needed -->
@@ -94,7 +94,7 @@
                 </li>
                 <li>
                     <label for="order-taker">受注者:</label>
-                    <select id="order-taker" name="order-taker">
+                    <select id="order-taker" name="order-taker" v-model="OrderStaffID">
                         <option value="taker1">Taker 1</option>
                         <option value="taker2">Taker 2</option>
                         <!-- Add more options as needed -->
@@ -120,21 +120,21 @@
                     <h3>オーダー詳細</h3>
                     <p><strong>店名:</strong> {{ currentOrder.StoreName }}</p>
                     <p><strong>お客様名:</strong> {{ currentOrder.CustomerName }}</p>
-                    <p><strong>電話番号:</strong> {{ currentOrder.phoneNumber }}</p>
-                    <p><strong>モデル名:</strong> {{ currentOrder.modelName }}</p>
-                    <p><strong>実モデル:</strong> {{ currentOrder.actualModel }}</p>
-                    <p><strong>コース:</strong> {{ currentOrder.courseName }}</p>
-                    <p><strong>料金:</strong> {{ currentOrder.price }}</p>
+                    <p><strong>電話番号:</strong> {{ currentOrder.PhoneNumber }}</p>
+                    <p><strong>モデル名:</strong> {{ currentOrder.ModelName }}</p>
+                    <p><strong>実モデル:</strong> {{ currentOrder.ActualModel }}</p>
+                    <p><strong>コース:</strong> {{ currentOrder.CourseMin }}</p>
+                    <p><strong>料金:</strong> {{ currentOrder.Price }}</p>
                     <p><strong>郵便番号:</strong> {{ currentOrder.PostalCode }}</p>
                     <p><strong>住所:</strong> {{ currentOrder.Address }}</p>
-                    <p><strong>送り:</strong> {{ currentOrder.delivery }}</p>
-                    <p><strong>指名料:</strong> {{ currentOrder.nominationFee }}</p>
+                    <p><strong>送り:</strong> {{ currentOrder.DriverID }}</p>
+                    <p><strong>指名料:</strong> {{ currentOrder.ReservationFee }}</p>
                     <p><strong>交通費:</strong> {{ currentOrder.transportationFee }}</p>
-                    <p><strong>出張費:</strong> {{ currentOrder.travelExpenses }}</p>
+                    <p><strong>出張費:</strong> {{ currentOrder.TravelCost }}</p>
                     <p><strong>媒体:</strong> {{ currentOrder.media }}</p>
                     <p><strong>備考:</strong> {{ currentOrder.notes }}</p>
-                    <p><strong>カード対応者:</strong> {{ currentOrder.travelExpenses }}</p>
-                    <p><strong>受注者:</strong> {{ currentOrder.travelExpenses }}</p>
+                    <p><strong>カード対応者:</strong> {{ currentOrder.cardstaffID }}</p>
+                    <p><strong>受注者:</strong> {{ currentOrder.orderStaffID }}</p>
                     <!-- 他のオーダー詳細 -->
                 </div>
                 <div v-else>
@@ -223,18 +223,18 @@ export default {
                     customerName: this.customerName,
                     modelName: this.modelName,
                     actualModel: this.actualModel,
-                    courseName: this.courseName,
+                    courseName: this.courseMin,
                     price: this.price,
-                    postalCode: this.postalCode,
+                    postalCode: this.PostalCode,
                     address: this.address,
-                    delivery: this.delivery,
-                    nominationFee: this.nominationFee,
-                    transportationFee: this.transportationFee,
-                    travelExpenses: this.travelExpenses,
+                    DriverID: this.DriverID,
+                    ReservationFee: this.ReservationFee,
+                    transportationFee: this.TransportationFee,
+                    TravelCost: this.TravelCost,
                     media: this.media,
                     notes: this.notes,
-                    cardHandler: this.cardHandler,
-                    orderTaker: this.orderTaker,
+                    CardstaffID: this.CardstaffID,
+                    CardstaffID: this.CardstaffID,
                 };
 
                 const response = await axios.post('http://localhost:3000/api/v1/orders', orderData);

@@ -36,11 +36,17 @@ func (h *OrderHandler) Create(c *gin.Context) {
 func (h *OrderHandler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	groupID, _ := strconv.Atoi(c.DefaultQuery("groupID", "0"))
+
+	groupID := 0 // 固定値として1を使用
 
 	orders, err := h.useCase.List(groupID, page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文リストの取得に失敗しました: " + err.Error()})
+		return
+	}
+
+	if len(orders) == 0 {
+		c.JSON(http.StatusOK, gin.H{"data": []entity.Orders{}, "message": "注文が見つかりません"})
 		return
 	}
 
