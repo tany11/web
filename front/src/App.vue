@@ -27,12 +27,31 @@ export default {
   },
   computed: {
     isLoggedIn() {
-      return this.$store.state.auth.isLoggedIn
+      return this.$store.state.isLoggedIn
     }
   },
   methods: {
     toggleSidebar() {
       this.sidebarOpen = !this.sidebarOpen
+    },
+    checkAuth() {
+      const token = localStorage.getItem('token')
+      const userId = localStorage.getItem('userId')
+      if (token && userId) {
+        this.$store.commit('setToken', token)
+        this.$store.commit('setUserId', userId)
+        this.$store.commit('setLoggedIn', true)
+      }
+    }
+  },
+  created() {
+    this.checkAuth()
+  },
+  watch: {
+    $route(to) {
+      if (to.meta.requiresAuth && !this.isLoggedIn) {
+        this.$router.push('/login')
+      }
     }
   }
 }

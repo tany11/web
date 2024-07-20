@@ -17,8 +17,16 @@ const routes = [
 ]
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
+    history: createWebHistory(import.meta.env.BASE_URL),
+    routes
 })
 
+router.beforeEach((to, from, next) => {
+    const isLoggedIn = localStorage.getItem('token') !== null
+    if (to.matched.some(record => record.meta.requiresAuth) && !isLoggedIn) {
+        next('/login')
+    } else {
+        next()
+    }
+})
 export default router

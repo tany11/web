@@ -51,8 +51,8 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 	}
 
 	// 顧客IDを注文データに設定
+
 	order.CustomerID = customer.ID
-	order.DriverID = "1"
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 

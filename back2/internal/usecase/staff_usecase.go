@@ -51,6 +51,15 @@ func (uc *StaffUseCase) List(groupID, page, pageSize int) ([]*entity.Staff, erro
 	return uc.repo.List(groupID, offset, pageSize)
 }
 
+func (uc *StaffUseCase) ListForDropdown(groupID int) ([]*entity.Staff, error) {
+	staffs, err := uc.repo.ListForDropdown(groupID)
+	if err != nil {
+		log.Printf("Error in StaffUseCase.ListForDropdown: %v", err) // Added error logging
+		return nil, err
+	}
+	return staffs, nil
+}
+
 func (uc *StaffUseCase) Update(staff *entity.Staff) error {
 	if staff.PasswordHash != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(staff.PasswordHash), bcrypt.DefaultCost)
@@ -94,7 +103,7 @@ func (uc *StaffUseCase) generateStaffUniqueRandomID() (string, error) {
 		id := fmt.Sprintf("S%06d", rand.Intn(1000000))
 		staff, err := uc.repo.GetByStaffIID(id)
 		if err != nil {
-			log.Printf("IDの存在確認中にエラーが発生: %v\n", err)
+			log.Printf("ID存在確認中にエラーが発生: %v\n", err)
 			return "", fmt.Errorf("IDの存在確認中にエラーが発生: %w", err)
 		}
 		if staff == nil {

@@ -46,6 +46,15 @@ func (uc *CastUseCase) List(groupID int, page, pageSize int) ([]*entity.Cast, er
 	return uc.repo.List(groupID, offset, pageSize)
 }
 
+func (uc *CastUseCase) ListForDropdown(groupID int) ([]*entity.Cast, error) {
+	casts, err := uc.repo.ListForDropdown(groupID)
+	if err != nil {
+		log.Printf("Error in CastUseCase.ListForDropdown: %v", err) // Added error logging
+		return nil, err
+	}
+	return casts, nil
+}
+
 func (uc *CastUseCase) Update(cast *entity.Cast) error {
 	return uc.repo.Update(cast)
 }

@@ -71,3 +71,9 @@ func (r *XormStaffRepository) GetByEmail(email string) (*entity.Staff, error) {
 	}
 	return staff, nil
 }
+
+func (r *XormStaffRepository) ListForDropdown(groupID int) ([]*entity.Staff, error) {
+	staffs := make([]*entity.Staff, 0)
+	err := r.engine.Where("group_i_d = ?", groupID).Cols("i_d", "staff_i_d", "staff_last_name", "office_flg", "driver_flg").Find(&staffs)
+	return staffs, err
+}

@@ -3,6 +3,7 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -115,4 +116,27 @@ func (h *CastHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": "Cast deleted"})
+}
+
+func (h *CastHandler) ListForDropdown(c *gin.Context) {
+	// GroupIDを仮に1に設定
+	groupID := 1
+
+	casts, err := h.useCase.ListForDropdown(groupID)
+	if err != nil {
+		log.Printf("Error in ListForDropdown: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	simplifiedStaffs := make([]gin.H, len(casts))
+	for i, cast := range casts {
+		simplifiedStaffs[i] = gin.H{
+			"id":      cast.ID,
+			"cast_id": cast.CastID,
+			"name":    cast.CastName,
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": simplifiedStaffs})
 }

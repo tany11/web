@@ -1,10 +1,10 @@
 <template>
   <div class="login">
     <h2>ログイン</h2>
-    <form @submit.prevent="login">
+    <form @submit.prevent="handleLogin">
       <div>
-        <label for="email">メールアドレス:</label>
-        <input v-model="email" type="email" id="email" required>
+        <label for="staffId">スタッフID:</label>
+        <input v-model="staffId" type="text" id="staffId" required>
       </div>
       <div>
         <label for="password">パスワード:</label>
@@ -18,43 +18,33 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { mapActions } from 'vuex'
 
 export default {
   name: 'Login',
   data() {
     return {
-      email: '',
+      staffId: '',
       password: '',
       error: null
     }
   },
   methods: {
-    async login() {
+    ...mapActions(['login']),
+    async handleLogin() {
       try {
-        const response = await axios.get(`http://localhost:3000/api/v1/staff`, {
-          params: {
-            password: this.password
-          }
-        });
-
-        const { token, userId } = response.data;
-
-        // トークンとユーザーIDをストアに保存
-        this.$store.commit('setToken', token);
-        this.$store.commit('setUserId', userId);
-
-        // ログイン状態を更新
-        this.$store.commit('setLoggedIn', true);
-
-        // ダッシュボードへリダイレクト
-        this.$router.push('/dashboard');
-      }
-      catch (error) {
-        this.$store.commit('setLoggedIn', true);
-        this.$router.push('/dashboard');
-        // console.error('ログインエラー:', error);
-        // this.error = error.response?.data?.message || 'ログインに失敗しました';
+        const success = await this.login({
+          staff_id: this.staffId,
+          password: this.password
+        })
+        if (success) {
+          this.$router.push('/dashboard')
+        } else {
+          this.error = 'ログインに失敗しました。スタッフIDとパスワードを確認してください。'
+        }
+      } catch (error) {
+        console.error('ログインエラー:', error)
+        this.error = 'ログイン中にエラーが発生しました。後でもう一度お試しください。'
       }
     }
   }

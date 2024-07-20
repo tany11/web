@@ -6,8 +6,8 @@ import (
 
 type Orders struct {
 	ID                int64
-	GroupID           int //グループID
-	StoreID           int `json:"group_id" xorm:"'group_i_d'"` // この行を確認
+	GroupID           int `json:"group_id" xorm:"'group_i_d'"` // この行を確認//グループID
+	StoreID           int
 	PhoneNumber       string
 	CustomerName      string
 	CustomerID        int64

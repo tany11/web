@@ -3,6 +3,7 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -135,4 +136,29 @@ func (h *StaffHandler) Authenticate(c *gin.Context) {
 func (h *StaffHandler) GetByEmail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
+}
+
+func (h *StaffHandler) ListForDropdown(c *gin.Context) {
+	// GroupIDを仮に1に設定
+	groupID := 1
+
+	staffs, err := h.useCase.ListForDropdown(groupID)
+	if err != nil {
+		log.Printf("Error in ListForDropdown: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	simplifiedStaffs := make([]gin.H, len(staffs))
+	for i, staff := range staffs {
+		simplifiedStaffs[i] = gin.H{
+			"id":         staff.ID,
+			"staff_id":   staff.StaffID,
+			"name":       staff.StaffLastName,
+			"office_flg": staff.OfficeFlg,
+			"driver_flg": staff.DriverFlg,
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": simplifiedStaffs})
 }

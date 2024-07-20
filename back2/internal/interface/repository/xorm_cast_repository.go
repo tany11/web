@@ -59,3 +59,9 @@ func (r *XormCastRepository) Delete(id int64) error {
 	_, err := r.engine.ID(id).Delete(&entity.Cast{})
 	return err
 }
+
+func (r *XormCastRepository) ListForDropdown(groupID int) ([]*entity.Cast, error) {
+	casts := make([]*entity.Cast, 0)
+	err := r.engine.Where("group_i_d = ?", groupID).Cols("i_d", "cast_i_d", "cast_name").Find(&casts)
+	return casts, err
+}

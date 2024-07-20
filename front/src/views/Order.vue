@@ -6,7 +6,7 @@
             <ul>
                 <li>
                     <label for="store-name">店名:</label>
-                    <select id="store-name" name="store-name" v-model="StoreName">
+                    <select id="store-name" name="store-name" v-model="storeName">
                         <option value="store1">Store 1</option>
                         <option value="store2">Store 2</option>
                         <!-- Add more options as needed -->
@@ -14,63 +14,68 @@
                 </li>
                 <li>
                     <label for="phone-number">電話番号:</label>
-                    <input type="text" id="phone-number" name="phone-number" v-model="PhoneNumber"
+                    <input type="text" id="phone-number" name="phone-number" v-model="phoneNumber"
                         @blur="fetchCustomerInfo">
                 </li>
                 <li>
                     <label for="customer-name">お客様名:</label>
-                    <input type="text" id="customer-name" name="customer-name" v-model="CustomerName">
+                    <input type="text" id="customer-name" name="customer-name" v-model="customerName">
                 </li>
                 <li>
                     <label for="model-name">モデル名:</label>
-                    <input type="text" id="model-name" name="model-name" v-model="ModelName">
+                    <input type="text" id="model-name" name="model-name" v-model="modelName">
                 </li>
                 <li>
                     <label for="actual-model">実モデル:</label>
-                    <input type="text" id="actual-model" name="actual-model" v-model="ActualModel">
+                    <select id="actual-model" name="actual-model" v-model="actualModel">
+                        <option value="">選択してください</option> <!-- デフォルトオプション -->
+                        <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
+                            {{ cast.name }}
+                        </option>
+                    </select>
                 </li>
                 <li>
                     <label for="course-name">コース名:</label>
-                    <input type="text" id="course-name" name="course-name" v-model="CourseMin">
+                    <input type="text" id="course-name" name="course-name" v-model="courseMin">
                     <label for="course-duration">分:</label>
                 </li>
                 <li>
                     <label for="price">料金:</label>
-                    <input type="text" id="price" name="price" v-model="Price">
+                    <input type="text" id="price" name="price" v-model="price">
                 </li>
                 <!-- 自宅orホテルのプルダウンもほしいか -->
                 <li>
                     <label for="postal-code">郵便番号:</label>
-                    <input type="text" id="postal-code" name="postal-code" v-model="PostalCode" @blur="fetchAddress">
+                    <input type="text" id="postal-code" name="postal-code" v-model="postalCode" @blur="fetchAddress">
                 </li>
                 <!-- 住所を使用してHomesとGoogleMapのURLもほしい -->
                 <li>
                     <label for="address">住所:</label>
-                    <input type="text" id="address" name="address" v-model="Address">
+                    <input type="text" id="address" name="address" v-model="address">
                 </li>
                 <li>
                     <label for="delivery">送り:</label>
-                    <select id="delivery" name="delivery" v-model="DriverID">
-                        <option value="option1">Option 1</option>
-                        <option value="option2">Option 2</option>
-                        <!-- Add more options as needed -->
+                    <select id="delivery" name="delivery" v-model="driverID">
+                        <option v-for="staff in driverStaffList" :key="staff.id" :value="staff.staff_id">
+                            {{ staff.name }}
+                        </option>
                     </select>
                 </li>
                 <li>
                     <label for="nomination-fee">指名料:</label>
-                    <input type="text" id="nomination-fee" name="nomination-fee" v-model="ReservationFee">
+                    <input type="text" id="nomination-fee" name="nomination-fee" v-model="reservationFee">
                 </li>
                 <li>
                     <label for="transportation-fee">交通費:</label>
-                    <input type="text" id="transportation-fee" name="transportation-fee" v-model="TransportationFee">
+                    <input type="text" id="transportation-fee" name="transportation-fee" v-model="transportationFee">
                 </li>
                 <li>
                     <label for="travel-expenses">出張費:</label>
-                    <input type="text" id="travel-expenses" name="travel-expenses" v-model="TravelCost">
+                    <input type="text" id="travel-expenses" name="travel-expenses" v-model="travelCost">
                 </li>
                 <li>
                     <label for="media">媒体:</label>
-                    <select id="media" name="media" v-model="Media">
+                    <select id="media" name="media" v-model="media">
                         <option value="media1">Media 1</option>
                         <option value="media2">Media 2</option>
                         <!-- Add more options as needed -->
@@ -78,7 +83,7 @@
                 </li>
                 <li>
                     <label for="notes">備考:</label>
-                    <select id="notes" name="notes" v-model="Notes">
+                    <select id="notes" name="notes" v-model="notes">
                         <option value="note1">Note 1</option>
                         <option value="note2">Note 2</option>
                         <!-- Add more options as needed -->
@@ -86,18 +91,18 @@
                 </li>
                 <li>
                     <label for="card-handler">カード対応者:</label>
-                    <select id="card-handler" name="card-handler" v-model="CardstaffID">
-                        <option value="handler1">Handler 1</option>
-                        <option value="handler2">Handler 2</option>
-                        <!-- Add more options as needed -->
+                    <select id="card-handler" name="card-handler" v-model="cardstaffID">
+                        <option v-for="staff in officeStaffList" :key="staff.id" :value="staff.staff_id">
+                            {{ staff.name }}
+                        </option>
                     </select>
                 </li>
                 <li>
                     <label for="order-taker">受注者:</label>
-                    <select id="order-taker" name="order-taker" v-model="OrderStaffID">
-                        <option value="taker1">Taker 1</option>
-                        <option value="taker2">Taker 2</option>
-                        <!-- Add more options as needed -->
+                    <select id="order-taker" name="order-taker" v-model="orderStaffID">
+                        <option v-for="staff in officeStaffList" :key="staff.id" :value="staff.staff_id">
+                            {{ staff.name }}
+                        </option>
                     </select>
                 </li>
                 <li>
@@ -117,24 +122,24 @@
                     <button @click="nextPage" :disabled="currentPage === totalPages">次へ</button>
                 </div>
                 <div v-if="currentOrder" class="order-box">
-                    <h3>オーダー詳細</h3>
+                    <h3>オーダー明細</h3>
                     <p><strong>店名:</strong> {{ currentOrder.StoreName }}</p>
                     <p><strong>お客様名:</strong> {{ currentOrder.CustomerName }}</p>
                     <p><strong>電話番号:</strong> {{ currentOrder.PhoneNumber }}</p>
                     <p><strong>モデル名:</strong> {{ currentOrder.ModelName }}</p>
-                    <p><strong>実モデル:</strong> {{ currentOrder.ActualModel }}</p>
+                    <p><strong>実モデル:</strong> {{ getCastName(currentOrder.ActualModel) }}</p>
                     <p><strong>コース:</strong> {{ currentOrder.CourseMin }}</p>
                     <p><strong>料金:</strong> {{ currentOrder.Price }}</p>
                     <p><strong>郵便番号:</strong> {{ currentOrder.PostalCode }}</p>
                     <p><strong>住所:</strong> {{ currentOrder.Address }}</p>
-                    <p><strong>送り:</strong> {{ currentOrder.DriverID }}</p>
+                    <p><strong>送り:</strong> {{ getStaffName(currentOrder.DriverID) }}</p>
                     <p><strong>指名料:</strong> {{ currentOrder.ReservationFee }}</p>
-                    <p><strong>交通費:</strong> {{ currentOrder.transportationFee }}</p>
+                    <p><strong>交通費:</strong> {{ currentOrder.TransportationFee }}</p>
                     <p><strong>出張費:</strong> {{ currentOrder.TravelCost }}</p>
-                    <p><strong>媒体:</strong> {{ currentOrder.media }}</p>
-                    <p><strong>備考:</strong> {{ currentOrder.notes }}</p>
-                    <p><strong>カード対応者:</strong> {{ currentOrder.cardstaffID }}</p>
-                    <p><strong>受注者:</strong> {{ currentOrder.orderStaffID }}</p>
+                    <p><strong>媒体:</strong> {{ currentOrder.Media }}</p>
+                    <p><strong>備考:</strong> {{ currentOrder.Notes }}</p>
+                    <p><strong>カード対応者:</strong> {{ getStaffName(currentOrder.CardstaffID) }}</p>
+                    <p><strong>受注者:</strong> {{ getStaffName(currentOrder.OrderStaffID) }}</p>
                     <!-- 他のオーダー詳細 -->
                 </div>
                 <div v-else>
@@ -154,32 +159,36 @@ export default {
             phoneNumber: '',
             customerName: '',
             address: '',
-            orderTaker: '',
             storeName: '',
             modelName: '',
             actualModel: '',
-            courseName: '',
+            courseMin: '',
             price: '',
             postalCode: '',
-            delivery: '',
-            nominationFee: '',
             transportationFee: '',
-            travelExpenses: '',
             media: '',
             notes: '',
-            cardHandler: '',
             orders: [],
             currentPage: 1,
             totalPages: 1,
             loading: true,
+            driverID: '',
+            cardstaffID: '',
+            orderStaffID: '',
+            staffList: [],
+            castList: [],
         }
     },
     computed: {
         currentOrder() {
-            console.log('Current page:', this.currentPage);
-            console.log('Orders length:', this.orders.length);
             if (!this.orders || this.orders.length === 0) return null;
             return this.orders[this.currentPage - 1] || null;
+        },
+        driverStaffList() {
+            return this.staffList.filter(staff => staff.driver_flg === "1");
+        },
+        officeStaffList() {
+            return this.staffList.filter(staff => staff.office_flg === "1");
         }
     },
     methods: {
@@ -203,7 +212,6 @@ export default {
             if (this.postalCode) {
                 try {
                     const response = await axios.get(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${this.postalCode}`);
-                    console.log('郵便番号API応答:', response.data);
                     if (response.data && response.data.results) {
                         const result = response.data.results[0];
                         this.address = `${result.address1}${result.address2}${result.address3}`;
@@ -223,18 +231,18 @@ export default {
                     customerName: this.customerName,
                     modelName: this.modelName,
                     actualModel: this.actualModel,
-                    courseName: this.courseMin,
-                    price: this.price,
-                    postalCode: this.PostalCode,
+                    courseMin: this.courseMin,
+                    price: parseInt(this.price, 10),
+                    postalCode: this.postalCode,
                     address: this.address,
-                    DriverID: this.DriverID,
-                    ReservationFee: this.ReservationFee,
-                    transportationFee: this.TransportationFee,
-                    TravelCost: this.TravelCost,
+                    driverID: this.driverID,
+                    reservationFee: parseInt(this.reservationFee, 10),
+                    transportationFee: parseInt(this.transportationFee, 10),
+                    travelCost: parseInt(this.travelCost, 10),
                     media: this.media,
                     notes: this.notes,
-                    CardstaffID: this.CardstaffID,
-                    CardstaffID: this.CardstaffID,
+                    cardstaffID: this.cardstaffID,
+                    orderStaffID: this.orderStaffID,
                 };
 
                 const response = await axios.post('http://localhost:3000/api/v1/orders', orderData);
@@ -272,10 +280,36 @@ export default {
             if (this.currentPage < this.totalPages) {
                 this.currentPage++;
             }
+        },
+        async fetchStaffList() {
+            try {
+                const response = await axios.get('http://localhost:3000/api/v1/staff/dropdown');
+                this.staffList = response.data.data || [];
+            } catch (error) {
+                console.error('スタッフリストの取得に失敗しました:', error);
+            }
+        },
+        async fetchCastList() {
+            try {
+                const response = await axios.get('http://localhost:3000/api/v1/cast/dropdown');
+                this.castList = response.data.data || [];
+            } catch (error) {
+                console.error('キャストリストの取得に失敗しました:', error);
+            }
+        },
+        getCastName(castId) {
+            const cast = this.castList.find(c => c.cast_id === castId);
+            return cast ? cast.name : 'Unknown';
+        },
+        getStaffName(staffId) {
+            const staff = this.staffList.find(s => s.staff_id === staffId);
+            return staff ? staff.name : 'Unknown';
         }
     },
     mounted() {
         this.fetchOrders();
+        this.fetchStaffList();
+        this.fetchCastList();
     }
 }
 

@@ -9,4 +9,5 @@ type CastRepository interface {
 	List(groupID, offset, limit int) ([]*entity.Cast, error)
 	Update(cast *entity.Cast) error
 	Delete(id int64) error
+	ListForDropdown(groupID int) ([]*entity.Cast, error) // 新しいメソッドを追加
 }

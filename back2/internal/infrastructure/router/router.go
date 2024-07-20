@@ -17,6 +17,7 @@ func SetupRouter(
 	groupHandler *handler.GroupHandler,
 	orderHandler *handler.OrderHandler,
 	staffHandler *handler.StaffHandler,
+	authHandler *handler.AuthHandler,
 ) {
 	// Apply global middleware
 	engine.Use(RecordUaAndTime)
@@ -52,6 +53,7 @@ func SetupRouter(
 		v1.GET("/cast/:id", castHandler.Get)
 		v1.PUT("/cast/:id", castHandler.Update)
 		v1.DELETE("/cast/:id", castHandler.Delete)
+		v1.GET("/cast/dropdown", castHandler.ListForDropdown) // New endpoint added
 
 		// Staff routes
 		v1.POST("/staff", staffHandler.Create)
@@ -59,6 +61,10 @@ func SetupRouter(
 		v1.GET("/staff/:id", staffHandler.Get)
 		v1.PUT("/staff/:id", staffHandler.Update)
 		v1.DELETE("/staff/:id", staffHandler.Delete)
+		v1.GET("/staff/dropdown", staffHandler.ListForDropdown) // New endpoint added
+
+		// Login endpoint added
+		v1.POST("/login", authHandler.Login)
 	}
 }
 

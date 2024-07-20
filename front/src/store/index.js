@@ -1,24 +1,45 @@
 import { createStore } from 'vuex'
+import axios from 'axios'
 
 export default createStore({
     state: {
-        auth: {
-            isLoggedIn: false
-        }
+        token: null,
+        userId: null,
+        isLoggedIn: false
     },
     mutations: {
-        setLoggedIn(state, value) {
-            state.auth.isLoggedIn = value
+        setToken(state, token) {
+            state.token = token
+        },
+        setUserId(state, userId) {
+            state.userId = userId
+        },
+        setLoggedIn(state, isLoggedIn) {
+            state.isLoggedIn = isLoggedIn
         }
     },
     actions: {
-        login({ commit }) {
-            // ログイン処理
-            commit('setLoggedIn', true)
+        async login({ commit }, credentials) {
+            try {
+                const response = await axios.post('http://localhost:3000/api/v1/login', credentials)
+                const { token, staff_id } = response.data
+                commit('setToken', token)
+                commit('setUserId', staff_id)
+                commit('setLoggedIn', true)
+                localStorage.setItem('token', token)
+                localStorage.setItem('userId', staff_id)
+                return true
+            } catch (error) {
+                console.error('ログインエラー:', error)
+                return false
+            }
         },
         logout({ commit }) {
-            // ログアウト処理
+            commit('setToken', null)
+            commit('setUserId', null)
             commit('setLoggedIn', false)
+            localStorage.removeItem('token')
+            localStorage.removeItem('userId')
         }
     }
 })

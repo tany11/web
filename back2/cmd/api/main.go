@@ -46,6 +46,7 @@ func main() {
 	groupHandler := handler.NewGroupHandler(groupUseCase)
 	orderHandler := handler.NewOrderHandler(orderUseCase)
 	staffHandler := handler.NewStaffHandler(staffUseCase)
+	authHandler := handler.NewAuthHandler(staffUseCase)
 
 	// Ginエンジンの設定
 	engine := gin.Default()
@@ -56,7 +57,10 @@ func main() {
 	engine.Use(cors.New(config))
 
 	// ルーターのセットアップ
-	router.SetupRouter(engine, castHandler, customerHandler, groupHandler, orderHandler, staffHandler)
+	router.SetupRouter(engine, castHandler, customerHandler, groupHandler, orderHandler, staffHandler, authHandler)
+
+	// ログインエンドポイントの追加
+	engine.POST("/api/login", authHandler.Login)
 
 	// サーバーの起動
 	if err := engine.Run(":3000"); err != nil {
