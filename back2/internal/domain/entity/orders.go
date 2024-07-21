@@ -27,5 +27,6 @@ type Orders struct {
 	OrderStaffID      string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
-	IsDeleted         string
+	CompletionFlg     string `default:"0"`
+	IsDeleted         string `default:"0"`
 }

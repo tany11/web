@@ -41,7 +41,7 @@
                 </li>
                 <li>
                     <label for="price">料金:</label>
-                    <input type="text" id="price" name="price" v-model="price">
+                    <input type="number" id="price" name="price" v-model.number="price" step="1000" min="0">
                 </li>
                 <!-- 自宅orホテルのプルダウンもほしいか -->
                 <li>
@@ -63,15 +63,18 @@
                 </li>
                 <li>
                     <label for="nomination-fee">指名料:</label>
-                    <input type="text" id="nomination-fee" name="nomination-fee" v-model="reservationFee">
+                    <input type="number" id="nomination-fee" name="nomination-fee" v-model.number="reservationFee"
+                        step="1000" min="0">
                 </li>
                 <li>
                     <label for="transportation-fee">交通費:</label>
-                    <input type="text" id="transportation-fee" name="transportation-fee" v-model="transportationFee">
+                    <input type="number" id="transportation-fee" name="transportation-fee"
+                        v-model.number="transportationFee" step="1000" min="0">
                 </li>
                 <li>
                     <label for="travel-expenses">出張費:</label>
-                    <input type="text" id="travel-expenses" name="travel-expenses" v-model="travelCost">
+                    <input type="number" id="travel-expenses" name="travel-expenses" v-model.number="travelCost"
+                        step="1000" min="0">
                 </li>
                 <li>
                     <label for="media">媒体:</label>
@@ -123,24 +126,34 @@
                 </div>
                 <div v-if="currentOrder" class="order-box">
                     <h3>オーダー明細</h3>
-                    <p><strong>店名:</strong> {{ currentOrder.StoreName }}</p>
-                    <p><strong>お客様名:</strong> {{ currentOrder.CustomerName }}</p>
-                    <p><strong>電話番号:</strong> {{ currentOrder.PhoneNumber }}</p>
-                    <p><strong>モデル名:</strong> {{ currentOrder.ModelName }}</p>
-                    <p><strong>実モデル:</strong> {{ getCastName(currentOrder.ActualModel) }}</p>
-                    <p><strong>コース:</strong> {{ currentOrder.CourseMin }}</p>
-                    <p><strong>料金:</strong> {{ currentOrder.Price }}</p>
-                    <p><strong>郵便番号:</strong> {{ currentOrder.PostalCode }}</p>
-                    <p><strong>住所:</strong> {{ currentOrder.Address }}</p>
-                    <p><strong>送り:</strong> {{ getStaffName(currentOrder.DriverID) }}</p>
-                    <p><strong>指名料:</strong> {{ currentOrder.ReservationFee }}</p>
-                    <p><strong>交通費:</strong> {{ currentOrder.TransportationFee }}</p>
-                    <p><strong>出張費:</strong> {{ currentOrder.TravelCost }}</p>
-                    <p><strong>媒体:</strong> {{ currentOrder.Media }}</p>
-                    <p><strong>備考:</strong> {{ currentOrder.Notes }}</p>
-                    <p><strong>カード対応者:</strong> {{ getStaffName(currentOrder.CardstaffID) }}</p>
-                    <p><strong>受注者:</strong> {{ getStaffName(currentOrder.OrderStaffID) }}</p>
-                    <!-- 他のオーダー詳細 -->
+                    <form @submit.prevent="updateOrder">
+                        <template v-for="(value, key) in displayableFields" :key="key">
+                            <p v-if="!isEditing || !isEditableField(key)">
+                                <strong>{{ getFieldLabel(key) }}:</strong> {{ getDisplayValue(key, value) }}
+                            </p>
+                            <p v-else>
+                                <strong>{{ getFieldLabel(key) }}:</strong>
+                                <template v-if="key === 'ActualModel'">
+                                    <select v-model="editedOrder[key]">
+                                        <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
+                                            {{ cast.name }}
+                                        </option>
+                                    </select>
+                                </template>
+                                <template v-else-if="isPriceField(key)">
+                                    <input v-model.number="editedOrder[key]" type="number" step="1000" min="0">
+                                </template>
+                                <input v-else-if="isEditableField(key)" v-model="editedOrder[key]"
+                                    :type="getInputType(key)">
+                                <span v-else>{{ getDisplayValue(key, value) }}</span>
+                            </p>
+                        </template>
+                        <div class="button-group">
+                            <button type="button" @click="toggleEdit">{{ isEditing ? '編集完了' : '編集' }}</button>
+                            <button type="button" @click="confirmDelete">削除</button>
+                            <button type="button" @click="confirmOrder">確定</button>
+                        </div>
+                    </form>
                 </div>
                 <div v-else>
                     選択されたオーダーがありません。
@@ -177,6 +190,8 @@ export default {
             orderStaffID: '',
             staffList: [],
             castList: [],
+            isEditing: false,
+            editedOrder: {},
         }
     },
     computed: {
@@ -189,6 +204,15 @@ export default {
         },
         officeStaffList() {
             return this.staffList.filter(staff => staff.office_flg === "1");
+        },
+        displayableFields() {
+            const excludedFields = ['group_id', 'StoreID', 'CreatedAt', 'UpdatedAt', 'IsDeleted'];
+            return Object.keys(this.currentOrder || {}).reduce((acc, key) => {
+                if (!excludedFields.includes(key)) {
+                    acc[key] = this.currentOrder[key];
+                }
+                return acc;
+            }, {});
         }
     },
     methods: {
@@ -247,11 +271,40 @@ export default {
 
                 const response = await axios.post('http://localhost:3000/api/v1/orders', orderData);
                 console.log('注文が正常に送信されました:', response.data);
-                // ここで成功メッセージを表示したり、フォームをリセットしたりできます
+
+                // 成功メッセージを表示
+                alert('注文が正常に送信されました。');
+
+                // フォームをリセットし、オーダー一覧を更新
+                this.resetForm();
+                await this.fetchOrders();
+
+                // 最新のオーダーを表示するために currentPage を 1 にセット
+                this.currentPage = 1;
             } catch (error) {
                 console.error('注文の送信に失敗しました:', error);
-                // ここでエラーメッセージを表示できます
+                alert('注文の送信に失敗しました。もう一度お試しください。');
             }
+        },
+        resetForm() {
+            // フォームの各フィールドをリセット
+            this.phoneNumber = '';
+            this.customerName = '';
+            this.address = '';
+            this.storeName = '';
+            this.modelName = '';
+            this.actualModel = '';
+            this.courseMin = '';
+            this.price = '';
+            this.postalCode = '';
+            this.transportationFee = '';
+            this.media = '';
+            this.notes = '';
+            this.driverID = '';
+            this.cardstaffID = '';
+            this.orderStaffID = '';
+            this.reservationFee = '';
+            this.travelCost = '';
         },
         async fetchOrders() {
             this.loading = true;
@@ -259,7 +312,7 @@ export default {
                 const response = await axios.get('http://localhost:3000/api/v1/orders');
                 this.orders = response.data.data || []; // データが data プロパティ内にある場合
                 this.totalPages = this.orders.length;
-                this.currentPage = this.orders.length > 0 ? 1 : 0;
+                this.currentPage = this.orders.length > 0 ? 1 : 0; // 最新のオーダーを表示するために1ページ目にセット
                 console.log('Fetched orders:', this.orders);
                 console.log('Current page after fetch:', this.currentPage);
             } catch (error) {
@@ -304,7 +357,97 @@ export default {
         getStaffName(staffId) {
             const staff = this.staffList.find(s => s.staff_id === staffId);
             return staff ? staff.name : 'Unknown';
-        }
+        },
+        toggleEdit() {
+            if (this.isEditing) {
+                this.updateOrder();
+            } else {
+                this.editedOrder = { ...this.currentOrder };
+            }
+            this.isEditing = !this.isEditing;
+        },
+        async updateOrder() {
+            if (!this.currentOrder) {
+                console.error('現在のオーダーが見つかりません');
+                console.error(this.currentOrder);
+                return;
+            }
+
+            const orderId = this.currentOrder.ID;
+            if (!orderId) {
+                console.error('現在のオーダーIDが見つかりません');
+                console.error(orderId);
+                return;
+            }
+
+            try {
+                await axios.put(`http://localhost:3000/api/v1/orders/${orderId}`, this.editedOrder);
+                this.fetchOrders();
+                this.isEditing = false;
+            } catch (error) {
+                console.error('オーダーの更新に失敗しました:', error);
+            }
+        },
+        async confirmDelete() {
+            if (confirm('このオーダーを削除してもよろしいですか？')) {
+                try {
+                    await axios.delete(`http://localhost:3000/api/v1/orders/${this.currentOrder.id}`);
+                    this.fetchOrders();
+                } catch (error) {
+                    console.error('オーダーの削除に失敗しました:', error);
+                }
+            }
+        },
+        async confirmOrder() {
+            try {
+                await axios.post(`http://localhost:3000/api/v1/orders/${this.currentOrder.id}/confirm`);
+                this.fetchOrders();
+            } catch (error) {
+                console.error('オーダーの確定に失敗しました:', error);
+            }
+        },
+        isEditableField(key) {
+            const editableFields = ['CustomerName', 'PhoneNumber', 'ModelName', 'ActualModel', 'CourseMin', 'Price', 'Address', 'ReservationFee', 'TransportationFee', 'TravelCost', 'Notes'];
+            return editableFields.includes(key);
+        },
+        isPriceField(key) {
+            return ['Price', 'ReservationFee', 'TransportationFee', 'TravelCost'].includes(key);
+        },
+        getInputType(key) {
+            return this.isPriceField(key) ? 'number' : 'text';
+        },
+        getFieldLabel(key) {
+            const labels = {
+                StoreName: '店名',
+                CustomerName: 'お客様名',
+                PhoneNumber: '電話番号',
+                ModelName: 'モデル名',
+                ActualModel: '実モデル',
+                CourseMin: 'コース',
+                Price: '料金',
+                PostalCode: '郵便番号',
+                Address: '住所',
+                DriverID: '送り',
+                ReservationFee: '指名料',
+                TransportationFee: '交通費',
+                TravelCost: '出張費',
+                Media: '媒体',
+                Notes: '備考',
+                CardstaffID: 'カード対応者',
+                OrderStaffID: '受注者',
+            };
+            return labels[key] || key;
+        },
+        getDisplayValue(key, value) {
+            if (key === 'ActualModel') {
+                return this.getCastName(value);
+            } else if (key === 'DriverID' || key === 'CardstaffID' || key === 'OrderStaffID') {
+                return this.getStaffName(value);
+            } else if (this.isPriceField(key)) {
+                return `¥${value.toLocaleString()}`;
+            }
+            return value;
+        },
     },
     mounted() {
         this.fetchOrders();
@@ -314,3 +457,13 @@ export default {
 }
 
 </script>
+
+<style scoped>
+.button-group {
+    margin-top: 20px;
+}
+
+.button-group button {
+    margin-right: 10px;
+}
+</style>
