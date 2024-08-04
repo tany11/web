@@ -43,6 +43,12 @@ func (r *XormOrderRepository) List(groupID, offset, limit int) ([]*entity.Orders
 	return orders, err
 }
 
+func (r *XormOrderRepository) ListReserved(groupID, offset, limit int) ([]*entity.Orders, error) {
+	orders := make([]*entity.Orders, 0)
+	err := r.engine.Where("group_i_d = ?", groupID).Where("completion_flg = 0").Where("is_deleted = 0").Limit(limit, offset).Find(&orders)
+	return orders, err
+}
+
 func (r *XormOrderRepository) ListByCustomerID(customerID int) ([]*entity.Orders, error) {
 	orders := make([]*entity.Orders, 0)
 	err := r.engine.Where("customer_id = ?", customerID).Find(&orders)
@@ -56,5 +62,15 @@ func (r *XormOrderRepository) Update(order *entity.Orders) error {
 
 func (r *XormOrderRepository) Delete(id int64) error {
 	_, err := r.engine.ID(id).Delete(new(entity.Orders))
+	return err
+}
+
+func (r *XormOrderRepository) UpdateCompletionFlg(id int64) error {
+	_, err := r.engine.ID(id).Update(new(entity.Orders))
+	return err
+}
+
+func (r *XormOrderRepository) UpdateIsDeleted(id int64) error {
+	_, err := r.engine.ID(id).Update(new(entity.Orders))
 	return err
 }

@@ -18,6 +18,8 @@ func SetupRouter(
 	orderHandler *handler.OrderHandler,
 	staffHandler *handler.StaffHandler,
 	authHandler *handler.AuthHandler,
+	storeHandler *handler.StoreHandler,
+	mediaHandler *handler.MediaHandler,
 ) {
 	// Apply global middleware
 	engine.Use(RecordUaAndTime)
@@ -35,10 +37,13 @@ func SetupRouter(
 
 		// Order routes
 		v1.POST("/orders", orderHandler.Create)
+		v1.PUT("/orders/:id", orderHandler.Update)
+		v1.PUT("/orders/:id/completion", orderHandler.UpdateCompletionFlg)
+		v1.PUT("/orders/:id/delete", orderHandler.DeleteFlg)
 		v1.GET("/orders", orderHandler.GetAll)
 		v1.GET("/orders/:id", orderHandler.Get)
-		v1.PUT("/orders/:id", orderHandler.Update)
 		v1.DELETE("/orders/:id", orderHandler.Delete)
+		v1.GET("/orders/reserved", orderHandler.ListReserved)
 
 		// Group routes
 		v1.POST("/group", groupHandler.Create)
@@ -63,8 +68,25 @@ func SetupRouter(
 		v1.DELETE("/staff/:id", staffHandler.Delete)
 		v1.GET("/staff/dropdown", staffHandler.ListForDropdown) // New endpoint added
 
+		// Store routes
+		v1.POST("/store", storeHandler.Create)
+		v1.GET("/store", storeHandler.GetAll)
+		v1.GET("/store/:id", storeHandler.Get)
+		v1.PUT("/store/:id", storeHandler.Update)
+		v1.DELETE("/store/:id", storeHandler.Delete)
+		v1.GET("/store/dropdown", storeHandler.ListForDropdown)
+
+		// Media routes
+		v1.POST("/media", mediaHandler.Create)
+		v1.GET("/media", mediaHandler.GetAll)
+		v1.GET("/media/:id", mediaHandler.Get)
+		v1.PUT("/media/:id", mediaHandler.Update)
+		v1.DELETE("/media/:id", mediaHandler.Delete)
+		v1.GET("/media/dropdown", mediaHandler.ListForDropdown)
+
 		// Login endpoint added
 		v1.POST("/login", authHandler.Login)
+		v1.POST("/logout", authHandler.Logout)
 	}
 }
 

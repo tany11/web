@@ -1,6 +1,5 @@
 <template>
     <div class="cast-registration">
-        <h1>キャスト登録</h1>
         <form @submit.prevent="submitForm">
             <div class="form-group">
                 <label for="castName">キャスト名 *</label>
@@ -62,17 +61,18 @@ export default {
                 lineId: lineId.value,
                 birthDate: birthDate.value
             }
-
-            try {
-                const response = await axios.post('http://localhost:3000/api/v1/cast', formData)
-                console.log('キャストが登録されました', response.data)
-                registrationResult.value = 'キャストが正常に登録されました。'
-                resultClass.value = 'success'
-                resetForm()
-            } catch (error) {
-                console.error('登録エラー', error)
-                registrationResult.value = 'キャストの登録に失敗しました。もう一度お試しください。'
-                resultClass.value = 'error'
+            if (confirm('このキャストを登録してもよろしいですか？')) {
+                try {
+                    const response = await axios.post('http://localhost:3000/api/v1/cast', formData)
+                    console.log('キャストが登録されました', response.data)
+                    registrationResult.value = 'キャストが正常に登録されました。'
+                    resultClass.value = 'success'
+                    resetForm()
+                } catch (error) {
+                    console.error('登録エラー', error)
+                    registrationResult.value = 'キャストの登録に失敗しました。もう一度お試しください。'
+                    resultClass.value = 'error'
+                }
             }
         }
 

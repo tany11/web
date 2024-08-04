@@ -3,6 +3,7 @@ package handler
 import (
 	"back2/internal/usecase"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -40,7 +41,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte("your-secret-key")) // 実際の運用では安全な秘密鍵を使用してください
+	secretKey := os.Getenv("JWT_SECRET_KEY") // 環境変数から秘密鍵を取得
+	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
@@ -49,5 +51,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token":    tokenString,
 		"staff_id": staff.StaffID,
+		"message":  "Logged in successfully",
 	})
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+
+	c.JSON(http.StatusOK, gin.H{"message": "ログアウトしました"})
 }

@@ -2,16 +2,30 @@
   <header class="app-header">
     <div class="hamburger" @click="$emit('toggle-sidebar')">☰</div>
     <h1>業務管理</h1>
-    <button @click="logout" class="logout-button">ログアウト</button>
+    <button @click="handleLogout">ログアウト</button>
   </header>
 </template>
 
 <script>
+import { mapState, mapActions } from 'vuex'
+
 export default {
   name: 'Header',
+  computed: {
+    ...mapState(['user']),
+    isLoggedIn() {
+      return !!this.user
+    }
+  },
   methods: {
-    logout() {
-      // ログアウト処理をここに実装
+    ...mapActions(['logout']),
+    async handleLogout() {
+      const success = await this.logout()
+      if (success) {
+        this.$router.push('/login')
+      } else {
+        alert('ログアウトに失敗しました。もう一度お試しください。')
+      }
     }
   }
 }

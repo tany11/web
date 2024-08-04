@@ -9,4 +9,7 @@ type OrderRepository interface {
 	ListByCustomerID(customerID int) ([]*entity.Orders, error)
 	Update(order *entity.Orders) error
 	Delete(id int64) error
+	UpdateCompletionFlg(id int64) error
+	ListReserved(groupID, offset, limit int) ([]*entity.Orders, error)
+	UpdateIsDeleted(id int64) error
 }

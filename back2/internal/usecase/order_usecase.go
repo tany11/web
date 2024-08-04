@@ -58,6 +58,7 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 
 	// 注文を作成
 	err = uc.orderRepo.Create(order)
+	log.Printf(order.CourseMin, "order.CourseMin")
 	if err != nil {
 		log.Printf("注文の作成に失敗しました: %v", err)
 		return fmt.Errorf("注文の作成に失敗しました: %w", err)
@@ -77,14 +78,19 @@ func (uc *OrderUseCase) List(groupID, page, pageSize int) ([]*entity.Orders, err
 	return orders, nil
 }
 
+func (uc *OrderUseCase) ListReserved(groupID, page, pageSize int) ([]*entity.Orders, error) {
+	offset := (page - 1) * pageSize
+	orders, err := uc.orderRepo.ListReserved(groupID, offset, pageSize)
+	if err != nil {
+		log.Printf("予約リストの取得中にエラーが発生しました: %v", err)
+		return nil, fmt.Errorf("予約リストの取得に失敗しました: %w", err)
+	}
+	return orders, nil
+}
+
 func (uc *OrderUseCase) GetByID(id int64) (*entity.Orders, error) {
 	return uc.orderRepo.GetByID(id)
 }
-
-// func (uc *OrderUseCase) List(groupID int, page, pageSize int) ([]*entity.Order, error) {
-// 	offset := (page - 1) * pageSize
-// 	return uc.orderRepo.List(groupID, offset, pageSize)
-// }
 
 func (uc *OrderUseCase) Update(order *entity.Orders) error {
 	return uc.orderRepo.Update(order)
@@ -96,4 +102,12 @@ func (uc *OrderUseCase) Delete(id int64) error {
 
 func (uc *OrderUseCase) GetByCustomerID(customerID int) ([]*entity.Orders, error) {
 	return uc.orderRepo.ListByCustomerID(customerID)
+}
+
+func (uc *OrderUseCase) UpdateCompletionFlg(id int64) error {
+	return uc.orderRepo.UpdateCompletionFlg(id)
+}
+
+func (uc *OrderUseCase) UpdateIsDeleted(id int64) error {
+	return uc.orderRepo.UpdateIsDeleted(id)
 }

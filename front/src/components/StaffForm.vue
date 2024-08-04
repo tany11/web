@@ -1,6 +1,5 @@
 <template>
     <div class="staff-registration">
-        <h1>スタッフ登録</h1>
         <form @submit.prevent="submitForm">
             <div class="form-group name-group">
                 <div class="name-field">
@@ -93,17 +92,18 @@ export default {
                 driverFlg: driverFlg.value ? "1" : "0",
                 webFlg: webFlg.value ? "1" : "0"
             }
-
-            try {
-                const response = await axios.post('http://localhost:3000/api/v1/staff', formData)
-                console.log('スタッフが登録されました', response.data)
-                registrationResult.value = 'スタッフが正常に登録されました。'
-                resultClass.value = 'success'
-                resetForm()
-            } catch (error) {
-                console.error('登録エラー', error)
-                registrationResult.value = 'スタッフの登録に失敗しました。もう一度お試しください。'
-                resultClass.value = 'error'
+            if (confirm('スタッフを登録してもよろしいですか？')) {
+                try {
+                    const response = await axios.post('http://localhost:3000/api/v1/staff', formData)
+                    console.log('スタッフが登録されました', response.data)
+                    registrationResult.value = 'スタッフが正常に登録されました。'
+                    resultClass.value = 'success'
+                    resetForm()
+                } catch (error) {
+                    console.error('登録エラー', error)
+                    registrationResult.value = 'スタッフの登録に失敗しました。もう一度お試しください。'
+                    resultClass.value = 'error'
+                }
             }
         }
 
@@ -193,5 +193,21 @@ button {
 
 button:hover {
     background-color: #45a049;
+}
+
+.registration-result {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.registration-result.success {
+    background-color: #dff0d8;
+    color: #3c763d;
+}
+
+.registration-result.error {
+    background-color: #f2dede;
+    color: #a94442;
 }
 </style>

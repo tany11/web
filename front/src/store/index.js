@@ -34,12 +34,19 @@ export default createStore({
                 return false
             }
         },
-        logout({ commit }) {
-            commit('setToken', null)
-            commit('setUserId', null)
-            commit('setLoggedIn', false)
-            localStorage.removeItem('token')
-            localStorage.removeItem('userId')
+        async logout({ commit }) {
+            try {
+                await axios.post('http://localhost:3000/api/v1/logout')
+                commit('setToken', null)
+                commit('setUserId', null)
+                commit('setLoggedIn', false)
+                localStorage.removeItem('token')
+                localStorage.removeItem('userId')
+                return true
+            } catch (error) {
+                console.error('ログアウトエラー:', error)
+                return false
+            }
         }
     }
 })

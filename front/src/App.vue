@@ -2,7 +2,7 @@
   <div id="app">
     <Header v-if="isLoggedIn" @toggle-sidebar="toggleSidebar" />
     <div class="content-wrapper">
-      <Sidebar v-if="isLoggedIn" :isOpen="sidebarOpen" />
+      <Sidebar v-if="isLoggedIn" :isOpen="sidebarOpen" class="sidebar" />
       <main class="main-content" :class="{ 'sidebar-open': sidebarOpen }">
         <router-view></router-view>
       </main>
@@ -41,19 +41,16 @@ export default {
         this.$store.commit('setToken', token)
         this.$store.commit('setUserId', userId)
         this.$store.commit('setLoggedIn', true)
+      } else {
+        this.$store.commit('setLoggedIn', false)
+        this.$store.commit('setToken', null)
+        this.$store.commit('setUserId', null)
       }
     }
   },
   created() {
     this.checkAuth()
   },
-  watch: {
-    $route(to) {
-      if (to.meta.requiresAuth && !this.isLoggedIn) {
-        this.$router.push('/login')
-      }
-    }
-  }
 }
 </script>
 
@@ -83,9 +80,13 @@ export default {
   margin-left: 250px;
 }
 
-@media (max-width: 768px) {
+@media screen and (max-width: 640px) and (hover: none) and (pointer: coarse) {
   .main-content.sidebar-open {
     margin-left: 0;
   }
+}
+
+.sidebar {
+  z-index: 1;
 }
 </style>

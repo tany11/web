@@ -5,95 +5,109 @@
             <h2>受注表</h2>
             <ul>
                 <li>
-                    <label for="store-name">店名:</label>
-                    <select id="store-name" name="store-name" v-model="storeName">
-                        <option value="store1">Store 1</option>
-                        <option value="store2">Store 2</option>
-                        <!-- Add more options as needed -->
+                    <label for="store-name">店名　　: </label>
+                    <select id="store-name" name="store-name" v-model.number="storeID"
+                        :class="{ 'is-invalid': showValidation && !isStoreNameValid }">
+                        <option value="">選択してください</option>
+                        <option v-for="store in storeList" :key="store.id" :value="store.id">
+                            {{ store.name }}
+                        </option>
                     </select>
+                    <span v-if="showValidation && !isStoreNameValid" class="error-message">店名を選択してください</span>
                 </li>
                 <li>
-                    <label for="phone-number">電話番号:</label>
+                    <label for="phone-number">電話番号: </label>
                     <input type="text" id="phone-number" name="phone-number" v-model="phoneNumber"
-                        @blur="fetchCustomerInfo">
+                        @blur="fetchCustomerInfo" :class="{ 'is-invalid': showValidation && !isPhoneNumberValid }">
+                    <span v-if="showValidation && !isPhoneNumberValid" class="error-message">有効な電話番号を入力してください</span>
                 </li>
                 <li>
-                    <label for="customer-name">お客様名:</label>
-                    <input type="text" id="customer-name" name="customer-name" v-model="customerName">
+                    <label for="customer-name">お客様名: </label>
+                    <input type="text" id="customer-name" name="customer-name" v-model="customerName"
+                        :class="{ 'is-invalid': showValidation && !isCustomerNameValid }">
+                    <span v-if="showValidation && !isCustomerNameValid" class="error-message">お客様名を入力してください</span>
                 </li>
                 <li>
-                    <label for="model-name">モデル名:</label>
+                    <label for="model-name">モデル名: </label>
                     <input type="text" id="model-name" name="model-name" v-model="modelName">
                 </li>
                 <li>
-                    <label for="actual-model">実モデル:</label>
-                    <select id="actual-model" name="actual-model" v-model="actualModel">
-                        <option value="">選択してください</option> <!-- デフォルトオプション -->
+                    <label for="actual-model">実モデル: </label>
+                    <select id="actual-model" name="actual-model" v-model="actualModel"
+                        :class="{ 'is-invalid': showValidation && !isActualModelValid }">
+                        <option value="">選択してください</option>
                         <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
                             {{ cast.name }}
                         </option>
                     </select>
+                    <span v-if="showValidation && !isActualModelValid" class="error-message">実モデルを選択してください</span>
                 </li>
                 <li>
-                    <label for="course-name">コース名:</label>
-                    <input type="text" id="course-name" name="course-name" v-model="courseMin">
-                    <label for="course-duration">分:</label>
+                    <label for="course-name">コース　: </label>
+                    <input type="text" id="course-name" name="course-name" v-model="courseMin"
+                        :class="{ 'is-invalid': showValidation && !isCourseMinValid }">
+                    <label for="course-duration">分</label>
+                    <span v-if="showValidation && !isCourseMinValid" class="error-message">コース時間を入力してください</span>
                 </li>
                 <li>
-                    <label for="price">料金:</label>
-                    <input type="number" id="price" name="price" v-model.number="price" step="1000" min="0">
+                    <label for="price">料金　　: </label>
+                    <input type="number" id="price" name="price" v-model.number="price" step="1000" min="0"
+                        :class="{ 'is-invalid': showValidation && !isPriceValid }">
+                    <span v-if="showValidation && !isPriceValid" class="error-message">有効な料金を入力してください</span>
                 </li>
                 <!-- 自宅orホテルのプルダウンもほしいか -->
                 <li>
-                    <label for="postal-code">郵便番号:</label>
+                    <label for="postal-code">郵便番号: </label>
                     <input type="text" id="postal-code" name="postal-code" v-model="postalCode" @blur="fetchAddress">
                 </li>
                 <!-- 住所を使用してHomesとGoogleMapのURLもほしい -->
                 <li>
-                    <label for="address">住所:</label>
-                    <input type="text" id="address" name="address" v-model="address">
+                    <label for="address">住所　　: </label>
+                    <input type="text" id="address" name="address" v-model="address"
+                        :class="{ 'is-invalid': showValidation && !isAddressValid }">
+                    <span v-if="showValidation && !isAddressValid" class="error-message">住所を入力してください</span>
                 </li>
                 <li>
-                    <label for="delivery">送り:</label>
-                    <select id="delivery" name="delivery" v-model="driverID">
+                    <label for="delivery">送り　　: </label>
+                    <select id="delivery" name="delivery" v-model="driverID"
+                        :class="{ 'is-invalid': showValidation && !isDriverIDValid }">
+                        <option value="">選択してください</option>
                         <option v-for="staff in driverStaffList" :key="staff.id" :value="staff.staff_id">
                             {{ staff.name }}
                         </option>
                     </select>
+                    <span v-if="showValidation && !isDriverIDValid" class="error-message">ドライバーを選択してください</span>
                 </li>
                 <li>
-                    <label for="nomination-fee">指名料:</label>
+                    <label for="nomination-fee">指名料　: </label>
                     <input type="number" id="nomination-fee" name="nomination-fee" v-model.number="reservationFee"
                         step="1000" min="0">
                 </li>
                 <li>
-                    <label for="transportation-fee">交通費:</label>
+                    <label for="transportation-fee">交通費　: </label>
                     <input type="number" id="transportation-fee" name="transportation-fee"
                         v-model.number="transportationFee" step="1000" min="0">
                 </li>
                 <li>
-                    <label for="travel-expenses">出張費:</label>
+                    <label for="travel-expenses">出張費　: </label>
                     <input type="number" id="travel-expenses" name="travel-expenses" v-model.number="travelCost"
                         step="1000" min="0">
                 </li>
                 <li>
-                    <label for="media">媒体:</label>
-                    <select id="media" name="media" v-model="media">
-                        <option value="media1">Media 1</option>
-                        <option value="media2">Media 2</option>
-                        <!-- Add more options as needed -->
+                    <label for="media">媒体　　: </label>
+                    <select id="media" name="media" v-model.number="media">
+                        <option value="">選択してください</option>
+                        <option v-for="media in mediaList" :key="media.id" :value="media.id">
+                            {{ media.name }}
+                        </option>
                     </select>
                 </li>
                 <li>
-                    <label for="notes">備考:</label>
-                    <select id="notes" name="notes" v-model="notes">
-                        <option value="note1">Note 1</option>
-                        <option value="note2">Note 2</option>
-                        <!-- Add more options as needed -->
-                    </select>
+                    <label for="notes">備考　　: </label>
+                    <textarea id="notes" name="notes" v-model="notes" rows="3"></textarea>
                 </li>
                 <li>
-                    <label for="card-handler">カード対応者:</label>
+                    <label for="card-handler">カード　: </label>
                     <select id="card-handler" name="card-handler" v-model="cardstaffID">
                         <option v-for="staff in officeStaffList" :key="staff.id" :value="staff.staff_id">
                             {{ staff.name }}
@@ -101,7 +115,7 @@
                     </select>
                 </li>
                 <li>
-                    <label for="order-taker">受注者:</label>
+                    <label for="order-taker">受注者　: </label>
                     <select id="order-taker" name="order-taker" v-model="orderStaffID">
                         <option v-for="staff in officeStaffList" :key="staff.id" :value="staff.staff_id">
                             {{ staff.name }}
@@ -128,32 +142,46 @@
                     <h3>オーダー明細</h3>
                     <form @submit.prevent="updateOrder">
                         <template v-for="(value, key) in displayableFields" :key="key">
-                            <p v-if="!isEditing || !isEditableField(key)">
-                                <strong>{{ getFieldLabel(key) }}:</strong> {{ getDisplayValue(key, value) }}
-                            </p>
-                            <p v-else>
-                                <strong>{{ getFieldLabel(key) }}:</strong>
-                                <template v-if="key === 'ActualModel'">
-                                    <select v-model="editedOrder[key]">
-                                        <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
-                                            {{ cast.name }}
-                                        </option>
-                                    </select>
+                            <p>
+                                <strong>{{ getFieldLabel(key) }}: </strong>
+                                <template v-if="isEditing && isEditableField(key)">
+                                    <template v-if="key === 'ActualModel'">
+                                        <select v-model="editedOrder[key]">
+                                            <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
+                                                {{ cast.name }}
+                                            </option>
+                                        </select>
+                                    </template>
+                                    <template
+                                        v-else-if="key === 'CardstaffID' || key === 'OrderStaffID' || key === 'DriverID'">
+                                        <select v-model="editedOrder[key]">
+                                            <option v-for="staff in getStaffList(key)" :key="staff.staff_id"
+                                                :value="staff.staff_id">
+                                                {{ staff.name }}
+                                            </option>
+                                        </select>
+                                    </template>
+                                    <template v-else-if="isPriceField(key)">
+                                        <input v-model.number="editedOrder[key]" type="number" step="1000" min="0">
+                                    </template>
+                                    <template v-else-if="key === 'Notes'">
+                                        <textarea v-model="editedOrder[key]" rows="3"></textarea>
+                                    </template>
+                                    <template v-else>
+                                        <input v-model="editedOrder[key]" :type="getInputType(key)">
+                                    </template>
                                 </template>
-                                <template v-else-if="isPriceField(key)">
-                                    <input v-model.number="editedOrder[key]" type="number" step="1000" min="0">
+                                <template v-else>
+                                    {{ getDisplayValue(key, value) }}
                                 </template>
-                                <input v-else-if="isEditableField(key)" v-model="editedOrder[key]"
-                                    :type="getInputType(key)">
-                                <span v-else>{{ getDisplayValue(key, value) }}</span>
                             </p>
                         </template>
                         <div class="button-group">
                             <button type="button" @click="toggleEdit">{{ isEditing ? '編集完了' : '編集' }}</button>
-                            <button type="button" @click="confirmDelete">削除</button>
                             <button type="button" @click="confirmOrder">確定</button>
                         </div>
                     </form>
+                    <button type="button" @click="confirmDelete" class="delete-button">削除</button>
                 </div>
                 <div v-else>
                     選択されたオーダーがありません。
@@ -172,14 +200,16 @@ export default {
             phoneNumber: '',
             customerName: '',
             address: '',
-            storeName: '',
+            storeID: null,
             modelName: '',
             actualModel: '',
             courseMin: '',
-            price: '',
+            price: 0,
             postalCode: '',
-            transportationFee: '',
-            media: '',
+            reservationFee: 0,
+            transportationFee: 0,
+            travelCost: 0,
+            media: null,
             notes: '',
             orders: [],
             currentPage: 1,
@@ -192,6 +222,9 @@ export default {
             castList: [],
             isEditing: false,
             editedOrder: {},
+            showValidation: false,
+            storeList: [],
+            mediaList: [],
         }
     },
     computed: {
@@ -206,13 +239,55 @@ export default {
             return this.staffList.filter(staff => staff.office_flg === "1");
         },
         displayableFields() {
-            const excludedFields = ['group_id', 'StoreID', 'CreatedAt', 'UpdatedAt', 'IsDeleted'];
+            const excludedFields = ['GroupID', 'CustomerID', 'UpdatedAt', 'CompletionFlg', 'IsDeleted'];
             return Object.keys(this.currentOrder || {}).reduce((acc, key) => {
                 if (!excludedFields.includes(key)) {
                     acc[key] = this.currentOrder[key];
                 }
                 return acc;
             }, {});
+        },
+        isPhoneNumberValid() {
+            // 日本の電話番号の簡単なバリデーション
+            const phoneRegex = /^(0\d{1,4}-?\d{1,4}-?\d{4})$/;
+            return phoneRegex.test(this.phoneNumber);
+        },
+        isStoreIDValid() {
+            return this.storeID !== null && this.storeID !== '';
+        },
+        isStoreNameValid() {
+            return this.storeName !== '';
+        },
+        isCustomerNameValid() {
+            return this.customerName.trim() !== '';
+        },
+        isActualModelValid() {
+            return this.actualModel !== '';
+        },
+        isCourseMinValid() {
+            return this.courseMin.trim() !== '';
+        },
+        isPriceValid() {
+            return this.price !== '' && this.price > 0;
+        },
+        isAddressValid() {
+            return this.address.trim() !== '';
+        },
+        isDriverIDValid() {
+            return this.driverID !== '';
+        },
+        isMediaValid() {
+            return this.media !== null && this.media !== '';
+        },
+        isFormValid() {
+            return this.isStoreIDValid &&
+                this.isCustomerNameValid &&
+                this.isActualModelValid &&
+                this.isCourseMinValid &&
+                this.isPriceValid &&
+                this.isAddressValid &&
+                this.isDriverIDValid &&
+                this.isPhoneNumberValid;
         }
     },
     methods: {
@@ -247,10 +322,22 @@ export default {
                 }
             }
         },
+        validateForm() {
+            this.showValidation = true;
+            if (!this.isFormValid) {
+                alert('フォームに無効な入力があります。すべての必須フィールドを正しく入力してください。');
+                return false;
+            }
+            return true;
+        },
         async submitOrder() {
+            if (!this.validateForm()) {
+                return;
+            }
+
             try {
                 const orderData = {
-                    storeName: this.storeName,
+                    storeID: this.storeID,
                     phoneNumber: this.phoneNumber,
                     customerName: this.customerName,
                     modelName: this.modelName,
@@ -291,25 +378,26 @@ export default {
             this.phoneNumber = '';
             this.customerName = '';
             this.address = '';
-            this.storeName = '';
+            this.storeID = null;
             this.modelName = '';
             this.actualModel = '';
             this.courseMin = '';
             this.price = '';
             this.postalCode = '';
             this.transportationFee = '';
-            this.media = '';
+            this.media = null;
             this.notes = '';
             this.driverID = '';
             this.cardstaffID = '';
             this.orderStaffID = '';
             this.reservationFee = '';
             this.travelCost = '';
+            this.showValidation = false;
         },
         async fetchOrders() {
             this.loading = true;
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/orders');
+                const response = await axios.get('http://localhost:3000/api/v1/orders/reserved');
                 this.orders = response.data.data || []; // データが data プロパティ内にある場合
                 this.totalPages = this.orders.length;
                 this.currentPage = this.orders.length > 0 ? 1 : 0; // 最新のオーダーを表示するために1ページ目にセット
@@ -334,6 +422,8 @@ export default {
                 this.currentPage++;
             }
         },
+
+        //プルダウンリストを取得
         async fetchStaffList() {
             try {
                 const response = await axios.get('http://localhost:3000/api/v1/staff/dropdown');
@@ -350,6 +440,26 @@ export default {
                 console.error('キャストリストの取得に失敗しました:', error);
             }
         },
+        async fetchStoreList() {
+            try {
+                const response = await axios.get('http://localhost:3000/api/v1/store/dropdown');
+                this.storeList = response.data.data || [];
+                console.log('店舗リスト:', this.storeList);
+            } catch (error) {
+                console.error('店舗リストの取得に失敗しました:', error);
+            }
+        },
+        async fetchMediaList() {
+            try {
+                const response = await axios.get('http://localhost:3000/api/v1/media/dropdown');
+                this.mediaList = response.data.data || [];
+                console.log('媒体リスト:', this.mediaList);
+            } catch (error) {
+                console.error('媒体リストの取得に失敗しました:', error);
+            }
+        },
+
+        // 明細で使用するリストを取得
         getCastName(castId) {
             const cast = this.castList.find(c => c.cast_id === castId);
             return cast ? cast.name : 'Unknown';
@@ -357,6 +467,14 @@ export default {
         getStaffName(staffId) {
             const staff = this.staffList.find(s => s.staff_id === staffId);
             return staff ? staff.name : 'Unknown';
+        },
+        getStoreName(storeId) {
+            const store = this.storeList.find(s => s.id === storeId);
+            return store ? store.name : 'Unknown';
+        },
+        getMediaName(mediaId) {
+            const media = this.mediaList.find(m => m.id === mediaId);
+            return media ? media.name : 'Unknown';
         },
         toggleEdit() {
             if (this.isEditing) {
@@ -391,7 +509,7 @@ export default {
         async confirmDelete() {
             if (confirm('このオーダーを削除してもよろしいですか？')) {
                 try {
-                    await axios.delete(`http://localhost:3000/api/v1/orders/${this.currentOrder.id}`);
+                    await axios.put(`http://localhost:3000/api/v1/orders/${this.currentOrder.ID}/delete`);
                     this.fetchOrders();
                 } catch (error) {
                     console.error('オーダーの削除に失敗しました:', error);
@@ -399,15 +517,17 @@ export default {
             }
         },
         async confirmOrder() {
-            try {
-                await axios.post(`http://localhost:3000/api/v1/orders/${this.currentOrder.id}/confirm`);
-                this.fetchOrders();
-            } catch (error) {
-                console.error('オーダーの確定に失敗しました:', error);
+            if (confirm('このオーダーを確定してもよろしいですか？')) {
+                try {
+                    await axios.put(`http://localhost:3000/api/v1/orders/${this.currentOrder.ID}/completion`);
+                    this.fetchOrders();
+                } catch (error) {
+                    console.error('オーダーの確定に失敗しました:', error);
+                }
             }
         },
         isEditableField(key) {
-            const editableFields = ['CustomerName', 'PhoneNumber', 'ModelName', 'ActualModel', 'CourseMin', 'Price', 'Address', 'ReservationFee', 'TransportationFee', 'TravelCost', 'Notes'];
+            const editableFields = ['CustomerName', 'PhoneNumber', 'ModelName', 'ActualModel', 'CourseMin', 'Price', 'Address', 'PostalCode', 'ReservationFee', 'TransportationFee', 'TravelCost', 'Notes', 'CardstaffID', 'DriverID'];
             return editableFields.includes(key);
         },
         isPriceField(key) {
@@ -416,35 +536,65 @@ export default {
         getInputType(key) {
             return this.isPriceField(key) ? 'number' : 'text';
         },
+        getStaffList(key) {
+            if (key === 'DriverID') {
+                return this.driverStaffList;
+            } else if (key === 'CardstaffID' || key === 'OrderStaffID') {
+                return this.officeStaffList;
+            }
+            return [];
+        },
         getFieldLabel(key) {
             const labels = {
-                StoreName: '店名',
-                CustomerName: 'お客様名',
-                PhoneNumber: '電話番号',
-                ModelName: 'モデル名',
-                ActualModel: '実モデル',
-                CourseMin: 'コース',
-                Price: '料金',
-                PostalCode: '郵便番号',
-                Address: '住所',
-                DriverID: '送り',
-                ReservationFee: '指名料',
-                TransportationFee: '交通費',
-                TravelCost: '出張費',
-                Media: '媒体',
-                Notes: '備考',
-                CardstaffID: 'カード対応者',
-                OrderStaffID: '受注者',
+                StoreID: '店名　　　',
+                CustomerName: 'お客様名　',
+                PhoneNumber: '電話番号　',
+                ModelName: 'モデル名　',
+                ActualModel: '実モデル　',
+                CourseMin: 'コース　　',
+                Price: '料金　　　',
+                PostalCode: '郵便番号　',
+                Address: '住所　　　',
+                DriverID: '送り　　　',
+                ReservationFee: '指名料　　',
+                TransportationFee: '交通費　　',
+                TravelCost: '出張費　　',
+                Media: '媒体　　　',
+                Notes: '備考　　　',
+                CardstaffID: 'カード　　',
+                OrderStaffID: '受注者　　',
+                CreatedAt: '受注日　　',
             };
             return labels[key] || key;
+        },
+        formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const japanTime = new Date(date.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+
+            const year = String(japanTime.getFullYear()).slice(-2);
+            const month = String(japanTime.getMonth() + 1).padStart(2, '0');
+            const day = String(japanTime.getDate()).padStart(2, '0');
+            const hours = String(japanTime.getHours()).padStart(2, '0');
+            const minutes = String(japanTime.getMinutes()).padStart(2, '0');
+
+            return `${year}/${month}/${day} ${hours}:${minutes}`;
         },
         getDisplayValue(key, value) {
             if (key === 'ActualModel') {
                 return this.getCastName(value);
             } else if (key === 'DriverID' || key === 'CardstaffID' || key === 'OrderStaffID') {
                 return this.getStaffName(value);
+            } else if (key === 'StoreID') {
+                return this.getStoreName(value);
+            } else if (key === 'Media') {
+                return this.getMediaName(value);
             } else if (this.isPriceField(key)) {
                 return `¥${value.toLocaleString()}`;
+            } else if (key === 'Notes') {
+                return value || '';
+            } else if (key === 'CreatedAt') {
+                return this.formatDate(value);
             }
             return value;
         },
@@ -453,17 +603,82 @@ export default {
         this.fetchOrders();
         this.fetchStaffList();
         this.fetchCastList();
+        this.fetchStoreList();
+        this.fetchMediaList();
     }
 }
 
 </script>
 
 <style scoped>
+.order-box {
+    position: relative;
+    padding-bottom: 50px;
+    /* 削除ボタンの高さ分の余白を追加 */
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
 .button-group {
     margin-top: 20px;
 }
 
 .button-group button {
     margin-right: 10px;
+}
+
+.delete-button {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background-color: #ff4d4d;
+    /* 赤色の背景 */
+    color: var(--vt-c-white);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.delete-button:hover {
+    background-color: #ff1a1a;
+    /* ホバー時の色 */
+}
+
+@media (prefers-color-scheme: dark) {
+    .order-box {
+        border-color: var(--color-border);
+    }
+
+    .delete-button {
+        background-color: #8b0000;
+        /* ダークモード時の赤色 */
+    }
+
+    .delete-button:hover {
+        background-color: #a50000;
+        /* ダークモード時のホバー色 */
+    }
+}
+
+.is-invalid {
+    border-color: red;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.8em;
+}
+
+
+@media (max-width: 768px) {
+    .order-container {
+        padding-left: 0;
+        padding-bottom: 60px;
+        /* モバイル時のサイドバーの高さに応じて調整 */
+    }
 }
 </style>

@@ -43,6 +43,7 @@ func SyncDatabase(engine *xorm.Engine) error {
 		new(entity.Orders),
 		new(entity.Store),
 		new(entity.Staff),
+		new(entity.Media),
 	}
 
 	for _, table := range tables {

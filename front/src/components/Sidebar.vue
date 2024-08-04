@@ -4,8 +4,9 @@
       <ul>
         <li><router-link to="/dashboard">ダッシュボード</router-link></li>
         <li><router-link to="/order">受注</router-link></li>
-        <li><router-link to="/staff">スタッフ管理</router-link></li>
-        <li><router-link to="/cast">キャスト管理</router-link></li>
+        <li><router-link to="/staff-registration">スタッフ管理</router-link></li>
+        <li><router-link to="/customer-registration">顧客管理</router-link></li>
+        <li><router-link to="/store-registration">店舗設定</router-link></li>
       </ul>
     </nav>
   </div>

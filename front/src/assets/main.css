@@ -1,47 +1,5 @@
 @import './base.css';
 
-/* #app {
-  margin: 0 auto;
-  font-weight: normal;
-  padding-left: 250px;
-  /* サイドバーの幅と同じ */
-/* } */
-
-*/
-/* a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-} */
-
-/* @media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-} */
-
-/* @media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  } */
-
-/* #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
-} */
-
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  font-weight: normal;
-}
-
 .order-container {
   display: flex;
   justify-content: space-between;
@@ -68,20 +26,28 @@
 }
 
 .main-content {
-  margin-left: 250px;
+  transition: margin-left 0.3s ease-in-out;
   padding: 20px;
 }
 
-@media (max-width: 1024px) {
+#app.sidebar-open .main-content {
+  margin-left: 250px;
+}
+
+@media screen and (max-width: 640px) and (hover: none) and (pointer: coarse) {
   .order-container {
     flex-direction: column;
     display: flex;
     justify-content: space-between;
   }
 
-  .order-form,
+  .order-form {
+    width: 100%;
+  }
+
   .order-display {
     width: 100%;
+    margin-top: 40px;
   }
 
   .sidebar {
@@ -95,18 +61,6 @@
   }
 }
 
-.order-container {
-  display: flex;
-  justify-content: space-between;
-}
-
-.order-form {
-  width: 45%;
-}
-
-.order-display {
-  width: 45%;
-}
 
 .pagination {
   margin-bottom: 10px;
