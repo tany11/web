@@ -34,6 +34,7 @@ func main() {
 	staffRepo := repository.NewXormStaffRepository(dbEngine)
 	storeRepo := repository.NewXormStoreRepository(dbEngine)
 	mediaRepo := repository.NewXormMediaRepository(dbEngine)
+	masterRepo := repository.NewXormMasterRepository(dbEngine)
 	// ユースケースの初期化
 	castUseCase := usecase.NewCastUseCase(castRepo)
 	customerUseCase := usecase.NewCustomerUseCase(customerRepo)
@@ -42,7 +43,7 @@ func main() {
 	staffUseCase := usecase.NewStaffUseCase(staffRepo)
 	storeUseCase := usecase.NewStoreUseCase(storeRepo)
 	mediaUseCase := usecase.NewMediaUseCase(mediaRepo)
-
+	masterUseCase := usecase.NewMasterUseCase(masterRepo)
 	// ハンドラーの初期化
 	castHandler := handler.NewCastHandler(castUseCase)
 	customerHandler := handler.NewCustomerHandler(customerUseCase)
@@ -52,7 +53,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(staffUseCase)
 	storeHandler := handler.NewStoreHandler(storeUseCase)
 	mediaHandler := handler.NewMediaHandler(mediaUseCase)
-
+	masterHandler := handler.NewMasterHandler(masterUseCase)
 	// Ginエンジンの設定
 	engine := gin.Default()
 	config := cors.DefaultConfig()
@@ -62,7 +63,7 @@ func main() {
 	engine.Use(cors.New(config))
 
 	// ルーターのセットアップ
-	router.SetupRouter(engine, castHandler, customerHandler, groupHandler, orderHandler, staffHandler, authHandler, storeHandler, mediaHandler)
+	router.SetupRouter(engine, castHandler, customerHandler, groupHandler, orderHandler, staffHandler, authHandler, storeHandler, mediaHandler, masterHandler)
 
 	// サーバーの起動
 	if err := engine.Run(":3000"); err != nil {

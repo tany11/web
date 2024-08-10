@@ -117,3 +117,12 @@ func (h *CustomerHandler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": "Customer deleted"})
 }
+
+func (h *CustomerHandler) List(c *gin.Context) {
+	customers, err := h.useCase.List(0, 1, 10)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": customers})
+}
