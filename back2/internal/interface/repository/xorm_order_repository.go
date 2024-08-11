@@ -51,7 +51,7 @@ func (r *XormOrderRepository) ListReserved(groupID, offset, limit int) ([]*entit
 
 func (r *XormOrderRepository) ListByCustomerID(customerID int) ([]*entity.Orders, error) {
 	orders := make([]*entity.Orders, 0)
-	err := r.engine.Where("customer_id = ?", customerID).Find(&orders)
+	err := r.engine.Where("customer_i_d = ?", customerID).Find(&orders)
 	return orders, err
 }
 
@@ -73,4 +73,30 @@ func (r *XormOrderRepository) UpdateCompletionFlg(id int64) error {
 func (r *XormOrderRepository) UpdateIsDeleted(id int64) error {
 	_, err := r.engine.ID(id).Update(new(entity.Orders))
 	return err
+}
+
+func (r *XormOrderRepository) GetByCustomerID(customerID int) (*entity.CustomerOrder, error) {
+	customerOrder := new(entity.CustomerOrder)
+	err := r.engine.Where("customer_i_d = ?", customerID).Find(&customerOrder)
+	return customerOrder, err
+}
+
+func (r *XormOrderRepository) GetTotalPriceAndUseTime(customerID int) (int, int, error) {
+	totalPrice, totalUseTime, err := r.getTotalPriceAndUseTimeImpl(customerID)
+	return int(totalPrice), int(totalUseTime), err
+}
+
+func (r *XormOrderRepository) getTotalPriceAndUseTimeImpl(customerID int) (int64, int64, error) {
+	totalPrice, err := r.engine.
+		Where("customer_i_d = ?", customerID).
+		SumInt(new(entity.Orders), "price")
+	if err != nil {
+		return 0, 0, err
+	}
+
+	ToralUseTime, err := r.engine.
+		Where("customer_i_d = ?", customerID).
+		Count(new(entity.Orders))
+
+	return totalPrice, ToralUseTime, err
 }

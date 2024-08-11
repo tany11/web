@@ -6,11 +6,12 @@ import (
 )
 
 type CustomerUseCase struct {
-	repo repository.CustomerRepository
+	repo      repository.CustomerRepository
+	repoOrder repository.OrderRepository
 }
 
-func NewCustomerUseCase(repo repository.CustomerRepository) *CustomerUseCase {
-	return &CustomerUseCase{repo: repo}
+func NewCustomerUseCase(repo repository.CustomerRepository, repoOrder repository.OrderRepository) *CustomerUseCase {
+	return &CustomerUseCase{repo: repo, repoOrder: repoOrder}
 }
 
 func (uc *CustomerUseCase) Create(customer *entity.Customer) error {

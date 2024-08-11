@@ -40,6 +40,7 @@ func SyncDatabase(engine *xorm.Engine) error {
 		new(entity.Group),
 		new(entity.Cast),
 		new(entity.Customer),
+		new(entity.CustomerStatus),
 		new(entity.Orders),
 		new(entity.Store),
 		new(entity.Staff),

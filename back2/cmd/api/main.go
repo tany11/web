@@ -37,7 +37,7 @@ func main() {
 	masterRepo := repository.NewXormMasterRepository(dbEngine)
 	// ユースケースの初期化
 	castUseCase := usecase.NewCastUseCase(castRepo)
-	customerUseCase := usecase.NewCustomerUseCase(customerRepo)
+	customerUseCase := usecase.NewCustomerUseCase(customerRepo, orderRepo)
 	groupUseCase := usecase.NewGroupUseCase(groupRepo)
 	orderUseCase := usecase.NewOrderUseCase(orderRepo, customerOrderRepo)
 	staffUseCase := usecase.NewStaffUseCase(staffRepo)
@@ -46,7 +46,7 @@ func main() {
 	masterUseCase := usecase.NewMasterUseCase(masterRepo)
 	// ハンドラーの初期化
 	castHandler := handler.NewCastHandler(castUseCase)
-	customerHandler := handler.NewCustomerHandler(customerUseCase)
+	customerHandler := handler.NewCustomerHandler(customerUseCase, orderUseCase)
 	groupHandler := handler.NewGroupHandler(groupUseCase)
 	orderHandler := handler.NewOrderHandler(orderUseCase)
 	staffHandler := handler.NewStaffHandler(staffUseCase)

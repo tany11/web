@@ -3,6 +3,7 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -10,11 +11,15 @@ import (
 )
 
 type CustomerHandler struct {
-	useCase *usecase.CustomerUseCase
+	useCase      *usecase.CustomerUseCase
+	useCaseOrder *usecase.OrderUseCase
 }
 
-func NewCustomerHandler(useCase *usecase.CustomerUseCase) *CustomerHandler {
-	return &CustomerHandler{useCase: useCase}
+func NewCustomerHandler(useCase *usecase.CustomerUseCase, useCaseOrder *usecase.OrderUseCase) *CustomerHandler {
+	return &CustomerHandler{
+		useCase:      useCase,
+		useCaseOrder: useCaseOrder,
+	}
 }
 
 func (h *CustomerHandler) Create(c *gin.Context) {
@@ -125,4 +130,53 @@ func (h *CustomerHandler) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": customers})
+}
+
+func (h *CustomerHandler) GetDetail(c *gin.Context) {
+
+	var customerOrder entity.CustomerOrder
+	phoneNumber := c.Param("phone")
+
+	customer, err := h.useCase.GetByPhoneNumber(phoneNumber)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if customer == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "顧客が見つかりません"})
+		return
+	}
+
+	orders, err := h.useCaseOrder.GetByCustomerID(int(customer.ID))
+	if err != nil {
+		log.Printf("注文情報の取得に失敗: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文情報の取得に失敗しました"})
+		return
+	}
+
+	totalPrice, totalUseTime, err := h.useCaseOrder.GetTotalPriceAndUseTime(int(customer.ID))
+	if err != nil {
+		log.Printf("注文情報の取得に失敗: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文情報の取得に失敗しました"})
+		return
+	}
+
+	orderSlice := make([]entity.Orders, len(orders))
+	for i, order := range orders {
+		orderSlice[i] = *order
+	}
+
+	customerOrder = entity.CustomerOrder{
+		ID:           customer.ID,
+		CustomerName: customer.CustomerName,
+		PhoneNumber:  customer.PhoneNumber,
+		Memo:         customer.Memo,
+		Address:      customer.Address,
+		TotalPrice:   totalPrice,
+		TotalUseTime: totalUseTime,
+		OrderList:    orderSlice,
+	}
+	log.Printf("レスポンス用のデータ: %+v", customerOrder)
+
+	c.JSON(http.StatusOK, gin.H{"data": customerOrder})
 }

@@ -111,3 +111,7 @@ func (uc *OrderUseCase) UpdateCompletionFlg(id int64) error {
 func (uc *OrderUseCase) UpdateIsDeleted(id int64) error {
 	return uc.orderRepo.UpdateIsDeleted(id)
 }
+
+func (uc *OrderUseCase) GetTotalPriceAndUseTime(customerID int) (int, int, error) {
+	return uc.orderRepo.GetTotalPriceAndUseTime(customerID)
+}

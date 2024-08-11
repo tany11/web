@@ -33,6 +33,7 @@ func SetupRouter(
 		v1.GET("/customers", customerHandler.GetAll)
 		v1.GET("/customers/:id", customerHandler.Get)
 		v1.GET("/customers/phone/:phone", customerHandler.GetByPhone)
+		v1.GET("/customers/detail/:phone", customerHandler.GetDetail)
 		v1.GET("/customers/list", customerHandler.List)
 		v1.PUT("/customers/:id", customerHandler.Get)
 		v1.DELETE("/customers/:id", customerHandler.Delete)
