@@ -1,4 +1,4 @@
-<template>
+え<template>
     <div class="staff-registration">
         <form @submit.prevent="submitForm">
             <div class="form-group name-group">
@@ -53,9 +53,11 @@
 <script>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { useStore } from 'vuex'
 
 export default {
     setup() {
+        const store = useStore()
         const staffLastName = ref('')
         const staffFirstName = ref('')
         const password = ref('')
@@ -94,7 +96,7 @@ export default {
             }
             if (confirm('スタッフを登録してもよろしいですか？')) {
                 try {
-                    const response = await axios.post('http://localhost:3000/api/v1/staff', formData)
+                    const response = await axios.post(`${store.state.apiBaseUrl}/staff`, formData)
                     console.log('スタッフが登録されました', response.data)
                     registrationResult.value = 'スタッフが正常に登録されました。'
                     resultClass.value = 'success'

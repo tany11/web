@@ -3,6 +3,7 @@ package repository
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/domain/repository"
+	"log"
 
 	"github.com/go-xorm/xorm"
 )
@@ -64,4 +65,56 @@ func (r *XormCustomerRepository) GetByPhoneNumber(phoneNumber string) (*entity.C
 		return nil, nil
 	}
 	return order, nil
+}
+
+func (r *XormCustomerRepository) GetSearchList(customerSearch entity.CustomerSearch) ([]*entity.CustomerOrder, error) {
+	customers := make([]*entity.CustomerOrder, 0)
+
+	query := `
+		SELECT DISTINCT c.* 
+		FROM customer c
+		JOIN orders o ON c.i_d = o.customer_i_d
+		WHERE 1=1
+	`
+	var params []interface{}
+
+	log.Printf("検索クエリの構築開始")
+
+	if customerSearch.PhoneLast4 != "" {
+		query += " AND c.phone_number LIKE ?"
+		params = append(params, "%"+customerSearch.PhoneLast4)
+		log.Printf("電話番号の条件追加: %s", customerSearch.PhoneLast4)
+	}
+
+	if customerSearch.CastID != "" {
+		query += " AND o.actual_model = ?"
+		params = append(params, customerSearch.CastID)
+		log.Printf("キャストIDの条件追加: %s", customerSearch.CastID)
+	}
+
+	if customerSearch.CreatedFrom != "" {
+		query += " AND o.created_at >= ?"
+		params = append(params, customerSearch.CreatedFrom)
+		log.Printf("作成日From条件追加: %s", customerSearch.CreatedFrom)
+	}
+
+	if customerSearch.CreatedTo != "" {
+		query += " AND o.created_at <= ?"
+		params = append(params, customerSearch.CreatedTo)
+		log.Printf("作成日To条件追加: %s", customerSearch.CreatedTo)
+	}
+
+	log.Printf("最終的なクエリ: %s", query)
+	log.Printf("パラメータ: %v", params)
+
+	err := r.engine.SQL(query, params...).Find(&customers)
+	if err != nil {
+		log.Printf("クエリ実行エラー: %v", err)
+		return nil, err
+	}
+
+	log.Printf("検索結果: %v", customers)
+
+	log.Printf("検索結果: %d件の顧客が見つかりました", len(customers))
+	return customers, err
 }

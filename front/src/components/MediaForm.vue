@@ -18,9 +18,11 @@
 <script>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { useStore } from 'vuex'
 
 export default {
     setup() {
+        const store = useStore()
         const mediaName = ref('')
         const registrationResult = ref('')
         const resultClass = ref('')
@@ -30,7 +32,7 @@ export default {
 
         const submitForm = async () => {
             if (!isFormValid.value) {
-                alert('すべての必須項目を入力してください。')
+                alert('媒体名を入力してください。')
                 return
             }
 
@@ -39,7 +41,7 @@ export default {
             }
             if (confirm('この媒体を登録してもよろしいですか？')) {
                 try {
-                    const response = await axios.post('http://localhost:3000/api/v1/media', formData)
+                    const response = await axios.post(`${store.state.apiBaseUrl}/media`, formData)
                     console.log('媒体が登録されました', response.data)
                     registrationResult.value = '媒体が正常に登録されました。'
                     resultClass.value = 'success'

@@ -5,17 +5,17 @@
             <thead>
                 <tr>
                     <th>名前</th>
-                    <th>電話番号（下4桁）</th>
-                    <th>キャスト</th>
-                    <th>最終来店日</th>
+                    <th>電話番号</th>
+                    <th>住所</th>
+                    <th>最終利用日</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="customer in customers" :key="customer.id">
-                    <td><a @click="selectCustomer(customer)">{{ customer.name }}</a></td>
-                    <td>{{ customer.phoneNumber.slice(-4) }}</td>
-                    <td>{{ customer.castName }}</td>
-                    <td>{{ customer.lastVisitDate }}</td>
+                <tr v-for="customer in customers" :key="customer.ID">
+                    <td><a @click="selectCustomer(customer)" class="customer-link">{{ customer.CustomerName }}</a></td>
+                    <td>{{ customer.PhoneNumber }}</td>
+                    <td>{{ customer.Address }}</td>
+                    <td>{{ formatDate(customer.UpdatedAt) }}</td>
                 </tr>
             </tbody>
         </table>
@@ -32,6 +32,11 @@ export default {
     methods: {
         selectCustomer(customer) {
             this.$emit('select-customer', customer)
+        },
+        formatDate(dateString) {
+            if (!dateString) return '-'
+            const date = new Date(dateString)
+            return date.toLocaleDateString('ja-JP')
         }
     }
 }
@@ -53,5 +58,15 @@ export default {
 .customer-list tr:hover {
     background-color: #f5f5f5;
     cursor: pointer;
+}
+
+.customer-link {
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.customer-link:hover {
+    color: #0056b3;
 }
 </style>

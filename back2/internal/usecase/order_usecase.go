@@ -48,6 +48,12 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 		customer = newCustomer
 	} else {
 		log.Printf("既存の顧客が見つかりました")
+		// 既存の顧客のUpdatedAtを更新
+		customer.UpdatedAt = time.Now()
+		err = uc.customerRepo.Update(customer)
+		if err != nil {
+			return fmt.Errorf("顧客情報の更新に失敗しました: %w", err)
+		}
 	}
 
 	// 顧客IDを注文データに設定

@@ -10,4 +10,5 @@ type CustomerRepository interface {
 	Update(order *entity.Customer) error
 	Delete(id int64) error
 	GetByPhoneNumber(phoneNumber string) (*entity.Customer, error)
+	GetSearchList(customerSearch entity.CustomerSearch) ([]*entity.CustomerOrder, error)
 }

@@ -89,4 +89,15 @@ export default {
 .sidebar {
   z-index: 1;
 }
+
+body.dark-mode {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+body.dark-mode .app-container {
+  background-color: #2d3748;
+}
+
+/* 他のグローバルなダークモードスタイルをここに追加 */
 </style>

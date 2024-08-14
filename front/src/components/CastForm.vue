@@ -32,9 +32,11 @@
 <script>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { useStore } from 'vuex'
 
 export default {
     setup() {
+        const store = useStore()
         const castName = ref('')
         const password = ref('')
         const lineId = ref('')
@@ -63,7 +65,7 @@ export default {
             }
             if (confirm('このキャストを登録してもよろしいですか？')) {
                 try {
-                    const response = await axios.post('http://localhost:3000/api/v1/cast', formData)
+                    const response = await axios.post(`${store.state.apiBaseUrl}/cast`, formData)
                     console.log('キャストが登録されました', response.data)
                     registrationResult.value = 'キャストが正常に登録されました。'
                     resultClass.value = 'success'

@@ -7,13 +7,18 @@
                 <button @click="searchType = 'other'" :class="{ active: searchType === 'other' }">その他の検索</button>
             </div>
             <div v-if="searchType === 'phone'" class="input-group">
-                <input v-model="phoneNumber" placeholder="電話番号" class="input" />
+                <input v-model="phoneNumber" placeholder="電話番号" class="input" @keyup.enter="searchByPhone" />
                 <button @click="searchByPhone" class="search-button">検索</button>
             </div>
             <div v-else-if="searchType === 'other'">
                 <div class="input-group">
                     <input v-model="lastFourDigits" placeholder="電話番号（下4桁）" class="input" />
-                    <input v-model="castName" placeholder="キャスト名" class="input" />
+                    <select v-model="castID" class="input">
+                        <option value="">キャストを選択</option>
+                        <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
+                            {{ cast.name }}
+                        </option>
+                    </select>
                 </div>
                 <div class="input-group">
                     <input v-model="startDate" type="date" placeholder="開始日" class="input" />
@@ -22,7 +27,7 @@
                 <button @click="searchByOther" class="search-button">検索</button>
             </div>
         </div>
-        <customer-detail v-if="searchType === 'phone' && selectedCustomer" :customer="selectedCustomer" />
+        <customer-detail v-if="selectedCustomer" :customer="selectedCustomer" @close="closeCustomerDetail" />
         <customer-list v-if="searchType === 'other' && showList" :customers="searchResults"
             @select-customer="showDetails" />
     </div>
@@ -32,6 +37,7 @@
 import CustomerList from '@/components/CustomerList.vue'
 import CustomerDetail from '@/components/CustomerDetail.vue'
 import axios from 'axios'
+import { mapState } from 'vuex'
 
 export default {
     name: 'CustomerManagement',
@@ -39,23 +45,27 @@ export default {
         CustomerList,
         CustomerDetail
     },
+    computed: {
+        ...mapState(['apiBaseUrl'])
+    },
     data() {
         return {
             searchType: 'phone',
             phoneNumber: '',
             lastFourDigits: '',
-            castName: '',
+            castID: '',
             startDate: '',
             endDate: '',
             searchResults: [],
             selectedCustomer: null,
-            showList: false
+            showList: false,
+            castList: []
         }
     },
     methods: {
         async searchByPhone() {
             try {
-                const response = await axios.get(`http://localhost:3000/api/v1/customers/detail/${this.phoneNumber}`);
+                const response = await axios.get(`${this.apiBaseUrl}/customers/detail/${this.phoneNumber}`);
                 this.selectedCustomer = response.data.data;
                 this.showList = false;
             } catch (error) {
@@ -63,17 +73,52 @@ export default {
                 this.selectedCustomer = null;
             }
         },
-        searchByOther() {
-            // その他の条件での検索ロジックを実装
-            // API呼び出しなどを行い、結果をsearchResultsに格納
-            this.searchResults = [] // 仮の処理。実際はAPI結果を設定
-            this.showList = true
-            this.selectedCustomer = null
+        async searchByOther() {
+            try {
+                const params = {
+                    phoneLast4: this.lastFourDigits,
+                    castID: this.castID,
+                    createdFrom: this.startDate,
+                    createdTo: this.endDate
+                }
+                const response = await axios.get(`${this.apiBaseUrl}/customers/search`, { params })
+                this.searchResults = response.data.data
+                this.showList = true
+                this.selectedCustomer = null
+            } catch (error) {
+                console.error('顧客の検索中にエラーが発生しました:', error)
+                this.searchResults = []
+                this.showList = true
+                this.selectedCustomer = null
+            }
         },
-        showDetails(customer) {
-            this.selectedCustomer = customer
-            this.showList = false
+        async showDetails(customer) {
+            try {
+                const response = await axios.get(`${this.apiBaseUrl}/customers/detail/${customer.PhoneNumber}`);
+                this.selectedCustomer = response.data.data;
+                this.showList = false;
+            } catch (error) {
+                console.error('顧客の詳細取得中にエラーが発生しました:', error);
+                this.selectedCustomer = null;
+            }
+        },
+        closeCustomerDetail() {
+            this.selectedCustomer = null;
+            if (this.searchType === 'other') {
+                this.showList = true;
+            }
+        },
+        async fetchCastList() {
+            try {
+                const response = await axios.get(`${this.apiBaseUrl}/cast/dropdown`);
+                this.castList = response.data.data || [];
+            } catch (error) {
+                console.error('キャストリストの取得に失敗しました:', error);
+            }
         }
+    },
+    mounted() {
+        this.fetchCastList();
     }
 }
 </script>

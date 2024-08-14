@@ -140,6 +140,7 @@
                 </div>
                 <div v-if="currentOrder" class="order-box">
                     <h3>オーダー明細</h3>
+                    <!-- 延長になった場合を考えると、編集ボタンはあったほうがいいかも -->
                     <form @submit.prevent="updateOrder">
                         <template v-for="(value, key) in displayableFields" :key="key">
                             <p>
@@ -193,6 +194,8 @@
 
 <script>
 import axios from 'axios';
+import { mapState } from 'vuex';
+
 export default {
     name: 'Order',
     data() {
@@ -288,13 +291,15 @@ export default {
                 this.isAddressValid &&
                 this.isDriverIDValid &&
                 this.isPhoneNumberValid;
-        }
+        },
+        ...mapState(['apiBaseUrl']),
+
     },
     methods: {
         async fetchCustomerInfo() {
             if (this.phoneNumber) {
                 try {
-                    const response = await axios.get(`http://localhost:3000/api/v1/customers/phone/${this.phoneNumber}`);
+                    const response = await axios.get(`${this.apiBaseUrl}/customers/phone/${this.phoneNumber}`);
                     if (response.data && response.data.data) {
                         this.$nextTick(() => {
                             this.customerName = response.data.data.CustomerName || '';
@@ -356,7 +361,7 @@ export default {
                     orderStaffID: this.orderStaffID,
                 };
 
-                const response = await axios.post('http://localhost:3000/api/v1/orders', orderData);
+                const response = await axios.post(`${this.apiBaseUrl}/orders`, orderData);
                 console.log('注文が正常に送信されました:', response.data);
 
                 // 成功メッセージを表示
@@ -397,7 +402,7 @@ export default {
         async fetchOrders() {
             this.loading = true;
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/orders/reserved');
+                const response = await axios.get(`${this.apiBaseUrl}/orders/reserved`);
                 this.orders = response.data.data || []; // データが data プロパティ内にある場合
                 this.totalPages = this.orders.length;
                 this.currentPage = this.orders.length > 0 ? 1 : 0; // 最新のオーダーを表示するために1ページ目にセット
@@ -426,7 +431,7 @@ export default {
         //プルダウンリストを取得
         async fetchStaffList() {
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/staff/dropdown');
+                const response = await axios.get(`${this.apiBaseUrl}/staff/dropdown`);
                 this.staffList = response.data.data || [];
             } catch (error) {
                 console.error('スタッフリストの取得に失敗しました:', error);
@@ -434,7 +439,7 @@ export default {
         },
         async fetchCastList() {
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/cast/dropdown');
+                const response = await axios.get(`${this.apiBaseUrl}/cast/dropdown`);
                 this.castList = response.data.data || [];
             } catch (error) {
                 console.error('キャストリストの取得に失敗しました:', error);
@@ -442,7 +447,7 @@ export default {
         },
         async fetchStoreList() {
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/store/dropdown');
+                const response = await axios.get(`${this.apiBaseUrl}/store/dropdown`);
                 this.storeList = response.data.data || [];
                 console.log('店舗リスト:', this.storeList);
             } catch (error) {
@@ -451,7 +456,7 @@ export default {
         },
         async fetchMediaList() {
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/media/dropdown');
+                const response = await axios.get(`${this.apiBaseUrl}/media/dropdown`);
                 this.mediaList = response.data.data || [];
                 console.log('媒体リスト:', this.mediaList);
             } catch (error) {
@@ -499,7 +504,7 @@ export default {
             }
 
             try {
-                await axios.put(`http://localhost:3000/api/v1/orders/${orderId}`, this.editedOrder);
+                await axios.put(`${this.apiBaseUrl}/orders/${orderId}`, this.editedOrder);
                 this.fetchOrders();
                 this.isEditing = false;
             } catch (error) {
@@ -509,7 +514,7 @@ export default {
         async confirmDelete() {
             if (confirm('このオーダーを削除してもよろしいですか？')) {
                 try {
-                    await axios.put(`http://localhost:3000/api/v1/orders/${this.currentOrder.ID}/delete`);
+                    await axios.put(`${this.apiBaseUrl}/orders/${this.currentOrder.ID}/delete`);
                     this.fetchOrders();
                 } catch (error) {
                     console.error('オーダーの削除に失敗しました:', error);
@@ -519,7 +524,7 @@ export default {
         async confirmOrder() {
             if (confirm('このオーダーを確定してもよろしいですか？')) {
                 try {
-                    await axios.put(`http://localhost:3000/api/v1/orders/${this.currentOrder.ID}/completion`);
+                    await axios.put(`${this.apiBaseUrl}/orders/${this.currentOrder.ID}/completion`);
                     this.fetchOrders();
                 } catch (error) {
                     console.error('オーダーの確定に失敗しました:', error);
@@ -595,6 +600,10 @@ export default {
                 return value || '';
             } else if (key === 'CreatedAt') {
                 return this.formatDate(value);
+            } else if (key === 'CourseMin') {
+                return `${value}分`;
+            } else if (key === 'PhoneNumber') {
+                return `184${value}`;
             }
             return value;
         },

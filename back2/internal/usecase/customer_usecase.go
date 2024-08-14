@@ -3,6 +3,7 @@ package usecase
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/domain/repository"
+	"log"
 )
 
 type CustomerUseCase struct {
@@ -37,4 +38,15 @@ func (uc *CustomerUseCase) Update(customer *entity.Customer) error {
 
 func (uc *CustomerUseCase) Delete(id int64) error {
 	return uc.repo.Delete(id)
+}
+
+func (uc *CustomerUseCase) GetSearchList(customerSearch entity.CustomerSearch) ([]*entity.CustomerOrder, error) {
+	log.Printf("UseCase: 顧客検索開始 - パラメータ: %+v", customerSearch)
+	customers, err := uc.repo.GetSearchList(customerSearch)
+	if err != nil {
+		log.Printf("UseCase: 顧客検索エラー: %v", err)
+		return nil, err
+	}
+	log.Printf("UseCase: 顧客検索完了 - 結果件数: %d", len(customers))
+	return customers, nil
 }

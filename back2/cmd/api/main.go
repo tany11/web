@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"back2/internal/infrastructure/database"
 	"back2/internal/infrastructure/router"
@@ -57,7 +58,9 @@ func main() {
 	// Ginエンジンの設定
 	engine := gin.Default()
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173"} // フロントエンドのオリジンを指定
+	frontUrl := os.Getenv("FRONT_URL")
+	log.Println(frontUrl)
+	config.AllowOrigins = []string{frontUrl} // フロントエンドのオリジンを指定
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
 	engine.Use(cors.New(config))

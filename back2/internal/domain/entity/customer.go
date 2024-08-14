@@ -37,3 +37,10 @@ type CustomerStatus struct {
 	CreatedAt      time.Time `xorm:"created"`             //登録日
 	UpdatedAt      time.Time `xorm:"updated"`             //更新日
 }
+
+type CustomerSearch struct {
+	PhoneLast4  string
+	CastID      string
+	CreatedFrom string
+	CreatedTo   string
+}

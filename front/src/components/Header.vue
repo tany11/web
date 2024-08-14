@@ -1,8 +1,13 @@
 <template>
-  <header class="app-header">
+  <header class="app-header" :class="{ 'dark-mode': isDarkMode }">
     <div class="hamburger" @click="$emit('toggle-sidebar')">☰</div>
     <h1>業務管理</h1>
-    <button @click="handleLogout">ログアウト</button>
+    <div class="header-buttons">
+      <button @click="toggleDarkMode" class="mode-toggle">
+        {{ isDarkMode ? '🌞' : '🌙' }}
+      </button>
+      <button @click="handleLogout" class="logout-button">ログアウト</button>
+    </div>
   </header>
 </template>
 
@@ -11,6 +16,11 @@ import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'Header',
+  data() {
+    return {
+      isDarkMode: false
+    }
+  },
   computed: {
     ...mapState(['user']),
     isLoggedIn() {
@@ -26,6 +36,10 @@ export default {
       } else {
         alert('ログアウトに失敗しました。もう一度お試しください。')
       }
+    },
+    toggleDarkMode() {
+      this.isDarkMode = !this.isDarkMode
+      document.body.classList.toggle('dark-mode', this.isDarkMode)
     }
   }
 }
@@ -53,6 +67,19 @@ export default {
   margin-right: 15px;
 }
 
+.header-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.mode-toggle {
+  margin-right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
 .logout-button {
   padding: 5px 10px;
   cursor: pointer;
@@ -64,5 +91,18 @@ export default {
 
 .logout-button:hover {
   background-color: #41B883;
+}
+
+.dark-mode {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+.dark-mode .logout-button {
+  background-color: #2d3748;
+}
+
+.dark-mode .logout-button:hover {
+  background-color: #4a5568;
 }
 </style>

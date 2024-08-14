@@ -26,6 +26,7 @@
 
 <script>
 import axios from 'axios';
+import { mapState } from 'vuex';
 
 export default {
   name: 'Register',
@@ -37,6 +38,9 @@ export default {
       confirmPassword: ''
     }
   },
+  computed: {
+    ...mapState(['apiBaseUrl'])
+  },
   methods: {
     async register() {
       if (this.password !== this.confirmPassword) {
@@ -45,12 +49,12 @@ export default {
       }
 
       try {
-        const response = await axios.post('http://localhost:3000/api/v1/groups', {
+        const response = await axios.post(`${this.apiBaseUrl}/groups`, {
           username: this.username,
           email: this.email,
           password: this.password
         });
-        
+
         console.log('ユーザー登録成功:', response.data);
         alert('ユーザー登録が完了しました。ログインページに移動します。');
         this.$router.push('/login');

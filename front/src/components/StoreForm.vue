@@ -1,11 +1,10 @@
 <template>
-    <div class="cast-registration">
+    <div class="store-registration">
         <form @submit.prevent="submitForm">
             <div class="form-group">
                 <label for="storeName">店舗名 *</label>
                 <input type="text" id="storeName" v-model="storeName" required>
             </div>
-
 
             <button type="submit" :disabled="!isFormValid">登録</button>
         </form>
@@ -18,9 +17,11 @@
 <script>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { useStore } from 'vuex'
 
 export default {
     setup() {
+        const store = useStore()
         const storeName = ref('')
         const registrationResult = ref('')
         const resultClass = ref('')
@@ -40,7 +41,7 @@ export default {
             }
             if (confirm('この店舗を登録してもよろしいですか？')) {
                 try {
-                    const response = await axios.post('http://localhost:3000/api/v1/store', formData)
+                    const response = await axios.post(`${store.state.apiBaseUrl}/store`, formData)
                     console.log('店舗が登録されました', response.data)
                     registrationResult.value = '店舗が正常に登録されました。'
                     resultClass.value = 'success'
@@ -69,7 +70,7 @@ export default {
 </script>
 
 <style scoped>
-.cast-registration {
+.store-registration {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;

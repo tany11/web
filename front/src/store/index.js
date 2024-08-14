@@ -3,6 +3,7 @@ import axios from 'axios'
 
 export default createStore({
     state: {
+        apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.13:3000/api/v1',
         token: null,
         userId: null,
         isLoggedIn: false
@@ -19,9 +20,9 @@ export default createStore({
         }
     },
     actions: {
-        async login({ commit }, credentials) {
+        async login({ commit, state }, credentials) {
             try {
-                const response = await axios.post('http://localhost:3000/api/v1/login', credentials)
+                const response = await axios.post(`${state.apiBaseUrl}/login`, credentials)
                 const { token, staff_id } = response.data
                 commit('setToken', token)
                 commit('setUserId', staff_id)
@@ -34,9 +35,9 @@ export default createStore({
                 return false
             }
         },
-        async logout({ commit }) {
+        async logout({ commit, state }) {
             try {
-                await axios.post('http://localhost:3000/api/v1/logout')
+                await axios.post(`${state.apiBaseUrl}/logout`)
                 commit('setToken', null)
                 commit('setUserId', null)
                 commit('setLoggedIn', false)
