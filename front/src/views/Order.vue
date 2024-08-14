@@ -140,7 +140,8 @@
                 </div>
                 <div v-if="currentOrder" class="order-box">
                     <h3>オーダー明細</h3>
-                    <!-- 延長になった場合を考えると、編集ボタンはあったほうがいいかも -->
+                    <!-- 延長になった場合を考えると、編集ボタンはあったほうがいいかも 確定済みを表示しないチェックボックスを
+                    つけるといいかも -->
                     <form @submit.prevent="updateOrder">
                         <template v-for="(value, key) in displayableFields" :key="key">
                             <p>
