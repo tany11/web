@@ -64,7 +64,6 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 
 	// 注文を作成
 	err = uc.orderRepo.Create(order)
-	log.Printf(order.CourseMin, "order.CourseMin")
 	if err != nil {
 		log.Printf("注文の作成に失敗しました: %v", err)
 		return fmt.Errorf("注文の作成に失敗しました: %w", err)

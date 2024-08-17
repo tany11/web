@@ -5,7 +5,7 @@
             <h2>顧客詳細</h2>
             <div class="customer-detail">
                 <p><strong>名前：</strong>{{ customer.CustomerName }}</p>
-                <p><strong>電話番号：</strong>{{ customer.PhoneNumber }}</p>
+                <p><strong>電話番号：</strong><a :href="`tel:${customer.PhoneNumber}`">{{ customer.PhoneNumber }}</a></p>
                 <p><strong>住所：</strong>{{ customer.Address }}</p>
                 <p><strong>メモ：</strong>{{ customer.Memo }}</p>
                 <p><strong>合計金額：</strong>{{ customer.TotalPrice }}円</p>

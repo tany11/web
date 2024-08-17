@@ -19,6 +19,7 @@
                     <label for="phone-number">電話番号: </label>
                     <input type="text" id="phone-number" name="phone-number" v-model="phoneNumber"
                         @blur="fetchCustomerInfo" :class="{ 'is-invalid': showValidation && !isPhoneNumberValid }">
+                    <a href="#" @click.prevent="showCustomerDetail" v-if="phoneNumber">詳細</a>
                     <span v-if="showValidation && !isPhoneNumberValid" class="error-message">有効な電話番号を入力してください</span>
                 </li>
                 <li>
@@ -42,11 +43,15 @@
                     </select>
                     <span v-if="showValidation && !isActualModelValid" class="error-message">実モデルを選択してください</span>
                 </li>
-                <li>
+                <li class="course-item">
                     <label for="course-name">コース　: </label>
-                    <input type="text" id="course-name" name="course-name" v-model="courseMin"
-                        :class="{ 'is-invalid': showValidation && !isCourseMinValid }">
-                    <label for="course-duration">分</label>
+                    <div class="course-inputs">
+                        <input type="text" id="course-name" name="course-name" v-model="courseMin"
+                            :class="{ 'is-invalid': showValidation && !isCourseMinValid }">
+                        <span>+</span>
+                        <input type="text" id="extra-course" name="extra-course" v-model="extraCourse">
+                        <span>分</span>
+                    </div>
                     <span v-if="showValidation && !isCourseMinValid" class="error-message">コース時間を入力してください</span>
                 </li>
                 <li>
@@ -131,17 +136,23 @@
             <div v-if="loading">データを読み込んでいます...</div>
             <div v-else-if="orders.length === 0">
                 オーダーデータがありません。
+                <button @click="toggleShowCompleted" class="completed-toggle">
+                    {{ showCompleted ? '未確定のみ表示' : '確定済を表示' }}
+                </button>
             </div>
             <div v-else>
                 <div class="pagination">
                     <span>{{ currentPage }}/{{ totalPages }}</span>
-                    <button @click="prevPage" :disabled="currentPage === 1">前へ</button>
-                    <button @click="nextPage" :disabled="currentPage === totalPages">次へ</button>
+                    <button @click="prevPage" :disabled="currentPage === 1 || isEditing">前へ</button>
+                    <button @click="nextPage" :disabled="currentPage === totalPages || isEditing">次へ</button>
                 </div>
                 <div v-if="currentOrder" class="order-box">
-                    <h3>オーダー明細</h3>
-                    <!-- 延長になった場合を考えると、編集ボタンはあったほうがいいかも 確定済みを表示しないチェックボックスを
-                    つけるといいかも -->
+                    <div class="order-header">
+                        <h3>オーダー明細</h3>
+                        <button @click="toggleShowCompleted" class="completed-toggle">
+                            {{ showCompleted ? '確定済を非表示' : '確定済を表示' }}
+                        </button>
+                    </div>
                     <form @submit.prevent="updateOrder">
                         <template v-for="(value, key) in displayableFields" :key="key">
                             <p>
@@ -169,6 +180,9 @@
                                     <template v-else-if="key === 'Notes'">
                                         <textarea v-model="editedOrder[key]" rows="3"></textarea>
                                     </template>
+                                    <template v-else-if="key === 'ExtraTime'">
+                                        <input v-model.number="editedOrder[key]" type="number" step="30" min="0">
+                                    </template>
                                     <template v-else>
                                         <input v-model="editedOrder[key]" :type="getInputType(key)">
                                     </template>
@@ -179,26 +193,33 @@
                             </p>
                         </template>
                         <div class="button-group">
-                            <button type="button" @click="toggleEdit">{{ isEditing ? '編集完了' : '編集' }}</button>
-                            <button type="button" @click="confirmOrder">確定</button>
+                            <button type="button" @click="toggleEdit" v-if="!isEditing">編集</button>
+                            <button type="button" @click="saveEdit" v-if="isEditing">保存</button>
+                            <button type="button" @click="cancelEdit" v-if="isEditing">キャンセル</button>
+                            <button type="button" @click="confirmOrder" :disabled="isEditing">確定</button>
                         </div>
                     </form>
-                    <button type="button" @click="confirmDelete" class="delete-button">削除</button>
+                    <button type="button" @click="confirmDelete" class="delete-button" :disabled="isEditing">削除</button>
                 </div>
                 <div v-else>
                     選択されたオーダーがありません。
                 </div>
             </div>
         </div>
+        <CustomerDetail v-if="showCustomerModal" :customer="customerDetail" @close="closeCustomerModal" />
     </div>
 </template>
 
 <script>
 import axios from 'axios';
 import { mapState } from 'vuex';
+import CustomerDetail from '@/components/CustomerDetail.vue';
 
 export default {
     name: 'Order',
+    components: {
+        CustomerDetail
+    },
     data() {
         return {
             phoneNumber: '',
@@ -208,6 +229,7 @@ export default {
             modelName: '',
             actualModel: '',
             courseMin: '',
+            extraCourse: '',
             price: 0,
             postalCode: '',
             reservationFee: 0,
@@ -229,6 +251,9 @@ export default {
             showValidation: false,
             storeList: [],
             mediaList: [],
+            showCompleted: false,
+            showCustomerModal: false,
+            customerDetail: null,
         }
     },
     computed: {
@@ -243,7 +268,7 @@ export default {
             return this.staffList.filter(staff => staff.office_flg === "1");
         },
         displayableFields() {
-            const excludedFields = ['GroupID', 'CustomerID', 'UpdatedAt', 'CompletionFlg', 'IsDeleted'];
+            const excludedFields = ['GroupID', 'CustomerID', 'UpdatedAt', 'CompletionFlg', 'IsDeleted', 'ExtraCourse'];
             return Object.keys(this.currentOrder || {}).reduce((acc, key) => {
                 if (!excludedFields.includes(key)) {
                     acc[key] = this.currentOrder[key];
@@ -269,7 +294,8 @@ export default {
             return this.actualModel !== '';
         },
         isCourseMinValid() {
-            return this.courseMin.trim() !== '';
+            const courseMinInt = parseInt(this.courseMin, 10);
+            return !isNaN(courseMinInt) && courseMinInt > 0;
         },
         isPriceValid() {
             return this.price !== '' && this.price > 0;
@@ -348,7 +374,8 @@ export default {
                     customerName: this.customerName,
                     modelName: this.modelName,
                     actualModel: this.actualModel,
-                    courseMin: this.courseMin,
+                    courseMin: parseInt(this.courseMin, 10),
+                    extraCourse: parseInt(this.extraCourse, 10) || 0,
                     price: parseInt(this.price, 10),
                     postalCode: this.postalCode,
                     address: this.address,
@@ -388,6 +415,7 @@ export default {
             this.modelName = '';
             this.actualModel = '';
             this.courseMin = '';
+            this.extraCourse = '';
             this.price = '';
             this.postalCode = '';
             this.transportationFee = '';
@@ -403,7 +431,8 @@ export default {
         async fetchOrders() {
             this.loading = true;
             try {
-                const response = await axios.get(`${this.apiBaseUrl}/orders/reserved`);
+                const endpoint = this.showCompleted ? '/orders' : '/orders/reserved';
+                const response = await axios.get(`${this.apiBaseUrl}${endpoint}`);
                 this.orders = response.data.data || []; // データが data プロパティ内にある場合
                 this.totalPages = this.orders.length;
                 this.currentPage = this.orders.length > 0 ? 1 : 0; // 最新のオーダーを表示するために1ページ目にセット
@@ -419,12 +448,12 @@ export default {
             }
         },
         prevPage() {
-            if (this.currentPage > 1) {
+            if (this.currentPage > 1 && !this.isEditing) {
                 this.currentPage--;
             }
         },
         nextPage() {
-            if (this.currentPage < this.totalPages) {
+            if (this.currentPage < this.totalPages && !this.isEditing) {
                 this.currentPage++;
             }
         },
@@ -483,12 +512,17 @@ export default {
             return media ? media.name : 'Unknown';
         },
         toggleEdit() {
-            if (this.isEditing) {
-                this.updateOrder();
-            } else {
+            if (!this.isEditing) {
                 this.editedOrder = { ...this.currentOrder };
             }
             this.isEditing = !this.isEditing;
+        },
+        saveEdit() {
+            this.updateOrder();
+        },
+        cancelEdit() {
+            this.editedOrder = { ...this.currentOrder };
+            this.isEditing = false;
         },
         async updateOrder() {
             if (!this.currentOrder) {
@@ -513,6 +547,8 @@ export default {
             }
         },
         async confirmDelete() {
+            if (this.isEditing) return; // 編集中は処理を実行しない
+
             if (confirm('このオーダーを削除してもよろしいですか？')) {
                 try {
                     await axios.put(`${this.apiBaseUrl}/orders/${this.currentOrder.ID}/delete`);
@@ -523,6 +559,8 @@ export default {
             }
         },
         async confirmOrder() {
+            if (this.isEditing) return; // 編集中は処理を実行しない
+
             if (confirm('このオーダーを確定してもよろしいですか？')) {
                 try {
                     await axios.put(`${this.apiBaseUrl}/orders/${this.currentOrder.ID}/completion`);
@@ -533,7 +571,22 @@ export default {
             }
         },
         isEditableField(key) {
-            const editableFields = ['CustomerName', 'PhoneNumber', 'ModelName', 'ActualModel', 'CourseMin', 'Price', 'Address', 'PostalCode', 'ReservationFee', 'TransportationFee', 'TravelCost', 'Notes', 'CardstaffID', 'DriverID'];
+            const editableFields = [
+                'CustomerName',
+                'PhoneNumber',
+                'ModelName',
+                'ActualModel',
+                'CourseMin',
+                'ExtraTime',
+                'Price',
+                'Address',
+                'PostalCode',
+                'ReservationFee',
+                'TransportationFee',
+                'TravelCost',
+                'Notes',
+                'CardstaffID',
+                'DriverID'];
             return editableFields.includes(key);
         },
         isPriceField(key) {
@@ -558,6 +611,7 @@ export default {
                 ModelName: 'モデル名　',
                 ActualModel: '実モデル　',
                 CourseMin: 'コース　　',
+                ExtraTime: '延長時間　',
                 Price: '料金　　　',
                 PostalCode: '郵便番号　',
                 Address: '住所　　　',
@@ -602,11 +656,41 @@ export default {
             } else if (key === 'CreatedAt') {
                 return this.formatDate(value);
             } else if (key === 'CourseMin') {
+                const extraCourse = this.currentOrder.ExtraCourse || 0;
+                return `${value}分 + ${extraCourse}分`;
+            } else if (key === 'ExtraTime') {
                 return `${value}分`;
             } else if (key === 'PhoneNumber') {
                 return `184${value}`;
             }
             return value;
+        },
+        async toggleShowCompleted() {
+            this.showCompleted = !this.showCompleted;
+            await this.fetchOrders();
+            if (this.orders.length === 0) {
+                this.currentPage = 0;
+                this.totalPages = 0;
+            } else {
+                this.currentPage = 1;
+                this.totalPages = this.orders.length;
+            }
+        },
+        async showCustomerDetail() {
+            if (this.phoneNumber) {
+                try {
+                    const response = await axios.get(`${this.apiBaseUrl}/customers/detail/${this.phoneNumber}`);
+                    if (response.data && response.data.data) {
+                        this.customerDetail = response.data.data;
+                        this.showCustomerModal = true;
+                    }
+                } catch (error) {
+                    console.error('顧客詳細の取得に失敗しました:', error);
+                }
+            }
+        },
+        closeCustomerModal() {
+            this.showCustomerModal = false;
         },
     },
     mounted() {
@@ -690,5 +774,111 @@ export default {
         padding-bottom: 60px;
         /* モバイル時のサイドバーの高さに応じて調整 */
     }
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.completed-toggle {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.completed-toggle:hover {
+    background-color: #45a049;
+}
+
+@media (prefers-color-scheme: dark) {
+    .completed-toggle {
+        background-color: #2E7D32;
+    }
+
+    .completed-toggle:hover {
+        background-color: #1B5E20;
+    }
+}
+
+.course-inputs {
+    display: flex;
+    align-items: center;
+}
+
+.course-inputs input[type="text"] {
+    width: 50px;
+    margin-right: 5px;
+}
+
+.course-inputs span {
+    margin: 0 5px;
+}
+
+/* test */
+.course-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    list-style: disc;
+    /* マーカーを強制的に表示 */
+    list-style-position: outside;
+    /* マーカーをリストの外側に配置 */
+}
+
+.course-item label {
+    margin-right: 10px;
+    /* ラベルと入力フィールドの間に余白を追加 */
+    white-space: nowrap;
+    /* ラベルが折り返されないようにする */
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-group button:disabled,
+.delete-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.course-inputs {
+    display: flex;
+    align-items: center;
+}
+
+.pagination button:disabled,
+.delete-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.course-inputs input {
+    margin-right: 5px;
+    /* 各入力フィールド間の余白 */
+}
+
+.error-message {
+    color: red;
+    margin-top: 5px;
+    display: block;
+    /* エラーメッセージが新しい行に表示されるようにする */
+}
+
+.completed-toggle {
+    margin-top: 10px;
 }
 </style>

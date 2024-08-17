@@ -4,6 +4,7 @@ import (
 	"back2/internal/domain/entity"
 	"back2/internal/domain/repository"
 	"log"
+	"time"
 
 	"github.com/go-xorm/xorm"
 )
@@ -39,10 +40,14 @@ func (r *XormOrderRepository) GetByID(id int64) (*entity.Orders, error) {
 
 func (r *XormOrderRepository) List(groupID, offset, limit int) ([]*entity.Orders, error) {
 	orders := make([]*entity.Orders, 0)
-	err := r.engine.Where("group_i_d = ?", groupID).Limit(limit, offset).Find(&orders)
+	// 24時間前の時刻を計算
+	twentyFourHoursAgo := time.Now().Add(-24 * time.Hour)
+	err := r.engine.Where("group_i_d = ?", groupID).
+		And("created_at > ?", twentyFourHoursAgo).
+		Limit(limit, offset).
+		Find(&orders)
 	return orders, err
 }
-
 func (r *XormOrderRepository) ListReserved(groupID, offset, limit int) ([]*entity.Orders, error) {
 	orders := make([]*entity.Orders, 0)
 	err := r.engine.Where("group_i_d = ?", groupID).Where("completion_flg = 0").Where("is_deleted = 0").Limit(limit, offset).Find(&orders)
