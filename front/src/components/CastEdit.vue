@@ -1,12 +1,26 @@
 <template>
-    <div class="cast-registration">
-        <h1>媒体登録</h1>
+    <div class="cast-edit">
+        <h1>キャスト編集</h1>
         <form @submit.prevent="submitForm">
             <div class="form-group">
-                <label for="mediaName">媒体名 *</label>
-                <input type="text" id="mediaName" v-model="mediaName" required>
+                <label for="castName">キャスト名 *</label>
+                <input type="text" id="castName" v-model="castName" required>
             </div>
 
+            <div class="form-group">
+                <label for="password">パスワード *</label>
+                <input type="password" id="password" v-model="password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="lineId">LINE ID *</label>
+                <input type="text" id="lineId" v-model="lineId" required>
+            </div>
+
+            <div class="form-group">
+                <label for="birthDate">生年月日 *</label>
+                <input type="date" id="birthDate" v-model="birthDate" required>
+            </div>
 
             <button type="submit" :disabled="!isFormValid">登録</button>
         </form>
@@ -24,43 +38,59 @@ import { useStore } from 'vuex'
 export default {
     setup() {
         const store = useStore()
-        const mediaName = ref('')
+        const castName = ref('')
+        const password = ref('')
+        const lineId = ref('')
+        const birthDate = ref('')
         const registrationResult = ref('')
         const resultClass = ref('')
+
         const isFormValid = computed(() => {
-            return mediaName.value.trim() !== ''
+            return castName.value.trim() !== '' &&
+                password.value.trim() !== '' &&
+                lineId.value.trim() !== '' &&
+                birthDate.value !== ''
         })
 
         const submitForm = async () => {
             if (!isFormValid.value) {
-                alert('媒体名を入力してください。')
+                alert('すべての必須項目を入力してください。')
                 return
             }
 
             const formData = {
-                mediaName: mediaName.value,
+                castName: castName.value,
+                passwordHash: password.value,
+                lineId: lineId.value,
+                birthDate: birthDate.value
             }
-            if (confirm('この媒体を登録してもよろしいですか？')) {
+            if (confirm('このキャストを登録してもよろしいですか？')) {
                 try {
-                    const response = await axios.post(`${store.state.apiBaseUrl}/media`, formData)
-                    console.log('媒体が登録されました', response.data)
-                    registrationResult.value = '媒体が正常に登録されました。'
+                    const response = await axios.post(`${store.state.apiBaseUrl}/cast`, formData)
+                    console.log('キャストが登録されました', response.data)
+                    registrationResult.value = 'キャストが正常に登録されました。'
                     resultClass.value = 'success'
                     resetForm()
                 } catch (error) {
                     console.error('登録エラー', error)
-                    registrationResult.value = '媒体の登録に失敗しました。もう一度お試しください。'
+                    registrationResult.value = 'キャストの登録に失敗しました。もう一度お試しください。'
                     resultClass.value = 'error'
                 }
             }
         }
 
         const resetForm = () => {
-            mediaName.value = ''
+            castName.value = ''
+            password.value = ''
+            lineId.value = ''
+            birthDate.value = ''
         }
 
         return {
-            mediaName,
+            castName,
+            password,
+            lineId,
+            birthDate,
             submitForm,
             isFormValid,
             registrationResult,
@@ -71,7 +101,7 @@ export default {
 </script>
 
 <style scoped>
-.cast-registration {
+.cast-edit {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;

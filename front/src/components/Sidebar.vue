@@ -2,11 +2,21 @@
   <div class="sidebar" :class="{ 'sidebar-open': isOpen }">
     <nav>
       <ul>
+        <li class="category">メイン</li>
         <li><router-link to="/dashboard">ダッシュボード</router-link></li>
         <li><router-link to="/order">受注</router-link></li>
-        <li><router-link to="/staff-registration">スタッフ管理</router-link></li>
-        <li><router-link to="/customer-registration">顧客管理</router-link></li>
+        <li class="category">キャスト</li>
+        <li><router-link to="/cast-registration">キャスト登録</router-link></li>
+        <li><router-link to="/cast-edit">キャスト編集</router-link></li>
+        <li class="category">スタッフ</li>
+        <li><router-link to="/staff-registration">スタッフ登録</router-link></li>
+        <li><router-link to="/staff-edit">スタッフ編集</router-link></li>
+        <li class="category">顧客</li>
+        <li><router-link to="/customer-registration">顧客検索</router-link></li>
+        <li class="category">店舗</li>
         <li><router-link to="/store-registration">店舗設定</router-link></li>
+        <li><router-link to="/store-edit">店舗編集</router-link></li>
+        <li><router-link to="/media-registration">媒体登録</router-link></li>
       </ul>
     </nav>
   </div>
@@ -64,5 +74,17 @@ nav ul li a:hover {
 
 nav ul li a.router-link-active {
   background-color: #41B883;
+}
+
+.category {
+  font-weight: bold;
+  color: #41B883;
+  padding: 15px 10px 5px;
+  text-transform: uppercase;
+  font-size: 0.9em;
+}
+
+nav ul li:not(.category) {
+  padding-left: 20px;
 }
 </style>

@@ -3,10 +3,14 @@ import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
 import Order from '../views/Order.vue'
-import CastStaffRegistration from '../views/CastStaffRegistration.vue'
-import StoreRegistration from '../views/StoreRegistration.vue'
-import CustomerRegistration from '../views/CustomerRegistration.vue'
-
+import CustomerRegistration from '../components/CustomerRegistration.vue'
+import StaffRegistration from '../components/StaffRegistration.vue'
+import CastRegistration from '../components/CastRegistration.vue'
+import StaffEdit from '../components/StaffEdit.vue'
+import CastEdit from '../components/CastEdit.vue'
+import StoreRegistration from '../components/StoreRegistration.vue'
+import StoreEdit from '../components/StoreEdit.vue'
+import MediaRegistration from '../components/MediaForm.vue'
 
 const routes = [
     { path: '/', redirect: '/login' },
@@ -14,8 +18,13 @@ const routes = [
     { path: '/register', component: Register },
     { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
     { path: '/order', component: Order, meta: { requiresAuth: true } },
-    { path: '/staff-registration', component: CastStaffRegistration, meta: { requiresAuth: true } },
+    { path: '/staff-registration', component: StaffRegistration, meta: { requiresAuth: true } },
+    { path: '/staff-edit', component: StaffEdit, meta: { requiresAuth: true } },
+    { path: '/cast-registration', component: CastRegistration, meta: { requiresAuth: true } },
+    { path: '/cast-edit', component: CastEdit, meta: { requiresAuth: true } },
     { path: '/store-registration', component: StoreRegistration, meta: { requiresAuth: true } },
+    { path: '/store-edit', component: StoreEdit, meta: { requiresAuth: true } },
+    { path: '/media-registration', component: MediaRegistration, meta: { requiresAuth: true } },
     { path: '/customer-registration', component: CustomerRegistration, meta: { requiresAuth: true } },
 ]
 

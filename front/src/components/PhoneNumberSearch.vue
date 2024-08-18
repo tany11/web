@@ -1,30 +1,10 @@
 <template>
     <div class="customer-management">
-        <h1>顧客管理</h1>
+        <h1>電話番号検索</h1>
         <div class="search-form">
-            <div class="search-type-selector">
-                <button @click="searchType = 'phone'" :class="{ active: searchType === 'phone' }">電話番号検索</button>
-                <button @click="searchType = 'other'" :class="{ active: searchType === 'other' }">その他の検索</button>
-            </div>
-            <div v-if="searchType === 'phone'" class="input-group">
+            <div>
                 <input v-model="phoneNumber" placeholder="電話番号" class="input" @keyup.enter="searchByPhone" />
                 <button @click="searchByPhone" class="search-button">検索</button>
-            </div>
-            <div v-else-if="searchType === 'other'">
-                <div class="input-group">
-                    <input v-model="lastFourDigits" placeholder="電話番号（下4桁）" class="input" />
-                    <select v-model="castID" class="input">
-                        <option value="">キャストを選択</option>
-                        <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
-                            {{ cast.name }}
-                        </option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <input v-model="startDate" type="date" placeholder="開始日" class="input" />
-                    <input v-model="endDate" type="date" placeholder="終了日" class="input" />
-                </div>
-                <button @click="searchByOther" class="search-button">検索</button>
             </div>
         </div>
         <customer-detail v-if="selectedCustomer" :customer="selectedCustomer" @close="closeCustomerDetail" />

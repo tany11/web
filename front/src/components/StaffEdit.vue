@@ -1,5 +1,6 @@
-え<template>
-    <div class="staff-registration">
+<template>
+    <div class="staff-edit">
+        <h1>スタッフ編集</h1>
         <form @submit.prevent="submitForm">
             <div class="form-group name-group">
                 <div class="name-field">
@@ -140,7 +141,7 @@ export default {
 </script>
 
 <style scoped>
-.staff-registration {
+.staff-edit {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;

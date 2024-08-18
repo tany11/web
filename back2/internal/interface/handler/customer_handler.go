@@ -185,6 +185,7 @@ func (h *CustomerHandler) GetSearchList(c *gin.Context) {
 	var customerSearch entity.CustomerSearch
 	customerSearch.PhoneLast4 = c.Query("phoneLast4")
 	customerSearch.CastID = c.Query("castID")
+	customerSearch.StoreID = c.Query("storeID")
 	customerSearch.CreatedFrom = c.Query("createdFrom")
 	customerSearch.CreatedTo = c.Query("createdTo")
 
@@ -196,8 +197,5 @@ func (h *CustomerHandler) GetSearchList(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	log.Printf("検索結果: %+v", customers)
-	log.Printf("検索結果: %d件の顧客が見つかりました", len(customers))
 	c.JSON(http.StatusOK, gin.H{"data": customers})
-	log.Printf("検索結果: %+v", c)
 }

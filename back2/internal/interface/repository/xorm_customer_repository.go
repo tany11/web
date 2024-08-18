@@ -92,6 +92,12 @@ func (r *XormCustomerRepository) GetSearchList(customerSearch entity.CustomerSea
 		log.Printf("キャストIDの条件追加: %s", customerSearch.CastID)
 	}
 
+	if customerSearch.StoreID != "" {
+		query += " AND o.store_i_d = ?"
+		params = append(params, customerSearch.StoreID)
+		log.Printf("店舗IDの条件追加: %s", customerSearch.StoreID)
+	}
+
 	if customerSearch.CreatedFrom != "" {
 		query += " AND o.created_at >= ?"
 		params = append(params, customerSearch.CreatedFrom)
@@ -103,9 +109,6 @@ func (r *XormCustomerRepository) GetSearchList(customerSearch entity.CustomerSea
 		params = append(params, customerSearch.CreatedTo)
 		log.Printf("作成日To条件追加: %s", customerSearch.CreatedTo)
 	}
-
-	log.Printf("最終的なクエリ: %s", query)
-	log.Printf("パラメータ: %v", params)
 
 	err := r.engine.SQL(query, params...).Find(&customers)
 	if err != nil {

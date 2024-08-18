@@ -16,6 +16,7 @@
                     <thead>
                         <tr>
                             <th>日付</th>
+                            <th>利用店舗</th>
                             <th>コース時間</th>
                             <th>料金</th>
                             <th>キャスト</th>
@@ -24,6 +25,7 @@
                     <tbody>
                         <tr v-for="order in customer.OrderList" :key="order.ID">
                             <td>{{ formatDate(order.CreatedAt) }}</td>
+                            <td>{{ getStoreName(order.StoreID) }}</td>
                             <td>{{ order.CourseMin }}分</td>
                             <td>{{ order.Price }}円</td>
                             <td>{{ getCastName(order.ActualModel) }}</td>
@@ -48,7 +50,8 @@ export default {
     },
     data() {
         return {
-            castList: []
+            castList: [],
+            storeList: []
         }
     },
     computed: {
@@ -66,6 +69,10 @@ export default {
             const cast = this.castList.find(c => c.cast_id === castId);
             return cast ? cast.name : 'Unknown';
         },
+        getStoreName(storeId) {
+            const store = this.storeList.find(s => s.id === storeId);
+            return store ? store.name : 'Unknown';
+        },
         async fetchCastList() {
             try {
                 const response = await axios.get(`${this.apiBaseUrl}/cast/dropdown`);
@@ -73,10 +80,19 @@ export default {
             } catch (error) {
                 console.error('キャストリストの取得に失敗しました:', error);
             }
+        },
+        async fetchStoreList() {
+            try {
+                const response = await axios.get(`${this.apiBaseUrl}/store/dropdown`);
+                this.storeList = response.data.data || [];
+            } catch (error) {
+                console.error('店舗リストの取得に失敗しました:', error);
+            }
         }
     },
     mounted() {
         this.fetchCastList();
+        this.fetchStoreList();
     }
 }
 </script>

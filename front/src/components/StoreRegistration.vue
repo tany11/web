@@ -1,6 +1,11 @@
 <template>
     <div class="store-registration">
+        <h1>店舗登録</h1>
         <form @submit.prevent="submitForm">
+            <div class="form-group">
+                <label for="storeCode">店舗コード *</label>
+                <input type="number" id="storeCode" v-model.number="storeCode" required min="0">
+            </div>
             <div class="form-group">
                 <label for="storeName">店舗名 *</label>
                 <input type="text" id="storeName" v-model="storeName" required>
@@ -22,21 +27,23 @@ import { useStore } from 'vuex'
 export default {
     setup() {
         const store = useStore()
+        const storeCode = ref('')
         const storeName = ref('')
         const registrationResult = ref('')
         const resultClass = ref('')
 
         const isFormValid = computed(() => {
-            return storeName.value.trim() !== ''
+            return storeCode.value !== '' && !isNaN(storeCode.value) && storeName.value.trim() !== ''
         })
 
         const submitForm = async () => {
             if (!isFormValid.value) {
-                alert('店舗名を入力してください。')
+                alert('有効な店舗コード（整数）と店舗名を入力してください。')
                 return
             }
 
             const formData = {
+                storeCode: parseInt(storeCode.value, 10),
                 storeName: storeName.value,
             }
             if (confirm('この店舗を登録してもよろしいですか？')) {
@@ -55,10 +62,12 @@ export default {
         }
 
         const resetForm = () => {
+            storeCode.value = ''
             storeName.value = ''
         }
 
         return {
+            storeCode,
             storeName,
             submitForm,
             isFormValid,
@@ -96,6 +105,17 @@ input[type="date"] {
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 button {

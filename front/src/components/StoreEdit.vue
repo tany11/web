@@ -1,24 +1,10 @@
 <template>
-    <div class="cast-registration">
+    <div class="store-edit">
+        <h1>店舗編集</h1>
         <form @submit.prevent="submitForm">
             <div class="form-group">
-                <label for="castName">キャスト名 *</label>
-                <input type="text" id="castName" v-model="castName" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">パスワード *</label>
-                <input type="password" id="password" v-model="password" required>
-            </div>
-
-            <div class="form-group">
-                <label for="lineId">LINE ID *</label>
-                <input type="text" id="lineId" v-model="lineId" required>
-            </div>
-
-            <div class="form-group">
-                <label for="birthDate">生年月日 *</label>
-                <input type="date" id="birthDate" v-model="birthDate" required>
+                <label for="storeName">店舗名 *</label>
+                <input type="text" id="storeName" v-model="storeName" required>
             </div>
 
             <button type="submit" :disabled="!isFormValid">登録</button>
@@ -37,59 +23,44 @@ import { useStore } from 'vuex'
 export default {
     setup() {
         const store = useStore()
-        const castName = ref('')
-        const password = ref('')
-        const lineId = ref('')
-        const birthDate = ref('')
+        const storeName = ref('')
         const registrationResult = ref('')
         const resultClass = ref('')
 
         const isFormValid = computed(() => {
-            return castName.value.trim() !== '' &&
-                password.value.trim() !== '' &&
-                lineId.value.trim() !== '' &&
-                birthDate.value !== ''
+            return storeName.value.trim() !== ''
         })
 
         const submitForm = async () => {
             if (!isFormValid.value) {
-                alert('すべての必須項目を入力してください。')
+                alert('店舗名を入力してください。')
                 return
             }
 
             const formData = {
-                castName: castName.value,
-                passwordHash: password.value,
-                lineId: lineId.value,
-                birthDate: birthDate.value
+                storeName: storeName.value,
             }
-            if (confirm('このキャストを登録してもよろしいですか？')) {
+            if (confirm('この店舗を登録してもよろしいですか？')) {
                 try {
-                    const response = await axios.post(`${store.state.apiBaseUrl}/cast`, formData)
-                    console.log('キャストが登録されました', response.data)
-                    registrationResult.value = 'キャストが正常に登録されました。'
+                    const response = await axios.post(`${store.state.apiBaseUrl}/store`, formData)
+                    console.log('店舗が登録されました', response.data)
+                    registrationResult.value = '店舗が正常に登録されました。'
                     resultClass.value = 'success'
                     resetForm()
                 } catch (error) {
                     console.error('登録エラー', error)
-                    registrationResult.value = 'キャストの登録に失敗しました。もう一度お試しください。'
+                    registrationResult.value = '店舗の登録に失敗しました。もう一度お試しください。'
                     resultClass.value = 'error'
                 }
             }
         }
 
         const resetForm = () => {
-            castName.value = ''
-            password.value = ''
-            lineId.value = ''
-            birthDate.value = ''
+            storeName.value = ''
         }
 
         return {
-            castName,
-            password,
-            lineId,
-            birthDate,
+            storeName,
             submitForm,
             isFormValid,
             registrationResult,
@@ -100,7 +71,7 @@ export default {
 </script>
 
 <style scoped>
-.cast-registration {
+.store-edit {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;

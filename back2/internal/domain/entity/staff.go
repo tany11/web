@@ -16,6 +16,6 @@ type Staff struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	LastLogin      time.Time
-	Status         string
+	IsDeleted      string //削除フラグ
 	Birthdate      time.Time
 }
