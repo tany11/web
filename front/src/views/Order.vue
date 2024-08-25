@@ -5,11 +5,15 @@
             <h2>受注表</h2>
             <ul>
                 <li>
+                    <label for="store-code">店舗コード: </label>
+                    <input type="text" id="store-code" v-model="storeCode" @input="filterStores">
+                </li>
+                <li>
                     <label for="store-name">店名　　: </label>
                     <select id="store-name" name="store-name" v-model.number="storeID"
                         :class="{ 'is-invalid': showValidation && !isStoreNameValid }">
                         <option value="">選択してください</option>
-                        <option v-for="store in storeList" :key="store.id" :value="store.id">
+                        <option v-for="store in filteredStores" :key="store.id" :value="store.id">
                             {{ store.name }}
                         </option>
                     </select>
@@ -24,9 +28,7 @@
                 </li>
                 <li>
                     <label for="customer-name">お客様名: </label>
-                    <input type="text" id="customer-name" name="customer-name" v-model="customerName"
-                        :class="{ 'is-invalid': showValidation && !isCustomerNameValid }">
-                    <span v-if="showValidation && !isCustomerNameValid" class="error-message">お客様名を入力してください</span>
+                    <input type="text" id="customer-name" name="customer-name" v-model="customerName">
                 </li>
                 <li>
                     <label for="model-name">モデル名: </label>
@@ -34,31 +36,25 @@
                 </li>
                 <li>
                     <label for="actual-model">実モデル: </label>
-                    <select id="actual-model" name="actual-model" v-model="actualModel"
-                        :class="{ 'is-invalid': showValidation && !isActualModelValid }">
+                    <select id="actual-model" name="actual-model" v-model="actualModel">
                         <option value="">選択してください</option>
                         <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
                             {{ cast.name }}
                         </option>
                     </select>
-                    <span v-if="showValidation && !isActualModelValid" class="error-message">実モデルを選択してください</span>
                 </li>
                 <li class="course-item">
                     <label for="course-name">コース　: </label>
                     <div class="course-inputs">
-                        <input type="text" id="course-name" name="course-name" v-model="courseMin"
-                            :class="{ 'is-invalid': showValidation && !isCourseMinValid }">
+                        <input type="text" id="course-name" name="course-name" v-model="courseMin">
                         <span>+</span>
                         <input type="text" id="extra-course" name="extra-course" v-model="extraCourse">
                         <span>分</span>
                     </div>
-                    <span v-if="showValidation && !isCourseMinValid" class="error-message">コース時間を入力してください</span>
                 </li>
                 <li>
                     <label for="price">料金　　: </label>
-                    <input type="number" id="price" name="price" v-model.number="price" step="1000" min="0"
-                        :class="{ 'is-invalid': showValidation && !isPriceValid }">
-                    <span v-if="showValidation && !isPriceValid" class="error-message">有効な料金を入力してください</span>
+                    <input type="number" id="price" name="price" v-model.number="price" step="1000" min="0">
                 </li>
                 <!-- 自宅orホテルのプルダウンもほしいか -->
                 <li>
@@ -68,20 +64,16 @@
                 <!-- 住所を使用してHomesとGoogleMapのURLもほしい -->
                 <li>
                     <label for="address">住所　　: </label>
-                    <input type="text" id="address" name="address" v-model="address"
-                        :class="{ 'is-invalid': showValidation && !isAddressValid }">
-                    <span v-if="showValidation && !isAddressValid" class="error-message">住所を入力してください</span>
+                    <input type="text" id="address" name="address" v-model="address">
                 </li>
                 <li>
                     <label for="delivery">送り　　: </label>
-                    <select id="delivery" name="delivery" v-model="driverID"
-                        :class="{ 'is-invalid': showValidation && !isDriverIDValid }">
+                    <select id="delivery" name="delivery" v-model="driverID">
                         <option value="">選択してください</option>
                         <option v-for="staff in driverStaffList" :key="staff.id" :value="staff.staff_id">
                             {{ staff.name }}
                         </option>
                     </select>
-                    <span v-if="showValidation && !isDriverIDValid" class="error-message">ドライバーを選択してください</span>
                 </li>
                 <li>
                     <label for="nomination-fee">指名料　: </label>
@@ -159,32 +151,67 @@
                                 <strong>{{ getFieldLabel(key) }}: </strong>
                                 <template v-if="isEditing && isEditableField(key)">
                                     <template v-if="key === 'ActualModel'">
-                                        <select v-model="editedOrder[key]">
+                                        <select v-model="editedOrder[key]"
+                                            :class="{ 'is-invalid': editValidation && !isEditedActualModelValid }">
                                             <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
                                                 {{ cast.name }}
+                                            </option>
+                                        </select>
+                                        <span v-if="editValidation && !isEditedActualModelValid"
+                                            class="error-message">実モデルを選択してください</span>
+                                    </template>
+                                    <template v-else-if="key === 'StoreID'">
+                                        <select v-model="editedOrder[key]"
+                                            :class="{ 'is-invalid': editValidation && !isEditedStoreIDValid }">
+                                            <option v-for="store in storeList" :key="store.id" :value="store.id">
+                                                {{ store.name }}
+                                            </option>
+                                        </select>
+                                        <span v-if="editValidation && !isEditedStoreIDValid"
+                                            class="error-message">店舗を選択してください</span>
+                                    </template>
+                                    <template v-else-if="key === 'Media'">
+                                        <select v-model="editedOrder[key]">
+                                            <option v-for="media in mediaList" :key="media.id" :value="media.id">
+                                                {{ media.name }}
                                             </option>
                                         </select>
                                     </template>
                                     <template
                                         v-else-if="key === 'CardstaffID' || key === 'OrderStaffID' || key === 'DriverID'">
-                                        <select v-model="editedOrder[key]">
+                                        <select v-model="editedOrder[key]"
+                                            :class="{ 'is-invalid': editValidation && key === 'DriverID' && !isEditedDriverIDValid }">
                                             <option v-for="staff in getStaffList(key)" :key="staff.staff_id"
                                                 :value="staff.staff_id">
                                                 {{ staff.name }}
                                             </option>
                                         </select>
+                                        <span v-if="editValidation && key === 'DriverID' && !isEditedDriverIDValid"
+                                            class="error-message">ドライバーを選択してください</span>
                                     </template>
-                                    <template v-else-if="isPriceField(key)">
-                                        <input v-model.number="editedOrder[key]" type="number" step="1000" min="0">
+                                    <template v-else-if="isPriceField(key) || isIntField(key)">
+                                        <input v-model.number="editedOrder[key]" type="number" :step="getStepValue(key)"
+                                            min="0" @input="validateIntInput(key)"
+                                            :class="{ 'is-invalid': editValidation && ((key === 'Price' && !isEditedPriceValid) || (key === 'CourseMin' && !isEditedCourseMinValid)) }">
+                                        <span v-if="editValidation && key === 'Price' && !isEditedPriceValid"
+                                            class="error-message">有効な料金を入力してください</span>
+                                        <span v-if="editValidation && key === 'CourseMin' && !isEditedCourseMinValid"
+                                            class="error-message">有効なコース時間を入力してください</span>
                                     </template>
                                     <template v-else-if="key === 'Notes'">
                                         <textarea v-model="editedOrder[key]" rows="3"></textarea>
                                     </template>
-                                    <template v-else-if="key === 'ExtraTime'">
-                                        <input v-model.number="editedOrder[key]" type="number" step="30" min="0">
-                                    </template>
                                     <template v-else>
-                                        <input v-model="editedOrder[key]" :type="getInputType(key)">
+                                        <input v-model="editedOrder[key]" :type="getInputType(key)"
+                                            :class="{ 'is-invalid': editValidation && ((key === 'CustomerName' && !isEditedCustomerNameValid) || (key === 'PhoneNumber' && !isEditedPhoneNumberValid) || (key === 'Address' && !isEditedAddressValid)) }">
+                                        <span
+                                            v-if="editValidation && key === 'CustomerName' && !isEditedCustomerNameValid"
+                                            class="error-message">お客様名を入力してください</span>
+                                        <span
+                                            v-if="editValidation && key === 'PhoneNumber' && !isEditedPhoneNumberValid"
+                                            class="error-message">有効な電話番号を入力してください</span>
+                                        <span v-if="editValidation && key === 'Address' && !isEditedAddressValid"
+                                            class="error-message">住所を入力してください</span>
                                     </template>
                                 </template>
                                 <template v-else>
@@ -254,6 +281,9 @@ export default {
             showCompleted: false,
             showCustomerModal: false,
             customerDetail: null,
+            storeCode: '',
+            filteredStores: [],
+            editValidation: false,
         }
     },
     computed: {
@@ -268,7 +298,7 @@ export default {
             return this.staffList.filter(staff => staff.office_flg === "1");
         },
         displayableFields() {
-            const excludedFields = ['GroupID', 'CustomerID', 'UpdatedAt', 'CompletionFlg', 'IsDeleted', 'ExtraCourse'];
+            const excludedFields = ['GroupID', 'CustomerID', 'UpdatedAt', 'CompletionFlg', 'IsDeleted', 'ExtraCourse', 'PostalCode'];
             return Object.keys(this.currentOrder || {}).reduce((acc, key) => {
                 if (!excludedFields.includes(key)) {
                     acc[key] = this.currentOrder[key];
@@ -284,39 +314,44 @@ export default {
         isStoreIDValid() {
             return this.storeID !== null && this.storeID !== '';
         },
-        isStoreNameValid() {
-            return this.storeName !== '';
+        isEditedOrderValid() {
+            return this.isEditedStoreIDValid &&
+                this.isEditedCustomerNameValid &&
+                this.isEditedActualModelValid &&
+                this.isEditedCourseMinValid &&
+                this.isEditedPriceValid &&
+                this.isEditedAddressValid &&
+                this.isEditedDriverIDValid &&
+                this.isEditedPhoneNumberValid;
         },
-        isCustomerNameValid() {
-            return this.customerName.trim() !== '';
+        isEditedStoreIDValid() {
+            return this.editedOrder.StoreID !== null && this.editedOrder.StoreID !== '';
         },
-        isActualModelValid() {
-            return this.actualModel !== '';
+        isEditedCustomerNameValid() {
+            return this.editedOrder.CustomerName && this.editedOrder.CustomerName.trim() !== '';
         },
-        isCourseMinValid() {
-            const courseMinInt = parseInt(this.courseMin, 10);
+        isEditedActualModelValid() {
+            return this.editedOrder.ActualModel !== '';
+        },
+        isEditedCourseMinValid() {
+            const courseMinInt = parseInt(this.editedOrder.CourseMin, 10);
             return !isNaN(courseMinInt) && courseMinInt > 0;
         },
-        isPriceValid() {
-            return this.price !== '' && this.price > 0;
+        isEditedPriceValid() {
+            return this.editedOrder.Price !== '' && this.editedOrder.Price > 0;
         },
-        isAddressValid() {
-            return this.address.trim() !== '';
+        isEditedAddressValid() {
+            return this.editedOrder.Address && this.editedOrder.Address.trim() !== '';
         },
-        isDriverIDValid() {
-            return this.driverID !== '';
+        isEditedDriverIDValid() {
+            return this.editedOrder.DriverID !== '';
         },
-        isMediaValid() {
-            return this.media !== null && this.media !== '';
+        isEditedPhoneNumberValid() {
+            const phoneRegex = /^(0\d{1,4}-?\d{1,4}-?\d{4})$/;
+            return phoneRegex.test(this.editedOrder.PhoneNumber);
         },
         isFormValid() {
             return this.isStoreIDValid &&
-                this.isCustomerNameValid &&
-                this.isActualModelValid &&
-                this.isCourseMinValid &&
-                this.isPriceValid &&
-                this.isAddressValid &&
-                this.isDriverIDValid &&
                 this.isPhoneNumberValid;
         },
         ...mapState(['apiBaseUrl']),
@@ -479,6 +514,7 @@ export default {
             try {
                 const response = await axios.get(`${this.apiBaseUrl}/store/dropdown`);
                 this.storeList = response.data.data || [];
+                this.filteredStores = [...this.storeList]; // 初期状態では全ての店舗を表示
                 console.log('店舗リスト:', this.storeList);
             } catch (error) {
                 console.error('店舗リストの取得に失敗しました:', error);
@@ -518,11 +554,17 @@ export default {
             this.isEditing = !this.isEditing;
         },
         saveEdit() {
-            this.updateOrder();
+            this.editValidation = true;
+            if (this.isEditedOrderValid) {
+                this.updateOrder();
+            } else {
+                alert('フォームに無効な入力があります。すべての必須フィールドを正しく入力してください。');
+            }
         },
         cancelEdit() {
             this.editedOrder = { ...this.currentOrder };
             this.isEditing = false;
+            this.editValidation = false;
         },
         async updateOrder() {
             if (!this.currentOrder) {
@@ -538,6 +580,14 @@ export default {
                 return;
             }
 
+            // INT項目の値を整数に変換
+            const intFields = ['CourseMin', 'ExtraTime', 'ExtraCourse', 'Price', 'ReservationFee', 'TransportationFee', 'TravelCost'];
+            intFields.forEach(field => {
+                if (this.editedOrder[field] !== undefined) {
+                    this.editedOrder[field] = Math.floor(Number(this.editedOrder[field]));
+                }
+            });
+
             try {
                 await axios.put(`${this.apiBaseUrl}/orders/${orderId}`, this.editedOrder);
                 this.fetchOrders();
@@ -549,7 +599,7 @@ export default {
         async confirmDelete() {
             if (this.isEditing) return; // 編集中は処理を実行しない
 
-            if (confirm('このオーダーを削除してもよろしいですか？')) {
+            if (confirm('このオーダーを削除しても��ろしいですか？')) {
                 try {
                     await axios.put(`${this.apiBaseUrl}/orders/${this.currentOrder.ID}/delete`);
                     this.fetchOrders();
@@ -566,7 +616,7 @@ export default {
                     await axios.put(`${this.apiBaseUrl}/orders/${this.currentOrder.ID}/completion`);
                     this.fetchOrders();
                 } catch (error) {
-                    console.error('オーダーの確定に失敗しました:', error);
+                    console.error('オーダーの確定に失敗しまた:', error);
                 }
             }
         },
@@ -580,17 +630,38 @@ export default {
                 'ExtraTime',
                 'Price',
                 'Address',
-                'PostalCode',
                 'ReservationFee',
                 'TransportationFee',
                 'TravelCost',
                 'Notes',
                 'CardstaffID',
-                'DriverID'];
+                'DriverID',
+                'StoreID',
+                'Media',
+                'OrderStaffID'
+            ];
             return editableFields.includes(key);
         },
         isPriceField(key) {
             return ['Price', 'ReservationFee', 'TransportationFee', 'TravelCost'].includes(key);
+        },
+        isIntField(key) {
+            return ['CourseMin', 'ExtraTime', 'ExtraCourse'].includes(key);
+        },
+        getStepValue(key) {
+            if (this.isPriceField(key)) {
+                return 1000;
+            } else if (key === 'CourseMin') {
+                return 10;
+            } else if (key === 'ExtraTime' || key === 'ExtraCourse') {
+                return 30;
+            }
+            return 1;
+        },
+        validateIntInput(key) {
+            if (this.isIntField(key)) {
+                this.editedOrder[key] = Math.floor(this.editedOrder[key]);
+            }
         },
         getInputType(key) {
             return this.isPriceField(key) ? 'number' : 'text';
@@ -613,7 +684,6 @@ export default {
                 CourseMin: 'コース　　',
                 ExtraTime: '延長時間　',
                 Price: '料金　　　',
-                PostalCode: '郵便番号　',
                 Address: '住所　　　',
                 DriverID: '送り　　　',
                 ReservationFee: '指名料　　',
@@ -691,6 +761,22 @@ export default {
         },
         closeCustomerModal() {
             this.showCustomerModal = false;
+        },
+        filterStores() {
+            if (this.storeCode === '') {
+                this.filteredStores = [...this.storeList];
+            } else {
+                this.filteredStores = this.storeList.filter(store =>
+                    store.store_code.toString().startsWith(this.storeCode)
+                );
+            }
+
+            // フィルタリング後に店舗が1つだけ残った場合、自動的にその店舗を選択
+            if (this.filteredStores.length === 1) {
+                this.storeID = this.filteredStores[0].id;
+            } else {
+                this.storeID = null; // 複数の選択肢がある場合はクリア
+            }
         },
     },
     mounted() {
@@ -827,7 +913,7 @@ export default {
     align-items: center;
     margin-bottom: 10px;
     list-style: disc;
-    /* マーカーを強制的に表示 */
+    /* ーカーを強制的に表示 */
     list-style-position: outside;
     /* マーカーをリストの外側に配置 */
 }
@@ -880,5 +966,15 @@ export default {
 
 .completed-toggle {
     margin-top: 10px;
+}
+
+.store-input {
+    display: flex;
+    align-items: center;
+}
+
+.store-input input[type="text"] {
+    width: 80px;
+    margin-right: 10px;
 }
 </style>

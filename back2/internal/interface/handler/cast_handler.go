@@ -22,6 +22,7 @@ func NewCastHandler(useCase *usecase.CastUseCase) *CastHandler {
 func (h *CastHandler) Create(c *gin.Context) {
 	var castInput struct {
 		entity.Cast
+
 		Birthdate string `json:"birthdate"`
 	}
 	if err := c.ShouldBindJSON(&castInput); err != nil {
@@ -38,6 +39,7 @@ func (h *CastHandler) Create(c *gin.Context) {
 
 	cast := castInput.Cast
 	cast.Birthdate = birthdate
+	cast.IsDeleted = "0"
 
 	if err := h.useCase.Create(&cast); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -50,12 +52,17 @@ func (h *CastHandler) Create(c *gin.Context) {
 func (h *CastHandler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	groupID, _ := strconv.Atoi(c.DefaultQuery("groupID", "0"))
+	groupID, _ := strconv.Atoi(c.DefaultQuery("groupID", "1"))
 
 	casts, err := h.useCase.List(groupID, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// パスワードハッシュをレスポンスから除外
+	for _, c := range casts {
+		c.PasswordHash = ""
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": casts})

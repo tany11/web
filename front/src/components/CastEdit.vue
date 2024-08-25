@@ -1,100 +1,85 @@
 <template>
     <div class="cast-edit">
-        <h1>キャスト編集</h1>
-        <form @submit.prevent="submitForm">
-            <div class="form-group">
-                <label for="castName">キャスト名 *</label>
-                <input type="text" id="castName" v-model="castName" required>
-            </div>
+        <h1>キャスト一覧</h1>
+        <table class="cast-list">
+            <thead>
+                <tr>
+                    <th>キャスト名</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="cast in casts" :key="cast.ID">
+                    <td>{{ cast.CastName }}</td>
+                    <td>
+                        <button @click="openModal(cast)" class="edit-btn">詳細</button>
+                        <button @click="deleteCast(cast.ID)" class="delete-btn">削除</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
 
-            <div class="form-group">
-                <label for="password">パスワード *</label>
-                <input type="password" id="password" v-model="password" required>
-            </div>
-
-            <div class="form-group">
-                <label for="lineId">LINE ID *</label>
-                <input type="text" id="lineId" v-model="lineId" required>
-            </div>
-
-            <div class="form-group">
-                <label for="birthDate">生年月日 *</label>
-                <input type="date" id="birthDate" v-model="birthDate" required>
-            </div>
-
-            <button type="submit" :disabled="!isFormValid">登録</button>
-        </form>
-        <div v-if="registrationResult" class="registration-result" :class="resultClass">
-            {{ registrationResult }}
-        </div>
+        <CastDetail v-if="showModal" :cast="selectedCast" @close="closeModal" />
     </div>
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useStore } from 'vuex'
+import CastDetail from './CastDetail.vue'
 
 export default {
+    components: {
+        CastDetail
+    },
     setup() {
         const store = useStore()
-        const castName = ref('')
-        const password = ref('')
-        const lineId = ref('')
-        const birthDate = ref('')
-        const registrationResult = ref('')
-        const resultClass = ref('')
+        const casts = ref([])
+        const showModal = ref(false)
+        const selectedCast = ref(null)
 
-        const isFormValid = computed(() => {
-            return castName.value.trim() !== '' &&
-                password.value.trim() !== '' &&
-                lineId.value.trim() !== '' &&
-                birthDate.value !== ''
-        })
-
-        const submitForm = async () => {
-            if (!isFormValid.value) {
-                alert('すべての必須項目を入力してください。')
-                return
+        const fetchCasts = async () => {
+            try {
+                const response = await axios.get(`${store.state.apiBaseUrl}/cast`)
+                casts.value = response.data.data
+            } catch (error) {
+                console.error('キャスト一覧の取得に失敗しました', error)
             }
+        }
 
-            const formData = {
-                castName: castName.value,
-                passwordHash: password.value,
-                lineId: lineId.value,
-                birthDate: birthDate.value
-            }
-            if (confirm('このキャストを登録してもよろしいですか？')) {
+        const openModal = (cast) => {
+            selectedCast.value = cast
+            showModal.value = true
+        }
+
+        const closeModal = () => {
+            showModal.value = false
+            selectedCast.value = null
+        }
+
+        const deleteCast = async (id) => {
+            if (confirm('このキャストを削除してもよろしいですか？')) {
                 try {
-                    const response = await axios.post(`${store.state.apiBaseUrl}/cast`, formData)
-                    console.log('キャストが登録されました', response.data)
-                    registrationResult.value = 'キャストが正常に登録されました。'
-                    resultClass.value = 'success'
-                    resetForm()
+                    await axios.delete(`${store.state.apiBaseUrl}/cast/${id}`)
+                    alert('キャストが削除されました')
+                    fetchCasts() // キャスト一覧を再取得
                 } catch (error) {
-                    console.error('登録エラー', error)
-                    registrationResult.value = 'キャストの登録に失敗しました。もう一度お試しください。'
-                    resultClass.value = 'error'
+                    console.error('キャストの削除に失敗しました', error)
+                    alert('キャストの削除に失敗しました')
                 }
             }
         }
 
-        const resetForm = () => {
-            castName.value = ''
-            password.value = ''
-            lineId.value = ''
-            birthDate.value = ''
-        }
+        onMounted(fetchCasts)
 
         return {
-            castName,
-            password,
-            lineId,
-            birthDate,
-            submitForm,
-            isFormValid,
-            registrationResult,
-            resultClass
+            casts,
+            showModal,
+            selectedCast,
+            openModal,
+            closeModal,
+            deleteCast
         }
     }
 }
@@ -102,7 +87,7 @@ export default {
 
 <style scoped>
 .cast-edit {
-    max-width: 600px;
+    max-width: 800px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -111,51 +96,46 @@ h1 {
     text-align: center;
 }
 
-.form-group {
-    margin-bottom: 15px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="date"] {
+.cast-list {
     width: 100%;
-    padding: 8px;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.cast-list th,
+.cast-list td {
     border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 12px;
+    text-align: left;
 }
 
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
+.cast-list th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.edit-btn,
+.delete-btn {
+    padding: 6px 12px;
+    margin-right: 10px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 14px;
 }
 
-button:hover {
-    background-color: #45a049;
+.edit-btn {
+    background-color: #4CAF50;
+    color: white;
 }
 
-.registration-result {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
+.delete-btn {
+    background-color: #f44336;
+    color: white;
 }
 
-.registration-result.success {
-    background-color: #dff0d8;
-    color: #3c763d;
-}
-
-.registration-result.error {
-    background-color: #f2dede;
-    color: #a94442;
+.edit-btn:hover,
+.delete-btn:hover {
+    opacity: 0.8;
 }
 </style>

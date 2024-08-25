@@ -118,8 +118,9 @@ func (h *StoreHandler) ListForDropdown(c *gin.Context) {
 	simplifiedStaffs := make([]gin.H, len(stores))
 	for i, store := range stores {
 		simplifiedStaffs[i] = gin.H{
-			"id":   store.ID,
-			"name": store.StoreName,
+			"id":         store.ID,
+			"name":       store.StoreName,
+			"store_code": store.StoreCode,
 		}
 	}
 

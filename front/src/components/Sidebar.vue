@@ -5,6 +5,7 @@
         <li class="category">メイン</li>
         <li><router-link to="/dashboard">ダッシュボード</router-link></li>
         <li><router-link to="/order">受注</router-link></li>
+        <li><router-link to="/timeboard">タイムボード</router-link></li>
         <li class="category">キャスト</li>
         <li><router-link to="/cast-registration">キャスト登録</router-link></li>
         <li><router-link to="/cast-edit">キャスト編集</router-link></li>

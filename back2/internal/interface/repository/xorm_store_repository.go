@@ -52,6 +52,7 @@ func (r *XormStoreRepository) Delete(id int64) error {
 func (r *XormStoreRepository) ListForDropdown(groupID int) ([]*entity.Store, error) {
 	log.Println("ListForDropdown")
 	stores := make([]*entity.Store, 0)
-	err := r.engine.Where("group_i_d = ?", groupID).Cols("i_d", "store_name").Find(&stores)
+	err := r.engine.Where("group_i_d = ?", groupID).Cols("i_d", "store_name", "store_code").Find(&stores)
+	log.Println(stores)
 	return stores, err
 }
