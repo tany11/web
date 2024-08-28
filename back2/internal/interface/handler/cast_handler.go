@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,23 +21,13 @@ func NewCastHandler(useCase *usecase.CastUseCase) *CastHandler {
 func (h *CastHandler) Create(c *gin.Context) {
 	var castInput struct {
 		entity.Cast
-
-		Birthdate string `json:"birthdate"`
 	}
 	if err := c.ShouldBindJSON(&castInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 日付文字列を time.Time に変換
-	birthdate, err := time.Parse("2006-01-02", castInput.Birthdate)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid birthdate format. Use YYYY-MM-DD"})
-		return
-	}
-
 	cast := castInput.Cast
-	cast.Birthdate = birthdate
 	cast.IsDeleted = "0"
 
 	if err := h.useCase.Create(&cast); err != nil {

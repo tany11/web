@@ -1,23 +1,33 @@
 <template>
-    <div class="customer-management">
-        <h1>電話番号検索</h1>
-        <div class="search-form">
-            <div>
-                <input v-model="phoneNumber" placeholder="電話番号" class="input" @keyup.enter="searchByPhone" />
-                <button @click="searchByPhone" class="search-button">検索</button>
-            </div>
-        </div>
+    <v-container class="customer-management">
+        <v-row>
+            <v-col>
+                <h1 class="text-h4 mb-4">電話番号検索</h1>
+            </v-col>
+        </v-row>
+        <v-row>
+            <v-col cols="12" md="8" offset-md="2">
+                <v-form @submit.prevent="searchByPhone">
+                    <v-text-field v-model="phoneNumber" label="電話番号" placeholder="電話番号を入力してください"
+                        @keyup.enter="searchByPhone"></v-text-field>
+                    <v-btn color="primary" block @click="searchByPhone" :loading="loading">
+                        検索
+                    </v-btn>
+                </v-form>
+            </v-col>
+        </v-row>
         <customer-detail v-if="selectedCustomer" :customer="selectedCustomer" @close="closeCustomerDetail" />
         <customer-list v-if="searchType === 'other' && showList" :customers="searchResults"
             @select-customer="showDetails" />
-    </div>
+    </v-container>
 </template>
 
 <script>
+import { ref, computed } from 'vue'
+import { useStore } from 'vuex'
+import axios from 'axios'
 import CustomerList from '@/components/CustomerList.vue'
 import CustomerDetail from '@/components/CustomerDetail.vue'
-import axios from 'axios'
-import { mapState } from 'vuex'
 
 export default {
     name: 'CustomerManagement',
@@ -25,137 +35,108 @@ export default {
         CustomerList,
         CustomerDetail
     },
-    computed: {
-        ...mapState(['apiBaseUrl'])
-    },
-    data() {
-        return {
-            searchType: 'phone',
-            phoneNumber: '',
-            lastFourDigits: '',
-            castID: '',
-            startDate: '',
-            endDate: '',
-            searchResults: [],
-            selectedCustomer: null,
-            showList: false,
-            castList: []
-        }
-    },
-    methods: {
-        async searchByPhone() {
+    setup() {
+        const store = useStore()
+        const apiBaseUrl = computed(() => store.state.apiBaseUrl)
+
+        const searchType = ref('phone')
+        const phoneNumber = ref('')
+        const lastFourDigits = ref('')
+        const castID = ref('')
+        const startDate = ref('')
+        const endDate = ref('')
+        const searchResults = ref([])
+        const selectedCustomer = ref(null)
+        const showList = ref(false)
+        const castList = ref([])
+        const loading = ref(false)
+
+        const searchByPhone = async () => {
+            loading.value = true
             try {
-                const response = await axios.get(`${this.apiBaseUrl}/customers/detail/${this.phoneNumber}`);
-                this.selectedCustomer = response.data.data;
-                this.showList = false;
-            } catch (error) {
-                console.error('顧客の検索中にエラーが発生しました:', error);
-                this.selectedCustomer = null;
-            }
-        },
-        async searchByOther() {
-            try {
-                const params = {
-                    phoneLast4: this.lastFourDigits,
-                    castID: this.castID,
-                    createdFrom: this.startDate,
-                    createdTo: this.endDate
-                }
-                const response = await axios.get(`${this.apiBaseUrl}/customers/search`, { params })
-                this.searchResults = response.data.data
-                this.showList = true
-                this.selectedCustomer = null
+                const response = await axios.get(`${apiBaseUrl.value}/customers/detail/${phoneNumber.value}`)
+                selectedCustomer.value = response.data.data
+                showList.value = false
             } catch (error) {
                 console.error('顧客の検索中にエラーが発生しました:', error)
-                this.searchResults = []
-                this.showList = true
-                this.selectedCustomer = null
-            }
-        },
-        async showDetails(customer) {
-            try {
-                const response = await axios.get(`${this.apiBaseUrl}/customers/detail/${customer.PhoneNumber}`);
-                this.selectedCustomer = response.data.data;
-                this.showList = false;
-            } catch (error) {
-                console.error('顧客の詳細取得中にエラーが発生しました:', error);
-                this.selectedCustomer = null;
-            }
-        },
-        closeCustomerDetail() {
-            this.selectedCustomer = null;
-            if (this.searchType === 'other') {
-                this.showList = true;
-            }
-        },
-        async fetchCastList() {
-            try {
-                const response = await axios.get(`${this.apiBaseUrl}/cast/dropdown`);
-                this.castList = response.data.data || [];
-            } catch (error) {
-                console.error('キャストリストの取得に失敗しました:', error);
+                selectedCustomer.value = null
+            } finally {
+                loading.value = false
             }
         }
-    },
-    mounted() {
-        this.fetchCastList();
+
+        const searchByOther = async () => {
+            loading.value = true
+            try {
+                const params = {
+                    phoneLast4: lastFourDigits.value,
+                    castID: castID.value,
+                    createdFrom: startDate.value,
+                    createdTo: endDate.value
+                }
+                const response = await axios.get(`${apiBaseUrl.value}/customers/search`, { params })
+                searchResults.value = response.data.data
+                showList.value = true
+                selectedCustomer.value = null
+            } catch (error) {
+                console.error('顧客の検索中にエラーが発生しました:', error)
+                searchResults.value = []
+                showList.value = true
+                selectedCustomer.value = null
+            } finally {
+                loading.value = false
+            }
+        }
+
+        const showDetails = async (customer) => {
+            loading.value = true
+            try {
+                const response = await axios.get(`${apiBaseUrl.value}/customers/detail/${customer.PhoneNumber}`)
+                selectedCustomer.value = response.data.data
+                showList.value = false
+            } catch (error) {
+                console.error('顧客の詳細取得中にエラーが発生しました:', error)
+                selectedCustomer.value = null
+            } finally {
+                loading.value = false
+            }
+        }
+
+        const closeCustomerDetail = () => {
+            selectedCustomer.value = null
+            if (searchType.value === 'other') {
+                showList.value = true
+            }
+        }
+
+        const fetchCastList = async () => {
+            try {
+                const response = await axios.get(`${apiBaseUrl.value}/cast/dropdown`)
+                castList.value = response.data.data || []
+            } catch (error) {
+                console.error('キャストリストの取得に失敗しました:', error)
+            }
+        }
+
+        fetchCastList()
+
+        return {
+            searchType,
+            phoneNumber,
+            lastFourDigits,
+            castID,
+            startDate,
+            endDate,
+            searchResults,
+            selectedCustomer,
+            showList,
+            castList,
+            loading,
+            searchByPhone,
+            searchByOther,
+            showDetails,
+            closeCustomerDetail
+        }
     }
 }
 </script>
-
-<style scoped>
-.customer-management {
-    padding: 40px;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.search-type-selector {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-}
-
-.search-type-selector button {
-    flex: 1;
-    padding: 10px;
-    background-color: #f0f0f0;
-    border: 1px solid #ddd;
-    cursor: pointer;
-}
-
-.search-type-selector button.active {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.input-group {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.input {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-}
-
-.search-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.search-button:hover {
-    background-color: #45a049;
-}
-</style>

@@ -105,3 +105,12 @@ func (r *XormOrderRepository) getTotalPriceAndUseTimeImpl(customerID int) (int64
 
 	return totalPrice, ToralUseTime, err
 }
+
+func (r *XormOrderRepository) ListSchedule(startDate, endDate string) ([]*entity.Orders, error) {
+
+	orders := make([]*entity.Orders, 0)
+	err := r.engine.Where("scheduled_time >= ?", startDate).
+		And("scheduled_time <= ?", endDate).
+		Find(&orders)
+	return orders, err
+}

@@ -27,6 +27,7 @@ type Orders struct {
 	Notes             string    //メモ
 	CardstaffID       string    //カードスタッフID
 	OrderStaffID      string    //オーダースタッフID
+	ScheduledTime     time.Time //予定時間
 	CreatedAt         time.Time //作成日
 	UpdatedAt         time.Time //更新日
 	CompletionFlg     string    //完了フラグ

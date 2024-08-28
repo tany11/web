@@ -1,54 +1,40 @@
 <template>
-    <div class="staff-edit">
-        <h1>スタッフ編集</h1>
-        <form @submit.prevent="submitForm">
-            <div class="form-group name-group">
-                <div class="name-field">
-                    <label for="staffLastName">スタッフ姓 *</label>
-                    <input type="text" id="staffLastName" v-model="staffLastName" required>
-                </div>
-                <div class="name-field">
-                    <label for="staffFirstName">スタッフ名 *</label>
-                    <input type="text" id="staffFirstName" v-model="staffFirstName" required>
-                </div>
-            </div>
+    <v-container class="staff-edit">
+        <v-row justify="center">
+            <v-col cols="12" sm="8" md="6">
+                <h1 class="text-h4 text-center mb-6">スタッフ編集</h1>
+                <v-form @submit.prevent="submitForm">
+                    <v-row>
+                        <v-col cols="12" sm="6">
+                            <v-text-field v-model="staffLastName" label="スタッフ姓 *" required></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="6">
+                            <v-text-field v-model="staffFirstName" label="スタッフ名 *" required></v-text-field>
+                        </v-col>
+                    </v-row>
 
-            <div class="form-group">
-                <label for="password">パスワード *</label>
-                <input type="password" id="password" v-model="password" required>
-            </div>
+                    <v-text-field v-model="password" label="パスワード *" type="password" required></v-text-field>
 
-            <div class="form-group">
-                <label for="lineId">LINE ID *</label>
-                <input type="text" id="lineId" v-model="lineId" required>
-            </div>
+                    <v-text-field v-model="lineId" label="LINE ID *" required></v-text-field>
 
-            <div class="form-group">
-                <label for="phoneNumber">電話番号 *</label>
-                <input type="tel" id="phoneNumber" v-model="phoneNumber" required>
-            </div>
+                    <v-text-field v-model="phoneNumber" label="電話番号 *" type="tel" required></v-text-field>
 
-            <div class="form-group">
-                <label>役職 *</label>
-                <div class="checkbox-group">
-                    <label>
-                        <input type="checkbox" v-model="officeFlg"> 内勤
-                    </label>
-                    <label>
-                        <input type="checkbox" v-model="driverFlg"> ドライバー
-                    </label>
-                    <label>
-                        <input type="checkbox" v-model="webFlg"> Webスタッフ
-                    </label>
-                </div>
-            </div>
+                    <v-checkbox v-model="officeFlg" label="内勤"></v-checkbox>
 
-            <button type="submit" :disabled="!isFormValid">登録</button>
-        </form>
-        <div v-if="registrationResult" class="registration-result" :class="resultClass">
-            {{ registrationResult }}
-        </div>
-    </div>
+                    <v-checkbox v-model="driverFlg" label="ドライバー"></v-checkbox>
+
+                    <v-checkbox v-model="webFlg" label="Webスタッフ"></v-checkbox>
+
+                    <v-btn type="submit" color="primary" block :disabled="!isFormValid" class="mt-4">
+                        登録
+                    </v-btn>
+                </v-form>
+                <v-alert v-if="registrationResult" :type="resultClass" class="mt-4">
+                    {{ registrationResult }}
+                </v-alert>
+            </v-col>
+        </v-row>
+    </v-container>
 </template>
 
 <script>
@@ -133,84 +119,8 @@ export default {
             submitForm,
             isFormValid,
             registrationResult,
-            resultClass,
-            resetForm
+            resultClass
         }
     }
 }
 </script>
-
-<style scoped>
-.staff-edit {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-h1 {
-    text-align: center;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.name-group {
-    display: flex;
-    justify-content: space-between;
-}
-
-.name-field {
-    width: 48%;
-    /* 少し余裕を持たせる */
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="tel"] {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.radio-group {
-    display: flex;
-    gap: 20px;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-.registration-result {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
-}
-
-.registration-result.success {
-    background-color: #dff0d8;
-    color: #3c763d;
-}
-
-.registration-result.error {
-    background-color: #f2dede;
-    color: #a94442;
-}
-</style>

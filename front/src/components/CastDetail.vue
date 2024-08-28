@@ -1,37 +1,80 @@
 <template>
-    <div class="modal" v-if="castDetails" @click.self="closeModal">
-        <div class="modal-content">
-            <span class="close" @click="closeModal">&times;</span>
-            <h2>キャスト詳細</h2>
-            <div class="cast-detail">
-                <p><strong>キャスト名：</strong>{{ castDetails.CastName }}</p>
-                <p><strong>キャストID：</strong>{{ castDetails.CastID }}</p>
-                <p><strong>LINE ID：</strong>{{ castDetails.LineID }}</p>
-                <p><strong>生年月日：</strong>{{ formatDate(castDetails.birthdate) }}</p>
-                <p><strong>登録日：</strong>{{ formatDate(castDetails.CreatedAt) }}</p>
-                <p><strong>最終更新日：</strong>{{ formatDate(castDetails.UpdatedAt) }}</p>
-
-                <h3>出勤履歴</h3>
-                <table v-if="castDetails.WorkHistory && castDetails.WorkHistory.length">
-                    <thead>
-                        <tr>
-                            <th>日付</th>
-                            <th>勤務店舗</th>
-                            <th>勤務時間</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="work in castDetails.WorkHistory" :key="work.ID">
-                            <td>{{ formatDate(work.Date) }}</td>
-                            <td>{{ getStoreName(work.StoreID) }}</td>
-                            <td>{{ formatWorkTime(work.StartTime, work.EndTime) }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p v-else>出勤履歴はありません。</p>
-            </div>
-        </div>
-    </div>
+    <v-dialog v-model="dialogVisible" max-width="600px">
+        <v-card>
+            <v-card-title>
+                キャスト詳細
+                <v-spacer></v-spacer>
+                <v-btn icon @click="closeModal">
+                    <v-icon>mdi-close</v-icon>
+                </v-btn>
+            </v-card-title>
+            <v-card-text>
+                <v-container v-if="loading">
+                    <v-row justify="center">
+                        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                    </v-row>
+                </v-container>
+                <v-container v-else-if="castDetails">
+                    <v-row>
+                        <v-col cols="12">
+                            <div class="text-subtitle-1 font-weight-bold mb-2">基本情報</div>
+                        </v-col>
+                    </v-row>
+                    <v-list dense>
+                        <v-list-item>
+                            <v-list-item-title>キャスト名：</v-list-item-title>
+                            <v-list-item-subtitle>{{ castDetails.data.CastName }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item>
+                            <v-list-item-title>キャストID：</v-list-item-title>
+                            <v-list-item-subtitle>{{ castDetails.data.CastID }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item>
+                            <v-list-item-title>LINE ID：</v-list-item-title>
+                            <v-list-item-subtitle>{{ castDetails.data.LineID }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item>
+                            <v-list-item-title>生年月日：</v-list-item-title>
+                            <v-list-item-subtitle>{{ formatDate(castDetails.data.birthdate) }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item>
+                            <v-list-item-title>登録日：</v-list-item-title>
+                            <v-list-item-subtitle>{{ formatDate(castDetails.data.CreatedAt) }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item>
+                            <v-list-item-title>最終更新日：</v-list-item-title>
+                            <v-list-item-subtitle>{{ formatDate(castDetails.data.UpdatedAt) }}</v-list-item-subtitle>
+                        </v-list-item>
+                    </v-list>
+                    <v-row>
+                        <v-col cols="12">
+                            <div class="text-subtitle-1 font-weight-bold mb-2">追加情報</div>
+                        </v-col>
+                    </v-row>
+                    <v-data-table v-if="castDetails.WorkHistory && castDetails.WorkHistory.length" :headers="headers"
+                        :items="castDetails.WorkHistory" dense>
+                        <template v-slot:item.Date="{ item }">
+                            {{ formatDate(item.Date) }}
+                        </template>
+                        <template v-slot:item.StoreID="{ item }">
+                            {{ getStoreName(item.StoreID) }}
+                        </template>
+                        <template v-slot:item.WorkTime="{ item }">
+                            {{ formatWorkTime(item.StartTime, item.EndTime) }}
+                        </template>
+                    </v-data-table>
+                    <v-alert v-else type="info" dense>
+                        出勤履歴はありません。
+                    </v-alert>
+                </v-container>
+                <v-container v-else>
+                    <v-alert type="error" dense>
+                        キャスト情報の取得に失敗しました。
+                    </v-alert>
+                </v-container>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
 </template>
 
 <script>
@@ -47,14 +90,26 @@ export default {
         const store = useStore()
         const castDetails = ref(null)
         const storeList = ref([])
+        const dialogVisible = ref(false)
+        const loading = ref(false)
+
+        const headers = [
+            { text: '日付', value: 'Date' },
+            { text: '勤務店舗', value: 'StoreID' },
+            { text: '勤務時間', value: 'WorkTime' },
+        ]
 
         const fetchCastDetail = async () => {
             if (props.cast) {
+                loading.value = true
                 try {
                     const response = await axios.get(`${store.state.apiBaseUrl}/cast/${props.cast.ID}`)
                     castDetails.value = response.data
+                    dialogVisible.value = true
                 } catch (error) {
                     console.error('キャスト詳細の取得に失敗しました', error)
+                } finally {
+                    loading.value = false
                 }
             }
         }
@@ -84,87 +139,32 @@ export default {
         }
 
         const closeModal = () => {
+            dialogVisible.value = false
             emit('close')
         }
 
         onMounted(() => {
-            fetchCastDetail()
             fetchStoreList()
         })
 
-        watch(() => props.cast, fetchCastDetail)
+        watch(() => props.cast, (newCast) => {
+            if (newCast) {
+                fetchCastDetail()
+            } else {
+                dialogVisible.value = false
+            }
+        }, { immediate: true })
 
         return {
             castDetails,
+            dialogVisible,
+            headers,
             formatDate,
             getStoreName,
             formatWorkTime,
-            closeModal
+            closeModal,
+            loading
         }
     }
 }
 </script>
-
-<style scoped>
-.modal {
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background-color: #292929;
-    padding: 30px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
-    position: relative;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.close {
-    color: #4CAF50;
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close:hover,
-.close:focus {
-    color: #45a049;
-    text-decoration: none;
-}
-
-.cast-detail {
-    margin-top: 20px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-}
-
-th,
-td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-}
-
-th {
-    background-color: #34495E;
-}
-</style>

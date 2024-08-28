@@ -1,38 +1,66 @@
 <template>
-  <div id="app">
-    <Header v-if="isLoggedIn" @toggle-sidebar="toggleSidebar" />
-    <div class="content-wrapper">
-      <Sidebar v-if="isLoggedIn" :isOpen="sidebarOpen" class="sidebar" />
-      <main class="main-content" :class="{ 'sidebar-open': sidebarOpen }">
+  <v-app>
+    <v-app-bar v-if="isLoggedIn" app>
+      <v-app-bar-nav-icon @click="toggleSidebar"></v-app-bar-nav-icon>
+      <v-toolbar-title>アプリケーション名</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn icon @click="toggleDarkMode">
+        <v-icon>{{ isDarkMode ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
+      <v-btn text @click="handleLogout">ログアウト</v-btn>
+    </v-app-bar>
+
+    <v-navigation-drawer v-if="isLoggedIn" v-model="sidebarOpen" app>
+      <Sidebar />
+    </v-navigation-drawer>
+
+    <v-main>
+      <v-container fluid>
         <router-view></router-view>
-      </main>
-    </div>
-  </div>
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script>
 import Sidebar from './components/Sidebar.vue'
-import Header from './components/Header.vue'
+import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'App',
   components: {
-    Sidebar,
-    Header
+    Sidebar
   },
   data() {
     return {
-      sidebarOpen: true
+      sidebarOpen: true,
+      isDarkMode: false,
     }
   },
   computed: {
+    ...mapState(['user']),
     isLoggedIn() {
       return this.$store.state.isLoggedIn
     }
   },
   methods: {
+    ...mapActions(['logout']),
     toggleSidebar() {
       this.sidebarOpen = !this.sidebarOpen
+    },
+    toggleDarkMode() {
+      this.isDarkMode = !this.isDarkMode
+      this.$vuetify.theme.global.name = this.isDarkMode ? 'dark' : 'light'
+      localStorage.setItem('darkMode', this.isDarkMode)
+    },
+    async handleLogout() {
+      const success = await this.logout()
+      if (success) {
+        this.$router.push('/login')
+      } else {
+        // エラーメッセージの表示にはVuetifyのスナックバーを使用することをお勧めします
+        this.$store.commit('setSnackbar', { show: true, text: 'ログアウトに失敗しました。もう一度お試しください。' })
+      }
     },
     checkAuth() {
       const token = localStorage.getItem('token')
@@ -50,54 +78,18 @@ export default {
   },
   created() {
     this.checkAuth()
+    const darkMode = localStorage.getItem('darkMode')
+    if (darkMode !== null) {
+      this.isDarkMode = darkMode === 'true'
+      this.$vuetify.theme.global.name = this.isDarkMode ? 'dark' : 'light'
+    }
   },
+  watch: {
+    isDarkMode(newVal) {
+      localStorage.setItem('darkMode', newVal)
+    }
+  }
 }
 </script>
 
-<style>
-#app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.content-wrapper {
-  display: flex;
-  flex-grow: 1;
-  margin-top: 60px;
-}
-
-.main-content {
-  flex-grow: 1;
-  padding: 20px;
-  margin-left: 0;
-  transition: margin-left 0.3s ease-in-out;
-  overflow-y: auto;
-  height: calc(100vh - 60px);
-}
-
-.main-content.sidebar-open {
-  margin-left: 250px;
-}
-
-@media screen and (max-width: 640px) and (hover: none) and (pointer: coarse) {
-  .main-content.sidebar-open {
-    margin-left: 0;
-  }
-}
-
-.sidebar {
-  z-index: 1;
-}
-
-body.dark-mode {
-  background-color: #1a202c;
-  color: #e2e8f0;
-}
-
-body.dark-mode .app-container {
-  background-color: #2d3748;
-}
-
-/* 他のグローバルなダークモードスタイルをここに追加 */
-</style>
+<style></style>

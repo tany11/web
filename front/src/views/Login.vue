@@ -1,20 +1,31 @@
 <template>
-  <div class="login">
-    <h2>ログイン</h2>
-    <form @submit.prevent="handleLogin">
-      <div>
-        <label for="staffId">スタッフID:</label>
-        <input v-model="staffId" type="text" id="staffId" required>
-      </div>
-      <div>
-        <label for="password">パスワード:</label>
-        <input v-model="password" type="password" id="password" required>
-      </div>
-      <button type="submit">ログイン</button>
-    </form>
-    <p v-if="error" class="error">{{ error }}</p>
-    <p>アカウントをお持ちでない方は <router-link to="/register">こちら</router-link> から新規登録</p>
-  </div>
+  <v-container class="fill-height" fluid>
+    <v-row align="center" justify="center">
+      <v-col cols="12" sm="8" md="6">
+        <v-card class="elevation-12">
+          <v-toolbar color="primary" dark flat>
+            <v-toolbar-title>ログイン</v-toolbar-title>
+          </v-toolbar>
+          <v-card-text>
+            <v-form @submit.prevent="handleLogin">
+              <v-text-field v-model="staffId" label="スタッフID" name="staffId" prepend-icon="mdi-account" type="text"
+                required></v-text-field>
+              <v-text-field v-model="password" label="パスワード" name="password" prepend-icon="mdi-lock" type="password"
+                required></v-text-field>
+              <v-btn type="submit" color="primary" block class="mt-4">ログイン</v-btn>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn text to="/register">新規登録</v-btn>
+          </v-card-actions>
+        </v-card>
+        <v-alert v-if="error" type="error" class="mt-4">
+          {{ error }}
+        </v-alert>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>

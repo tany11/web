@@ -13,4 +13,5 @@ type OrderRepository interface {
 	ListReserved(groupID, offset, limit int) ([]*entity.Orders, error)
 	UpdateIsDeleted(id int64) error
 	GetTotalPriceAndUseTime(customerID int) (int, int, error)
+	ListSchedule(startDate, endDate string) ([]*entity.Orders, error)
 }

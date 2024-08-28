@@ -3,6 +3,7 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -183,4 +184,20 @@ func (h *OrderHandler) DeleteFlg(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": "注文の削除フラグが更新されました"})
+}
+
+func (h *OrderHandler) ListSchedule(c *gin.Context) {
+	startDate := c.Query("start_time")
+	endDate := c.Query("end_time")
+
+	fmt.Println("startDate", startDate)
+	fmt.Println("endDate", endDate)
+
+	orders, err := h.useCase.ListSchedule(startDate, endDate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": orders})
 }

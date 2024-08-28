@@ -1,159 +1,166 @@
 <template>
-    <div class="other-search">
-        <h1>一覧検索</h1>
-        <div class="search-form">
-            <div>
-                <div class="input-group">
-                    <input v-model="lastFourDigits" placeholder="電話番号（下4桁）" class="input" />
-                    <select v-model="castID" class="input">
-                        <option value="">キャストを選択</option>
-                        <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
-                            {{ cast.name }}
-                        </option>
-                    </select>
-                    <select v-model="storeID" class="input">
-                        <option value="">店舗を選択</option>
-                        <option v-for="store in storeList" :key="store.store_id" :value="store.store_id">
-                            {{ store.name }}
-                        </option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <input v-model="startDate" type="date" placeholder="開始日" class="input" />
-                    <input v-model="endDate" type="date" placeholder="終了日" class="input" />
-                </div>
-                <button @click="searchByOther" class="search-button">検索</button>
-            </div>
-        </div>
+    <v-container class="other-search">
+        <v-row>
+            <v-col>
+                <h1 class="text-h4 mb-4">一覧検索</h1>
+            </v-col>
+        </v-row>
+        <v-row>
+            <v-col cols="12" md="8" offset-md="2">
+                <v-form @submit.prevent="searchByOther">
+                    <v-text-field v-model="lastFourDigits" label="電話番号（下4桁）" placeholder="下4桁を入力してください"></v-text-field>
+                    <v-select v-model="castID" :items="castList" item-text="name" item-value="cast_id"
+                        label="キャスト"></v-select>
+                    <v-select v-model="storeID" :items="storeList" item-text="name" item-value="store_id"
+                        label="店舗"></v-select>
+                    <v-row>
+                        <v-col cols="12" sm="6">
+                            <v-menu v-model="startDateMenu" :close-on-content-click="false" :nudge-right="40"
+                                transition="scale-transition" offset-y min-width="auto">
+                                <template v-slot:activator="{ on, attrs }">
+                                    <v-text-field v-model="startDate" label="開始日" prepend-icon="mdi-calendar" readonly
+                                        v-bind="attrs" v-on="on"></v-text-field>
+                                </template>
+                                <v-date-picker v-model="startDate" @input="startDateMenu = false"></v-date-picker>
+                            </v-menu>
+                        </v-col>
+                        <v-col cols="12" sm="6">
+                            <v-menu v-model="endDateMenu" :close-on-content-click="false" :nudge-right="40"
+                                transition="scale-transition" offset-y min-width="auto">
+                                <template v-slot:activator="{ on, attrs }">
+                                    <v-text-field v-model="endDate" label="終了日" prepend-icon="mdi-calendar" readonly
+                                        v-bind="attrs" v-on="on"></v-text-field>
+                                </template>
+                                <v-date-picker v-model="endDate" @input="endDateMenu = false"></v-date-picker>
+                            </v-menu>
+                        </v-col>
+                    </v-row>
+                    <v-btn color="primary" block @click="searchByOther" :loading="loading" class="mt-4">
+                        検索
+                    </v-btn>
+                </v-form>
+            </v-col>
+        </v-row>
         <customer-detail v-if="selectedCustomer" :customer="selectedCustomer" @close="closeCustomerDetail" />
         <customer-list v-if="showList" :customers="searchResults" @select-customer="showDetails" />
-    </div>
+    </v-container>
 </template>
 
 <script>
+import { ref, computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import axios from 'axios'
 import CustomerList from '@/components/CustomerList.vue'
 import CustomerDetail from '@/components/CustomerDetail.vue'
-import axios from 'axios'
-import { mapState } from 'vuex'
 
 export default {
-    name: 'CustomerManagement',
+    name: 'OtherSearch',
     components: {
         CustomerList,
         CustomerDetail
     },
-    computed: {
-        ...mapState(['apiBaseUrl'])
-    },
-    data() {
-        return {
-            searchType: 'phone',
-            phoneNumber: '',
-            lastFourDigits: '',
-            castID: '',
-            startDate: '',
-            endDate: '',
-            searchResults: [],
-            selectedCustomer: null,
-            showList: false,
-            castList: [],
-            storeList: []
-        }
-    },
-    methods: {
-        async searchByOther() {
+    setup() {
+        const store = useStore()
+        const apiBaseUrl = computed(() => store.state.apiBaseUrl)
+
+        const lastFourDigits = ref('')
+        const castID = ref('')
+        const storeID = ref('')
+        const startDate = ref('')
+        const endDate = ref('')
+        const searchResults = ref([])
+        const selectedCustomer = ref(null)
+        const showList = ref(false)
+        const castList = ref([])
+        const storeList = ref([])
+        const loading = ref(false)
+        const startDateMenu = ref(false)
+        const endDateMenu = ref(false)
+
+        const searchByOther = async () => {
+            loading.value = true
             try {
                 const params = {
-                    phoneLast4: this.lastFourDigits,
-                    castID: this.castID,
-                    createdFrom: this.startDate,
-                    createdTo: this.endDate
+                    phoneLast4: lastFourDigits.value,
+                    castID: castID.value,
+                    storeID: storeID.value,
+                    createdFrom: startDate.value,
+                    createdTo: endDate.value
                 }
-                const response = await axios.get(`${this.apiBaseUrl}/customers/search`, { params })
-                this.searchResults = response.data.data
-                this.showList = true
-                this.selectedCustomer = null
+                const response = await axios.get(`${apiBaseUrl.value}/customers/search`, { params })
+                searchResults.value = response.data.data
+                showList.value = true
+                selectedCustomer.value = null
             } catch (error) {
                 console.error('顧客の検索中にエラーが発生しました:', error)
-                this.searchResults = []
-                this.showList = true
-                this.selectedCustomer = null
-            }
-        },
-        async showDetails(customer) {
-            try {
-                const response = await axios.get(`${this.apiBaseUrl}/customers/detail/${customer.PhoneNumber}`);
-                this.selectedCustomer = response.data.data;
-                this.showList = false;
-            } catch (error) {
-                console.error('顧客の詳細取得中にエラーが発生しました:', error);
-                this.selectedCustomer = null;
-            }
-        },
-        closeCustomerDetail() {
-            this.selectedCustomer = null;
-            if (this.searchType === 'other') {
-                this.showList = true;
-            }
-        },
-        async fetchCastList() {
-            try {
-                const response = await axios.get(`${this.apiBaseUrl}/cast/dropdown`);
-                this.castList = response.data.data || [];
-            } catch (error) {
-                console.error('キャストリストの取得に失敗しました:', error);
-            }
-        },
-        async fetchStoreList() {
-            try {
-                const response = await axios.get(`${this.apiBaseUrl}/store/dropdown`);
-                this.storeList = response.data.data || [];
-            } catch (error) {
-                console.error('店舗リストの取得に失敗しました:', error);
+                searchResults.value = []
+                showList.value = true
+                selectedCustomer.value = null
+            } finally {
+                loading.value = false
             }
         }
-    },
-    mounted() {
-        this.fetchCastList();
-        this.fetchStoreList();
+
+        const showDetails = async (customer) => {
+            loading.value = true
+            try {
+                const response = await axios.get(`${apiBaseUrl.value}/customers/detail/${customer.PhoneNumber}`)
+                selectedCustomer.value = response.data.data
+                showList.value = false
+            } catch (error) {
+                console.error('顧客の詳細取得中にエラーが発生しました:', error)
+                selectedCustomer.value = null
+            } finally {
+                loading.value = false
+            }
+        }
+
+        const closeCustomerDetail = () => {
+            selectedCustomer.value = null
+            showList.value = true
+        }
+
+        const fetchCastList = async () => {
+            try {
+                const response = await axios.get(`${apiBaseUrl.value}/cast/dropdown`)
+                castList.value = response.data.data || []
+            } catch (error) {
+                console.error('キャストリストの取得に失敗しました:', error)
+            }
+        }
+
+        const fetchStoreList = async () => {
+            try {
+                const response = await axios.get(`${apiBaseUrl.value}/store/dropdown`)
+                storeList.value = response.data.data || []
+            } catch (error) {
+                console.error('店舗リストの取得に失敗しました:', error)
+            }
+        }
+
+        onMounted(() => {
+            fetchCastList()
+            fetchStoreList()
+        })
+
+        return {
+            lastFourDigits,
+            castID,
+            storeID,
+            startDate,
+            endDate,
+            searchResults,
+            selectedCustomer,
+            showList,
+            castList,
+            storeList,
+            loading,
+            startDateMenu,
+            endDateMenu,
+            searchByOther,
+            showDetails,
+            closeCustomerDetail
+        }
     }
 }
 </script>
-
-<style scoped>
-.other-search {
-    padding: 40px;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-
-.input-group {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.input {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-}
-
-.search-button {
-    padding: 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.search-button:hover {
-    background-color: #45a030;
-}
-</style>

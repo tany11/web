@@ -120,3 +120,7 @@ func (uc *OrderUseCase) UpdateIsDeleted(id int64) error {
 func (uc *OrderUseCase) GetTotalPriceAndUseTime(customerID int) (int, int, error) {
 	return uc.orderRepo.GetTotalPriceAndUseTime(customerID)
 }
+
+func (uc *OrderUseCase) ListSchedule(startDate, endDate string) ([]*entity.Orders, error) {
+	return uc.orderRepo.ListSchedule(startDate, endDate)
+}

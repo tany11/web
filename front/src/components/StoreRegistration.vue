@@ -1,22 +1,24 @@
 <template>
-    <div class="store-registration">
-        <h1>店舗登録</h1>
-        <form @submit.prevent="submitForm">
-            <div class="form-group">
-                <label for="storeCode">店舗コード *</label>
-                <input type="number" id="storeCode" v-model.number="storeCode" required min="0">
-            </div>
-            <div class="form-group">
-                <label for="storeName">店舗名 *</label>
-                <input type="text" id="storeName" v-model="storeName" required>
-            </div>
+    <v-container class="store-registration">
+        <v-row justify="center">
+            <v-col cols="12" sm="8" md="6">
+                <h1 class="text-h4 text-center mb-6">店舗登録</h1>
+                <v-form @submit.prevent="submitForm">
+                    <v-text-field v-model.number="storeCode" label="店舗コード *" type="number" required
+                        min="0"></v-text-field>
 
-            <button type="submit" :disabled="!isFormValid">登録</button>
-        </form>
-        <div v-if="registrationResult" class="registration-result" :class="resultClass">
-            {{ registrationResult }}
-        </div>
-    </div>
+                    <v-text-field v-model="storeName" label="店舗名 *" required></v-text-field>
+
+                    <v-btn type="submit" color="primary" block :disabled="!isFormValid" class="mt-4">
+                        登録
+                    </v-btn>
+                </v-form>
+                <v-alert v-if="registrationResult" :type="resultClass" class="mt-4">
+                    {{ registrationResult }}
+                </v-alert>
+            </v-col>
+        </v-row>
+    </v-container>
 </template>
 
 <script>
@@ -77,74 +79,3 @@ export default {
     }
 }
 </script>
-
-<style scoped>
-.store-registration {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-h1 {
-    text-align: center;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="date"] {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: textfield;
-}
-
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-.registration-result {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
-}
-
-.registration-result.success {
-    background-color: #dff0d8;
-    color: #3c763d;
-}
-
-.registration-result.error {
-    background-color: #f2dede;
-    color: #a94442;
-}
-</style>

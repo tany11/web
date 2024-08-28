@@ -1,13 +1,35 @@
 <template>
-    <div class="order-tooltip">
-        <h3>{{ order.CustomerName }}</h3>
-        <p>コース時間: {{ order.CourseMin }}分</p>
-        <p>開始時間: {{ formatTime(order.CreatedAt) }}</p>
-        <p>終了時間: {{ formatTime(getEndTime(order)) }}</p>
-        <p>キャスト: {{ order.ActualModelName || '未割り当て' }}</p>
-        <p>オプション: {{ order.OptionName || 'なし' }}</p>
-        <p>料金: {{ order.Price }}円</p>
-    </div>
+    <v-card class="order-tooltip">
+        <v-card-title>{{ order.CustomerName }}</v-card-title>
+        <v-card-text>
+            <v-list dense>
+                <v-list-item>
+                    <v-list-item-title>コース時間:</v-list-item-title>
+                    <v-list-item-subtitle>{{ order.CourseMin }}分</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                    <v-list-item-title>開始時間:</v-list-item-title>
+                    <v-list-item-subtitle>{{ formatTime(order.CreatedAt) }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                    <v-list-item-title>終了時間:</v-list-item-title>
+                    <v-list-item-subtitle>{{ formatTime(getEndTime(order)) }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                    <v-list-item-title>キャスト:</v-list-item-title>
+                    <v-list-item-subtitle>{{ order.ActualModelName || '未割り当て' }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                    <v-list-item-title>オプション:</v-list-item-title>
+                    <v-list-item-subtitle>{{ order.OptionName || 'なし' }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                    <v-list-item-title>料金:</v-list-item-title>
+                    <v-list-item-subtitle>{{ order.Price }}円</v-list-item-subtitle>
+                </v-list-item>
+            </v-list>
+        </v-card-text>
+    </v-card>
 </template>
 
 <script>
@@ -34,42 +56,12 @@ export default {
 
 <style scoped>
 .order-tooltip {
-    background-color: var(--color-background);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     min-width: 250px;
-    font-size: 14px;
-}
-
-.order-tooltip h3 {
-    color: var(--color-heading);
-    margin-bottom: 10px;
-    font-size: 18px;
-}
-
-.order-tooltip p {
-    margin: 5px 0;
-}
-
-@media (prefers-color-scheme: dark) {
-    .order-tooltip {
-        background-color: var(--color-background-soft);
-        border-color: var(--color-border-hover);
-    }
 }
 
 @media screen and (max-width: 640px) {
     .order-tooltip {
-        font-size: 12px;
-        padding: 10px;
         min-width: 200px;
-    }
-
-    .order-tooltip h3 {
-        font-size: 16px;
     }
 }
 </style>

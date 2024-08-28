@@ -1,246 +1,174 @@
 <template>
-    <div class="order-container">
-        <div class="order-form">
-            <!-- ダッシュボードの内容をここに追加 -->
-            <h2>受注表</h2>
-            <ul>
-                <li>
-                    <label for="store-code">店舗コード: </label>
-                    <input type="text" id="store-code" v-model="storeCode" @input="filterStores">
-                </li>
-                <li>
-                    <label for="store-name">店名　　: </label>
-                    <select id="store-name" name="store-name" v-model.number="storeID"
-                        :class="{ 'is-invalid': showValidation && !isStoreNameValid }">
-                        <option value="">選択してください</option>
-                        <option v-for="store in filteredStores" :key="store.id" :value="store.id">
-                            {{ store.name }}
-                        </option>
-                    </select>
-                    <span v-if="showValidation && !isStoreNameValid" class="error-message">店名を選択してください</span>
-                </li>
-                <li>
-                    <label for="phone-number">電話番号: </label>
-                    <input type="text" id="phone-number" name="phone-number" v-model="phoneNumber"
-                        @blur="fetchCustomerInfo" :class="{ 'is-invalid': showValidation && !isPhoneNumberValid }">
-                    <a href="#" @click.prevent="showCustomerDetail" v-if="phoneNumber">詳細</a>
-                    <span v-if="showValidation && !isPhoneNumberValid" class="error-message">有効な電話番号を入力してください</span>
-                </li>
-                <li>
-                    <label for="customer-name">お客様名: </label>
-                    <input type="text" id="customer-name" name="customer-name" v-model="customerName">
-                </li>
-                <li>
-                    <label for="model-name">モデル名: </label>
-                    <input type="text" id="model-name" name="model-name" v-model="modelName">
-                </li>
-                <li>
-                    <label for="actual-model">実モデル: </label>
-                    <select id="actual-model" name="actual-model" v-model="actualModel">
-                        <option value="">選択してください</option>
-                        <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
-                            {{ cast.name }}
-                        </option>
-                    </select>
-                </li>
-                <li class="course-item">
-                    <label for="course-name">コース　: </label>
-                    <div class="course-inputs">
-                        <input type="text" id="course-name" name="course-name" v-model="courseMin">
-                        <span>+</span>
-                        <input type="text" id="extra-course" name="extra-course" v-model="extraCourse">
-                        <span>分</span>
-                    </div>
-                </li>
-                <li>
-                    <label for="price">料金　　: </label>
-                    <input type="number" id="price" name="price" v-model.number="price" step="1000" min="0">
-                </li>
-                <!-- 自宅orホテルのプルダウンもほしいか -->
-                <li>
-                    <label for="postal-code">郵便番号: </label>
-                    <input type="text" id="postal-code" name="postal-code" v-model="postalCode" @blur="fetchAddress">
-                </li>
-                <!-- 住所を使用してHomesとGoogleMapのURLもほしい -->
-                <li>
-                    <label for="address">住所　　: </label>
-                    <input type="text" id="address" name="address" v-model="address">
-                </li>
-                <li>
-                    <label for="delivery">送り　　: </label>
-                    <select id="delivery" name="delivery" v-model="driverID">
-                        <option value="">選択してください</option>
-                        <option v-for="staff in driverStaffList" :key="staff.id" :value="staff.staff_id">
-                            {{ staff.name }}
-                        </option>
-                    </select>
-                </li>
-                <li>
-                    <label for="nomination-fee">指名料　: </label>
-                    <input type="number" id="nomination-fee" name="nomination-fee" v-model.number="reservationFee"
-                        step="1000" min="0">
-                </li>
-                <li>
-                    <label for="transportation-fee">交通費　: </label>
-                    <input type="number" id="transportation-fee" name="transportation-fee"
-                        v-model.number="transportationFee" step="1000" min="0">
-                </li>
-                <li>
-                    <label for="travel-expenses">出張費　: </label>
-                    <input type="number" id="travel-expenses" name="travel-expenses" v-model.number="travelCost"
-                        step="1000" min="0">
-                </li>
-                <li>
-                    <label for="media">媒体　　: </label>
-                    <select id="media" name="media" v-model.number="media">
-                        <option value="">選択してください</option>
-                        <option v-for="media in mediaList" :key="media.id" :value="media.id">
-                            {{ media.name }}
-                        </option>
-                    </select>
-                </li>
-                <li>
-                    <label for="notes">備考　　: </label>
-                    <textarea id="notes" name="notes" v-model="notes" rows="3"></textarea>
-                </li>
-                <li>
-                    <label for="card-handler">カード　: </label>
-                    <select id="card-handler" name="card-handler" v-model="cardstaffID">
-                        <option v-for="staff in officeStaffList" :key="staff.id" :value="staff.staff_id">
-                            {{ staff.name }}
-                        </option>
-                    </select>
-                </li>
-                <li>
-                    <label for="order-taker">受注者　: </label>
-                    <select id="order-taker" name="order-taker" v-model="orderStaffID">
-                        <option v-for="staff in officeStaffList" :key="staff.id" :value="staff.staff_id">
-                            {{ staff.name }}
-                        </option>
-                    </select>
-                </li>
-                <li>
-                    <button @click="submitOrder">受注</button>
-                </li>
-            </ul>
-        </div>
-        <div class="order-display">
-            <div v-if="loading">データを読み込んでいます...</div>
-            <div v-else-if="orders.length === 0">
-                オーダーデータがありません。
-                <button @click="toggleShowCompleted" class="completed-toggle">
-                    {{ showCompleted ? '未確定のみ表示' : '確定済を表示' }}
-                </button>
-            </div>
-            <div v-else>
-                <div class="pagination">
-                    <span>{{ currentPage }}/{{ totalPages }}</span>
-                    <button @click="prevPage" :disabled="currentPage === 1 || isEditing">前へ</button>
-                    <button @click="nextPage" :disabled="currentPage === totalPages || isEditing">次へ</button>
-                </div>
-                <div v-if="currentOrder" class="order-box">
-                    <div class="order-header">
-                        <h3>オーダー明細</h3>
-                        <button @click="toggleShowCompleted" class="completed-toggle">
-                            {{ showCompleted ? '確定済を非表示' : '確定済を表示' }}
-                        </button>
-                    </div>
-                    <form @submit.prevent="updateOrder">
-                        <template v-for="(value, key) in displayableFields" :key="key">
-                            <p>
-                                <strong>{{ getFieldLabel(key) }}: </strong>
-                                <template v-if="isEditing && isEditableField(key)">
-                                    <template v-if="key === 'ActualModel'">
-                                        <select v-model="editedOrder[key]"
-                                            :class="{ 'is-invalid': editValidation && !isEditedActualModelValid }">
-                                            <option v-for="cast in castList" :key="cast.cast_id" :value="cast.cast_id">
-                                                {{ cast.name }}
-                                            </option>
-                                        </select>
-                                        <span v-if="editValidation && !isEditedActualModelValid"
-                                            class="error-message">実モデルを選択してください</span>
-                                    </template>
-                                    <template v-else-if="key === 'StoreID'">
-                                        <select v-model="editedOrder[key]"
-                                            :class="{ 'is-invalid': editValidation && !isEditedStoreIDValid }">
-                                            <option v-for="store in storeList" :key="store.id" :value="store.id">
-                                                {{ store.name }}
-                                            </option>
-                                        </select>
-                                        <span v-if="editValidation && !isEditedStoreIDValid"
-                                            class="error-message">店舗を選択してください</span>
-                                    </template>
-                                    <template v-else-if="key === 'Media'">
-                                        <select v-model="editedOrder[key]">
-                                            <option v-for="media in mediaList" :key="media.id" :value="media.id">
-                                                {{ media.name }}
-                                            </option>
-                                        </select>
-                                    </template>
-                                    <template
-                                        v-else-if="key === 'CardstaffID' || key === 'OrderStaffID' || key === 'DriverID'">
-                                        <select v-model="editedOrder[key]"
-                                            :class="{ 'is-invalid': editValidation && key === 'DriverID' && !isEditedDriverIDValid }">
-                                            <option v-for="staff in getStaffList(key)" :key="staff.staff_id"
-                                                :value="staff.staff_id">
-                                                {{ staff.name }}
-                                            </option>
-                                        </select>
-                                        <span v-if="editValidation && key === 'DriverID' && !isEditedDriverIDValid"
-                                            class="error-message">ドライバーを選択してください</span>
-                                    </template>
-                                    <template v-else-if="isPriceField(key) || isIntField(key)">
-                                        <input v-model.number="editedOrder[key]" type="number" :step="getStepValue(key)"
-                                            min="0" @input="validateIntInput(key)"
-                                            :class="{ 'is-invalid': editValidation && ((key === 'Price' && !isEditedPriceValid) || (key === 'CourseMin' && !isEditedCourseMinValid)) }">
-                                        <span v-if="editValidation && key === 'Price' && !isEditedPriceValid"
-                                            class="error-message">有効な料金を入力してください</span>
-                                        <span v-if="editValidation && key === 'CourseMin' && !isEditedCourseMinValid"
-                                            class="error-message">有効なコース時間を入力してください</span>
-                                    </template>
-                                    <template v-else-if="key === 'Notes'">
-                                        <textarea v-model="editedOrder[key]" rows="3"></textarea>
-                                    </template>
-                                    <template v-else>
-                                        <input v-model="editedOrder[key]" :type="getInputType(key)"
-                                            :class="{ 'is-invalid': editValidation && ((key === 'CustomerName' && !isEditedCustomerNameValid) || (key === 'PhoneNumber' && !isEditedPhoneNumberValid) || (key === 'Address' && !isEditedAddressValid)) }">
-                                        <span
-                                            v-if="editValidation && key === 'CustomerName' && !isEditedCustomerNameValid"
-                                            class="error-message">お客様名を入力してください</span>
-                                        <span
-                                            v-if="editValidation && key === 'PhoneNumber' && !isEditedPhoneNumberValid"
-                                            class="error-message">有効な電話番号を入力してください</span>
-                                        <span v-if="editValidation && key === 'Address' && !isEditedAddressValid"
-                                            class="error-message">住所を入力してください</span>
-                                    </template>
+    <v-container fluid class="order-container">
+        <v-row>
+            <v-col cols="12" md="6">
+                <v-card class="order-form">
+                    <v-card-title>受注表</v-card-title>
+                    <v-card-text>
+                        <v-form @submit.prevent="submitOrder">
+                            <v-row>
+                                <v-col cols="12" sm="6">
+                                    <v-text-field v-model="storeCode" label="店舗コード"
+                                        @input="filterStores"></v-text-field>
+                                </v-col>
+                                <v-col cols="12" sm="6">
+                                    <v-select v-model="storeID" :items="filteredStores" item-title="name"
+                                        item-value="id" label="店名"
+                                        :error-messages="showValidation && !isStoreNameValid ? ['店名を選択してください'] : []"></v-select>
+                                </v-col>
+                            </v-row>
+
+                            <v-text-field v-model="phoneNumber" label="電話番号" @blur="fetchCustomerInfo"
+                                :error-messages="showValidation && !isPhoneNumberValid ? ['有効な電話番号を入力してください'] : []">
+                                <template v-slot:append>
+                                    <v-btn text small color="primary" @click="showCustomerDetail" v-if="phoneNumber">
+                                        詳細
+                                    </v-btn>
                                 </template>
-                                <template v-else>
-                                    {{ getDisplayValue(key, value) }}
-                                </template>
-                            </p>
-                        </template>
-                        <div class="button-group">
-                            <button type="button" @click="toggleEdit" v-if="!isEditing">編集</button>
-                            <button type="button" @click="saveEdit" v-if="isEditing">保存</button>
-                            <button type="button" @click="cancelEdit" v-if="isEditing">キャンセル</button>
-                            <button type="button" @click="confirmOrder" :disabled="isEditing">確定</button>
+                            </v-text-field>
+
+                            <v-text-field v-model="customerName" label="お客様名"></v-text-field>
+                            <v-text-field v-model="modelName" label="モデル名"></v-text-field>
+
+                            <v-select v-model="actualModel" :items="castList" item-title="name" item-value="cast_id"
+                                label="実モデル"></v-select>
+
+                            <v-row>
+                                <v-col cols="5">
+                                    <v-text-field v-model="courseMin" label="コース（分）" type="number"></v-text-field>
+                                </v-col>
+                                <v-col cols="2" class="d-flex justify-center align-center">
+                                    <span class="text-h5">+</span>
+                                </v-col>
+                                <v-col cols="5">
+                                    <v-text-field v-model="extraCourse" label="延長（分）" type="number"></v-text-field>
+                                </v-col>
+                            </v-row>
+
+                            <v-text-field v-model.number="price" label="料金" type="number" prefix="¥" :step="1000"
+                                @keydown.up.prevent="adjustPrice(-1000)"
+                                @keydown.down.prevent="adjustPrice(1000)"></v-text-field>
+
+                            <v-text-field v-model="postalCode" label="郵便番号" @blur="fetchAddress"></v-text-field>
+                            <v-text-field v-model="address" label="住所"></v-text-field>
+
+                            <v-select v-model="driverID" :items="driverStaffList" item-title="name"
+                                item-value="staff_id" label="送り"></v-select>
+
+                            <v-text-field v-model.number="reservationFee" label="指名料" type="number" prefix="¥"
+                                :step="1000" @keydown.up.prevent="adjustReservationFee(-1000)"
+                                @keydown.down.prevent="adjustReservationFee(1000)"></v-text-field>
+                            <v-text-field v-model.number="transportationFee" label="交通費" type="number" prefix="¥"
+                                :step="1000" @keydown.up.prevent="adjustTransportationFee(-1000)"
+                                @keydown.down.prevent="adjustTransportationFee(1000)"></v-text-field>
+                            <v-text-field v-model.number="travelCost" label="出張費" type="number" prefix="¥" :step="1000"
+                                @keydown.up.prevent="adjustTravelCost(-1000)"
+                                @keydown.down.prevent="adjustTravelCost(1000)"></v-text-field>
+
+                            <v-select v-model="media" :items="mediaList" item-title="name" item-value="id"
+                                label="媒体"></v-select>
+
+                            <v-textarea v-model="notes" label="備考"></v-textarea>
+
+                            <v-select v-model="cardstaffID" :items="officeStaffList" item-title="name"
+                                item-value="staff_id" label="カード"></v-select>
+
+                            <v-select v-model="orderStaffID" :items="officeStaffList" item-title="name"
+                                item-value="staff_id" label="受注者"></v-select>
+
+                            <v-btn color="primary" block type="submit" :disabled="!isFormValid">受注</v-btn>
+                        </v-form>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+
+            <v-col cols="12" md="6">
+                <v-card class="order-display">
+                    <v-card-text>
+                        <v-progress-circular v-if="loading" indeterminate color="primary"></v-progress-circular>
+                        <div v-else-if="orders.length === 0">
+                            オーダーデータがありません。
+                            <v-btn @click="toggleShowCompleted" color="primary" text>
+                                {{ showCompleted ? '未確定のみ表示' : '確定済を表示' }}
+                            </v-btn>
                         </div>
-                    </form>
-                    <button type="button" @click="confirmDelete" class="delete-button" :disabled="isEditing">削除</button>
-                </div>
-                <div v-else>
-                    選択されたオーダーがありません。
-                </div>
-            </div>
-        </div>
-        <CustomerDetail v-if="showCustomerModal" :customer="customerDetail" @close="closeCustomerModal" />
-    </div>
+                        <div v-else>
+                            <v-pagination v-model="currentPage" :length="totalPages"
+                                :disabled="isEditing"></v-pagination>
+
+                            <v-card v-if="currentOrder" class="order-box">
+                                <v-card-title class="order-header">
+                                    オーダー明細
+                                    <v-btn @click="toggleShowCompleted" color="primary" text>
+                                        {{ showCompleted ? '確定済を非表示' : '確定済を表示' }}
+                                    </v-btn>
+                                </v-card-title>
+
+                                <v-card-text>
+                                    <v-form @submit.prevent="updateOrder">
+                                        <template v-for="(value, key) in displayableFields" :key="`row-${key}`">
+                                            <div class="order-detail-row">
+                                                <span class="order-detail-label">{{ getFieldLabel(key) }}</span>
+                                                <span class="order-detail-value">
+                                                    <template v-if="!isEditing">
+                                                        {{ getDisplayValue(key, value) }}
+                                                    </template>
+                                                    <template v-else>
+                                                        <v-text-field
+                                                            v-if="isEditableField(key) && !['ActualModel', 'StoreID', 'Media', 'CardstaffID', 'OrderStaffID', 'DriverID'].includes(key)"
+                                                            v-model="editedOrder[key]" :type="getInputType(key)"
+                                                            :error-messages="getErrorMessages(key)"
+                                                            :step="getStepValue(key)"
+                                                            @keydown.up.prevent="adjustValue(key, -getStepValue(key))"
+                                                            @keydown.down.prevent="adjustValue(key, getStepValue(key))"
+                                                            dense></v-text-field>
+                                                        <v-select
+                                                            v-else-if="['ActualModel', 'StoreID', 'Media', 'CardstaffID', 'OrderStaffID', 'DriverID'].includes(key)"
+                                                            v-model="editedOrder[key]" :items="getSelectItems(key)"
+                                                            item-title="text" item-value="value"
+                                                            :error-messages="getErrorMessages(key)" dense></v-select>
+                                                        <v-textarea v-else-if="key === 'Notes'"
+                                                            v-model="editedOrder[key]" rows="3" auto-grow
+                                                            dense></v-textarea>
+                                                    </template>
+                                                </span>
+                                            </div>
+                                        </template>
+
+                                        <v-btn-group>
+                                            <v-btn v-if="!isEditing" @click="toggleEdit" color="primary">編集</v-btn>
+                                            <v-btn v-if="isEditing" @click="saveEdit" color="success">保存</v-btn>
+                                            <v-btn v-if="isEditing" @click="cancelEdit" color="error">キャンセル</v-btn>
+                                            <v-btn @click="confirmOrder" :disabled="isEditing" color="info">確定</v-btn>
+                                        </v-btn-group>
+                                    </v-form>
+                                </v-card-text>
+
+                                <v-card-actions>
+                                    <v-spacer></v-spacer>
+                                    <v-btn @click="confirmDelete" :disabled="isEditing" color="error">削除</v-btn>
+                                </v-card-actions>
+                            </v-card>
+                            <div v-else>
+                                選択されたオーダーがありません。
+                            </div>
+                        </div>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+        </v-row>
+
+        <v-dialog v-model="showCustomerModal" max-width="600px">
+            <CustomerDetail :customer="customerDetail" @close="closeCustomerModal" />
+        </v-dialog>
+    </v-container>
 </template>
 
 <script>
 import axios from 'axios';
 import { mapState } from 'vuex';
-import CustomerDetail from '@/components/CustomerDetail.vue';
+import { defineAsyncComponent } from 'vue';
+const CustomerDetail = defineAsyncComponent(() => import('@/components/CustomerDetail.vue'));
 
 export default {
     name: 'Order',
@@ -299,15 +227,17 @@ export default {
         },
         displayableFields() {
             const excludedFields = ['GroupID', 'CustomerID', 'UpdatedAt', 'CompletionFlg', 'IsDeleted', 'ExtraCourse', 'PostalCode'];
-            return Object.keys(this.currentOrder || {}).reduce((acc, key) => {
-                if (!excludedFields.includes(key)) {
-                    acc[key] = this.currentOrder[key];
-                }
-                return acc;
-            }, {});
+            return this.currentOrder
+                ? Object.keys(this.currentOrder).reduce((acc, key) => {
+                    if (!excludedFields.includes(key)) {
+                        acc[key] = this.currentOrder[key];
+                    }
+                    return acc;
+                }, {})
+                : {};
         },
         isPhoneNumberValid() {
-            // 日本の電話番号の簡単なバリデーション
+            // 日本の電番号の簡単なバリデーション
             const phoneRegex = /^(0\d{1,4}-?\d{1,4}-?\d{4})$/;
             return phoneRegex.test(this.phoneNumber);
         },
@@ -355,7 +285,6 @@ export default {
                 this.isPhoneNumberValid;
         },
         ...mapState(['apiBaseUrl']),
-
     },
     methods: {
         async fetchCustomerInfo() {
@@ -434,7 +363,7 @@ export default {
                 this.resetForm();
                 await this.fetchOrders();
 
-                // 最新のオーダーを表示するために currentPage を 1 にセット
+                // 最新のオーダーを表示するめに currentPage を 1 にセット
                 this.currentPage = 1;
             } catch (error) {
                 console.error('注文の送信に失敗しました:', error);
@@ -463,14 +392,14 @@ export default {
             this.travelCost = '';
             this.showValidation = false;
         },
-        async fetchOrders() {
+        async fetchOrders(page = 1, limit = 10) {
             this.loading = true;
             try {
                 const endpoint = this.showCompleted ? '/orders' : '/orders/reserved';
-                const response = await axios.get(`${this.apiBaseUrl}${endpoint}`);
-                this.orders = response.data.data || []; // データが data プロパティ内にある場合
-                this.totalPages = this.orders.length;
-                this.currentPage = this.orders.length > 0 ? 1 : 0; // 最新のオーダーを表示するために1ページ目にセット
+                const response = await axios.get(`${this.apiBaseUrl}${endpoint}?page=${page}&limit=${limit}`);
+                this.orders = response.data.data || [];
+                this.totalPages = Math.ceil(response.data.total / limit);
+                this.currentPage = page;
                 console.log('Fetched orders:', this.orders);
                 console.log('Current page after fetch:', this.currentPage);
             } catch (error) {
@@ -495,17 +424,20 @@ export default {
 
         //プルダウンリストを取得
         async fetchStaffList() {
+            if (this.staffList.length > 0) return; // キャッシュがある場合はスキップ
             try {
                 const response = await axios.get(`${this.apiBaseUrl}/staff/dropdown`);
                 this.staffList = response.data.data || [];
+                console.log('スタッフリスト:', this.staffList);
             } catch (error) {
-                console.error('スタッフリストの取得に失敗しました:', error);
+                console.error('タッフリ���の取得に失敗しました:', error);
             }
         },
         async fetchCastList() {
             try {
                 const response = await axios.get(`${this.apiBaseUrl}/cast/dropdown`);
                 this.castList = response.data.data || [];
+                console.log('キャストリスト:', this.castList);
             } catch (error) {
                 console.error('キャストリストの取得に失敗しました:', error);
             }
@@ -526,7 +458,7 @@ export default {
                 this.mediaList = response.data.data || [];
                 console.log('媒体リスト:', this.mediaList);
             } catch (error) {
-                console.error('媒体リストの取得に失敗しました:', error);
+                console.error('媒体リスト取得に失敗ま��た:', error);
             }
         },
 
@@ -599,7 +531,7 @@ export default {
         async confirmDelete() {
             if (this.isEditing) return; // 編集中は処理を実行しない
 
-            if (confirm('このオーダーを削除しても��ろしいですか？')) {
+            if (confirm('このオーダーを削除してもよろしいですか？')) {
                 try {
                     await axios.put(`${this.apiBaseUrl}/orders/${this.currentOrder.ID}/delete`);
                     this.fetchOrders();
@@ -666,34 +598,38 @@ export default {
         getInputType(key) {
             return this.isPriceField(key) ? 'number' : 'text';
         },
-        getStaffList(key) {
-            if (key === 'DriverID') {
-                return this.driverStaffList;
-            } else if (key === 'CardstaffID' || key === 'OrderStaffID') {
-                return this.officeStaffList;
+        getSelectItems(key) {
+            if (key === 'ActualModel') {
+                return this.castList.map(cast => ({ text: cast.name, value: cast.cast_id }));
+            } else if (key === 'StoreID') {
+                return this.storeList.map(store => ({ text: store.name, value: store.id }));
+            } else if (key === 'Media') {
+                return this.mediaList.map(media => ({ text: media.name, value: media.id }));
+            } else if (key === 'CardstaffID' || key === 'OrderStaffID' || key === 'DriverID') {
+                return this.staffList.filter(staff => staff.office_flg === "1").map(staff => ({ text: staff.name, value: staff.staff_id }));
             }
             return [];
         },
         getFieldLabel(key) {
             const labels = {
-                StoreID: '店名　　　',
-                CustomerName: 'お客様名　',
-                PhoneNumber: '電話番号　',
-                ModelName: 'モデル名　',
-                ActualModel: '実モデル　',
-                CourseMin: 'コース　　',
-                ExtraTime: '延長時間　',
-                Price: '料金　　　',
-                Address: '住所　　　',
-                DriverID: '送り　　　',
-                ReservationFee: '指名料　　',
-                TransportationFee: '交通費　　',
-                TravelCost: '出張費　　',
-                Media: '媒体　　　',
-                Notes: '備考　　　',
-                CardstaffID: 'カード　　',
-                OrderStaffID: '受注者　　',
-                CreatedAt: '受注日　　',
+                StoreID: '店名　　',
+                CustomerName: 'お客様名',
+                PhoneNumber: '電話番号',
+                ModelName: 'モデル名',
+                ActualModel: '実モデル',
+                CourseMin: 'コース　',
+                ExtraTime: '延長時間',
+                Price: '料金　　',
+                Address: '住所　　',
+                DriverID: '送り　　',
+                ReservationFee: '指名料　',
+                TransportationFee: '交通費　',
+                TravelCost: '出張費　',
+                Media: '媒体　　',
+                Notes: '備考　　',
+                CardstaffID: 'カード　',
+                OrderStaffID: '受注者　',
+                CreatedAt: '受注日　',
             };
             return labels[key] || key;
         },
@@ -711,6 +647,8 @@ export default {
             return `${year}/${month}/${day} ${hours}:${minutes}`;
         },
         getDisplayValue(key, value) {
+            if (value === null || value === undefined) return '';
+
             if (key === 'ActualModel') {
                 return this.getCastName(value);
             } else if (key === 'DriverID' || key === 'CardstaffID' || key === 'OrderStaffID') {
@@ -735,6 +673,28 @@ export default {
             }
             return value;
         },
+        getErrorMessages(key) {
+            if (this.editValidation) {
+                if (key === 'StoreID' && !this.isEditedStoreIDValid) {
+                    return ['店舗を選択してください'];
+                } else if (key === 'CustomerName' && !this.isEditedCustomerNameValid) {
+                    return ['お客様名を入力してください'];
+                } else if (key === 'ActualModel' && !this.isEditedActualModelValid) {
+                    return ['実モデルを選択してください'];
+                } else if (key === 'CourseMin' && !this.isEditedCourseMinValid) {
+                    return ['有効なコース時間を入力してください'];
+                } else if (key === 'Price' && !this.isEditedPriceValid) {
+                    return ['有効な料金を入力してください'];
+                } else if (key === 'Address' && !this.isEditedAddressValid) {
+                    return ['住所を入力してください'];
+                } else if (key === 'DriverID' && !this.isEditedDriverIDValid) {
+                    return ['ドライバを選択してください'];
+                } else if (key === 'PhoneNumber' && !this.isEditedPhoneNumberValid) {
+                    return ['有効な電話番号を入力してください'];
+                }
+            }
+            return [];
+        },
         async toggleShowCompleted() {
             this.showCompleted = !this.showCompleted;
             await this.fetchOrders();
@@ -755,7 +715,7 @@ export default {
                         this.showCustomerModal = true;
                     }
                 } catch (error) {
-                    console.error('顧客詳細の取得に失敗しました:', error);
+                    console.error('顧客詳細の取得に失��しました:', error);
                 }
             }
         },
@@ -778,203 +738,53 @@ export default {
                 this.storeID = null; // 複数の選択肢がある場合はクリア
             }
         },
+        adjustPrice(amount) {
+            this.price = Math.max(0, (this.price || 0) + amount);
+        },
+        adjustReservationFee(amount) {
+            this.reservationFee = Math.max(0, (this.reservationFee || 0) + amount);
+        },
+        adjustTransportationFee(amount) {
+            this.transportationFee = Math.max(0, (this.transportationFee || 0) + amount);
+        },
+        adjustTravelCost(amount) {
+            this.travelCost = Math.max(0, (this.travelCost || 0) + amount);
+        },
+        adjustValue(key, amount) {
+            if (this.isEditableField(key)) {
+                const currentValue = parseInt(this.editedOrder[key], 10) || 0;
+                this.editedOrder[key] = Math.max(0, currentValue + amount);
+            }
+        },
     },
-    mounted() {
-        this.fetchOrders();
-        this.fetchStaffList();
-        this.fetchCastList();
-        this.fetchStoreList();
-        this.fetchMediaList();
+    async mounted() {
+        await this.fetchOrders();
+
+        // 他のデータ取得を非同期で行う
+        Promise.all([
+            this.fetchStaffList(),
+            this.fetchCastList(),
+            this.fetchStoreList(),
+            this.fetchMediaList()
+        ]);
     }
 }
-
 </script>
 
 <style scoped>
-.order-box {
-    position: relative;
-    padding-bottom: 50px;
-    /* 削除ボタンの高さ分の余白を追加 */
-    border: 1px solid var(--color-border);
-    border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
-.button-group {
-    margin-top: 20px;
-}
-
-.button-group button {
-    margin-right: 10px;
-}
-
-.delete-button {
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
-    background-color: #ff4d4d;
-    /* 赤色の背景 */
-    color: var(--vt-c-white);
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.delete-button:hover {
-    background-color: #ff1a1a;
-    /* ホバー時の色 */
-}
-
-@media (prefers-color-scheme: dark) {
-    .order-box {
-        border-color: var(--color-border);
-    }
-
-    .delete-button {
-        background-color: #8b0000;
-        /* ダークモード時の赤色 */
-    }
-
-    .delete-button:hover {
-        background-color: #a50000;
-        /* ダークモード時のホバー色 */
-    }
-}
-
-.is-invalid {
-    border-color: red;
-}
-
-.error-message {
-    color: red;
-    font-size: 0.8em;
-}
-
-
-@media (max-width: 768px) {
-    .order-container {
-        padding-left: 0;
-        padding-bottom: 60px;
-        /* モバイル時のサイドバーの高さに応じて調整 */
-    }
-}
-
-.order-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.completed-toggle {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.completed-toggle:hover {
-    background-color: #45a049;
-}
-
-@media (prefers-color-scheme: dark) {
-    .completed-toggle {
-        background-color: #2E7D32;
-    }
-
-    .completed-toggle:hover {
-        background-color: #1B5E20;
-    }
-}
-
-.course-inputs {
+.order-detail-row {
     display: flex;
     align-items: center;
+    margin-bottom: 8px;
 }
 
-.course-inputs input[type="text"] {
-    width: 50px;
-    margin-right: 5px;
+.order-detail-label {
+    flex: 0 0 100px;
+    font-weight: bold;
 }
 
-.course-inputs span {
-    margin: 0 5px;
-}
-
-/* test */
-.course-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    list-style: disc;
-    /* ーカーを強制的に表示 */
-    list-style-position: outside;
-    /* マーカーをリストの外側に配置 */
-}
-
-.course-item label {
-    margin-right: 10px;
-    /* ラベルと入力フィールドの間に余白を追加 */
-    white-space: nowrap;
-    /* ラベルが折り返されないようにする */
-}
-
-.pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.button-group button:disabled,
-.delete-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.course-inputs {
-    display: flex;
-    align-items: center;
-}
-
-.pagination button:disabled,
-.delete-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.course-inputs input {
-    margin-right: 5px;
-    /* 各入力フィールド間の余白 */
-}
-
-.error-message {
-    color: red;
-    margin-top: 5px;
-    display: block;
-    /* エラーメッセージが新しい行に表示されるようにする */
-}
-
-.completed-toggle {
-    margin-top: 10px;
-}
-
-.store-input {
-    display: flex;
-    align-items: center;
-}
-
-.store-input input[type="text"] {
-    width: 80px;
-    margin-right: 10px;
+.order-detail-value {
+    flex: 1;
+    padding-left: 8px;
 }
 </style>

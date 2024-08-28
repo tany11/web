@@ -1,43 +1,41 @@
 <template>
-    <div class="cast-registration">
-        <h1>キャスト登録</h1>
-        <form @submit.prevent="submitForm">
-            <div class="form-group">
-                <label for="castName">キャスト名 *</label>
-                <input type="text" id="castName" v-model="castName" required>
-            </div>
+    <v-container class="cast-registration">
+        <v-row justify="center">
+            <v-col cols="12" sm="8" md="6">
+                <h1 class="text-h4 text-center mb-6">キャスト登録</h1>
+                <v-form @submit.prevent="submitForm">
+                    <v-text-field v-model="castName" label="キャスト名 *" required></v-text-field>
 
-            <div class="form-group">
-                <label for="password">パスワード *</label>
-                <input type="password" id="password" v-model="password" required>
-            </div>
+                    <v-text-field v-model="password" label="パスワード *" type="password" required></v-text-field>
 
-            <div class="form-group">
-                <label for="lineId">LINE ID *</label>
-                <input type="text" id="lineId" v-model="lineId" required>
-            </div>
+                    <v-text-field v-model="lineId" label="LINE ID *" required></v-text-field>
 
-            <div class="form-group">
-                <label for="birthDate">生年月日 *</label>
-                <input type="date" id="birthDate" v-model="birthDate" required>
-            </div>
+                    <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y
+                        min-width="auto">
+                        <template v-slot:activator="{ props }">
+                            <v-text-field v-model="formattedBirthDate" label="生年月日 *" readonly v-bind="props"
+                                required></v-text-field>
+                        </template>
+                        <v-locale-provider locale="ja">
+                            <v-date-picker v-model="birthDate" @update:model-value="updateBirthDate">
+                            </v-date-picker>
+                        </v-locale-provider>
+                    </v-menu>
 
-            <div class="form-group">
-                <label for="phoneNumber">電話番号</label>
-                <input type="tel" id="phoneNumber" v-model="phoneNumber">
-            </div>
+                    <v-text-field v-model="phoneNumber" label="電話番号" type="tel"></v-text-field>
 
-            <div class="form-group">
-                <label for="email">メールアドレス</label>
-                <input type="email" id="email" v-model="email">
-            </div>
+                    <v-text-field v-model="email" label="メールアドレス" type="email"></v-text-field>
 
-            <button type="submit" :disabled="!isFormValid">登録</button>
-        </form>
-        <div v-if="registrationResult" class="registration-result" :class="resultClass">
-            {{ registrationResult }}
-        </div>
-    </div>
+                    <v-btn type="submit" color="primary" block :disabled="!isFormValid" class="mt-4">
+                        登録
+                    </v-btn>
+                </v-form>
+                <v-alert v-if="registrationResult" :type="resultClass" class="mt-4">
+                    {{ registrationResult }}
+                </v-alert>
+            </v-col>
+        </v-row>
+    </v-container>
 </template>
 
 <script>
@@ -51,19 +49,41 @@ export default {
         const castName = ref('')
         const password = ref('')
         const lineId = ref('')
-        const birthDate = ref('')
+        const birthDate = ref(null)
+        const formattedBirthDate = ref('')
         const phoneNumber = ref('')
         const email = ref('')
         const registrationResult = ref('')
         const resultClass = ref('')
-
+        const menu = ref(false)
+        const maxDate = new Date().toISOString().split('T')[0] // 今日の日付を最大値として設定
         const isFormValid = computed(() => {
             return castName.value.trim() !== '' &&
                 password.value.trim() !== '' &&
                 lineId.value.trim() !== '' &&
-                birthDate.value !== '' &&
+                birthDate.value !== null &&
                 phoneNumber.value.trim() !== ''
         })
+
+        const formatDate = (date) => {
+            if (!date) return ''
+            if (typeof date === 'string') {
+                const [year, month, day] = date.split('-')
+                return `${year}年${parseInt(month)}月${parseInt(day)}日`
+            } else if (date instanceof Date) {
+                const year = date.getFullYear()
+                const month = date.getMonth() + 1 // getMonth()は0から始まるため、1を加算
+                const day = date.getDate()
+                return `${year}年${month}月${day}日`
+            }
+            return ''
+        }
+
+        const updateBirthDate = (date) => {
+            birthDate.value = date
+            formattedBirthDate.value = formatDate(date)
+            menu.value = false
+        }
 
         const submitForm = async () => {
             if (!isFormValid.value) {
@@ -98,7 +118,7 @@ export default {
             castName.value = ''
             password.value = ''
             lineId.value = ''
-            birthDate.value = ''
+            birthDate.value = null
             phoneNumber.value = ''
             email.value = ''
         }
@@ -113,70 +133,14 @@ export default {
             submitForm,
             isFormValid,
             registrationResult,
-            resultClass
+            resultClass,
+            menu,
+            maxDate,
+            formatDate,
+            formattedBirthDate,
+            updateBirthDate,
+            menu,
         }
     }
 }
 </script>
-
-<style scoped>
-.cast-registration {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-h1 {
-    text-align: center;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="date"],
-input[type="tel"],
-input[type="email"] {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-.registration-result {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
-}
-
-.registration-result.success {
-    background-color: #dff0d8;
-    color: #3c763d;
-}
-
-.registration-result.error {
-    background-color: #f2dede;
-    color: #a94442;
-}
-</style>
