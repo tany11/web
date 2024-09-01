@@ -25,7 +25,6 @@ export default {
             { title: 'ダッシュボード', to: '/dashboard' },
             { title: '受注', to: '/order' },
             { title: 'タイムボード', to: '/timeboard' },
-            { title: 'タイムスケジュール', to: '/timeschedule' },
           ],
         },
         {
