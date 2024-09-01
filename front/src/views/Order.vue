@@ -35,13 +35,15 @@
 
                             <v-row>
                                 <v-col cols="5">
-                                    <v-text-field v-model="courseMin" label="コース（分）" type="number"></v-text-field>
+                                    <v-text-field v-model="courseMin" label="コース（分）" type="number"
+                                        :step="10"></v-text-field>
                                 </v-col>
                                 <v-col cols="2" class="d-flex justify-center align-center">
                                     <span class="text-h5">+</span>
                                 </v-col>
                                 <v-col cols="5">
-                                    <v-text-field v-model="extraCourse" label="延長（分）" type="number"></v-text-field>
+                                    <v-text-field v-model="extraCourse" label="（分）" type="number"
+                                        :step="5"></v-text-field>
                                 </v-col>
                             </v-row>
 
@@ -76,6 +78,9 @@
                             <v-select v-model="orderStaffID" :items="officeStaffList" item-title="name"
                                 item-value="staff_id" label="受注者"></v-select>
 
+                            <v-text-field v-model="scheduledTime" label="到着時刻" type="datetime-local"
+                                :step="900"></v-text-field>
+
                             <v-btn color="primary" block type="submit" :disabled="!isFormValid">受注</v-btn>
                         </v-form>
                     </v-card-text>
@@ -93,8 +98,8 @@
                             </v-btn>
                         </div>
                         <div v-else>
-                            <v-pagination v-model="currentPage" :length="totalPages"
-                                :disabled="isEditing"></v-pagination>
+                            <v-pagination v-model="currentPage" :length="totalPages" :disabled="isEditing"
+                                @input="fetchOrders(currentPage)" v-if="totalPages > 1"></v-pagination>
 
                             <v-card v-if="currentOrder" class="order-box">
                                 <v-card-title class="order-header">
@@ -115,7 +120,7 @@
                                                     </template>
                                                     <template v-else>
                                                         <v-text-field
-                                                            v-if="isEditableField(key) && !['ActualModel', 'StoreID', 'Media', 'CardstaffID', 'OrderStaffID', 'DriverID'].includes(key)"
+                                                            v-if="isEditableField(key) && !['ActualModel', 'StoreID', 'Media', 'CardstaffID', 'OrderStaffID', 'DriverID', 'ScheduledTime'].includes(key)"
                                                             v-model="editedOrder[key]" :type="getInputType(key)"
                                                             :error-messages="getErrorMessages(key)"
                                                             :step="getStepValue(key)"
@@ -127,6 +132,10 @@
                                                             v-model="editedOrder[key]" :items="getSelectItems(key)"
                                                             item-title="text" item-value="value"
                                                             :error-messages="getErrorMessages(key)" dense></v-select>
+                                                        <v-text-field v-else-if="key === 'ScheduledTime'"
+                                                            v-model="editedOrder[key]" type="datetime-local"
+                                                            :error-messages="getErrorMessages(key)" dense
+                                                            :step="900"></v-text-field>
                                                         <v-textarea v-else-if="key === 'Notes'"
                                                             v-model="editedOrder[key]" rows="3" auto-grow
                                                             dense></v-textarea>
@@ -212,6 +221,7 @@ export default {
             storeCode: '',
             filteredStores: [],
             editValidation: false,
+            scheduledTime: '',
         }
     },
     computed: {
@@ -351,6 +361,7 @@ export default {
                     notes: this.notes,
                     cardstaffID: this.cardstaffID,
                     orderStaffID: this.orderStaffID,
+                    scheduledTime: this.formatDateTimeForServer(this.scheduledTime),
                 };
 
                 const response = await axios.post(`${this.apiBaseUrl}/orders`, orderData);
@@ -391,6 +402,7 @@ export default {
             this.reservationFee = '';
             this.travelCost = '';
             this.showValidation = false;
+            this.scheduledTime = this.getInitialScheduledTime();
         },
         async fetchOrders(page = 1, limit = 10) {
             this.loading = true;
@@ -398,10 +410,11 @@ export default {
                 const endpoint = this.showCompleted ? '/orders' : '/orders/reserved';
                 const response = await axios.get(`${this.apiBaseUrl}${endpoint}?page=${page}&limit=${limit}`);
                 this.orders = response.data.data || [];
-                this.totalPages = Math.ceil(response.data.total / limit);
+                this.totalPages = Math.ceil(this.orders.length); // 修正: totalPagesの計算をordersの長さで行う
                 this.currentPage = page;
                 console.log('Fetched orders:', this.orders);
                 console.log('Current page after fetch:', this.currentPage);
+                console.log('Total pages after fetch:', this.totalPages);
             } catch (error) {
                 console.error('オーダーの取得に失敗しました:', error);
                 this.orders = [];
@@ -430,7 +443,7 @@ export default {
                 this.staffList = response.data.data || [];
                 console.log('スタッフリスト:', this.staffList);
             } catch (error) {
-                console.error('タッフリ���の取得に失敗しました:', error);
+                console.error('タッフリの取得に失敗しました:', error);
             }
         },
         async fetchCastList() {
@@ -458,7 +471,7 @@ export default {
                 this.mediaList = response.data.data || [];
                 console.log('媒体リスト:', this.mediaList);
             } catch (error) {
-                console.error('媒体リスト取得に失敗ま��た:', error);
+                console.error('媒体リスト取得に失敗また:', error);
             }
         },
 
@@ -519,6 +532,11 @@ export default {
                     this.editedOrder[field] = Math.floor(Number(this.editedOrder[field]));
                 }
             });
+
+            // 日時フィールドをフォーマット
+            if (this.editedOrder.ScheduledTime) {
+                this.editedOrder.ScheduledTime = this.formatDateTimeForServer(this.editedOrder.ScheduledTime);
+            }
 
             try {
                 await axios.put(`${this.apiBaseUrl}/orders/${orderId}`, this.editedOrder);
@@ -596,7 +614,12 @@ export default {
             }
         },
         getInputType(key) {
-            return this.isPriceField(key) ? 'number' : 'text';
+            if (this.isPriceField(key)) {
+                return 'number';
+            } else if (key === 'ScheduledTime') {
+                return 'datetime-local';
+            }
+            return 'text';
         },
         getSelectItems(key) {
             if (key === 'ActualModel') {
@@ -630,6 +653,7 @@ export default {
                 CardstaffID: 'カード　',
                 OrderStaffID: '受注者　',
                 CreatedAt: '受注日　',
+                ScheduledTime: '予定時間',
             };
             return labels[key] || key;
         },
@@ -661,7 +685,7 @@ export default {
                 return `¥${value.toLocaleString()}`;
             } else if (key === 'Notes') {
                 return value || '';
-            } else if (key === 'CreatedAt') {
+            } else if (key === 'CreatedAt' || key === 'ScheduledTime') {
                 return this.formatDate(value);
             } else if (key === 'CourseMin') {
                 const extraCourse = this.currentOrder.ExtraCourse || 0;
@@ -715,7 +739,7 @@ export default {
                         this.showCustomerModal = true;
                     }
                 } catch (error) {
-                    console.error('顧客詳細の取得に失��しました:', error);
+                    console.error('顧客詳細の取得に失敗しました:', error);
                 }
             }
         },
@@ -756,12 +780,26 @@ export default {
                 this.editedOrder[key] = Math.max(0, currentValue + amount);
             }
         },
+        getInitialScheduledTime() {
+            const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+            now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+            return now.toISOString().slice(0, 16);
+        },
+        formatDateTimeForServer(dateTimeString) {
+            if (!dateTimeString) return null;
+            const date = new Date(dateTimeString);
+            return date.toISOString();
+        },
     },
     async mounted() {
+        this.loading = true;
         await this.fetchOrders();
+        this.loading = false;
 
         // 他のデータ取得を非同期で行う
-        Promise.all([
+        await Promise.all([
             this.fetchStaffList(),
             this.fetchCastList(),
             this.fetchStoreList(),

@@ -50,7 +50,7 @@
                                         <div v-if="(hour + 5) % 24 === 0" class="date-label">
                                             {{ formatDate(getDateForHour(hour)) }}
                                         </div>
-                                        {{ formatHour((hour + 5) % 24) }}
+                                        {{ formatHour(hour) }}
                                     </div>
                                 </div>
                                 <!-- スケジュールグリッド -->
@@ -63,8 +63,9 @@
                                     </div>
                                 </div>
                                 <!-- オーダー表示 -->
-                                <OrderItem v-for="order in filteredOrders" :key="order.ID" :order="order"
-                                    :timelineStart="timelineStart" :casts="casts" @update="updateOrder" />
+                                <OrderItem v-for="order in ordersWithCastAssignment" :key="order.ID" :order="order"
+                                    :timelineStart="timelineStart" :dayStart="getDayStart()" :dayEnd="getDayEnd()"
+                                    :casts="casts" @update="updateOrder" />
                             </v-card-text>
                         </div>
                     </div>
@@ -96,7 +97,7 @@ export default {
             currentDate: new Date(),
             isLoading: false,
             weekStart: null,
-            selectedDateOffset: null,
+            selectedDateOffset: 0, // 初期値を0に設定
         };
     },
     computed: {
@@ -130,17 +131,46 @@ export default {
                 return [];
             }
             const currentDateStart = new Date(this.currentDate);
-            currentDateStart.setHours(0, 0, 0, 0);
-            const currentDateEnd = new Date(this.currentDate);
-            currentDateEnd.setHours(23, 59, 59, 999);
+            currentDateStart.setHours(6, 0, 0, 0);
+            const currentDateEnd = new Date(currentDateStart);
+            currentDateEnd.setDate(currentDateEnd.getDate() + 1);
+            currentDateEnd.setHours(5, 59, 59, 999);
 
             return this.orders.filter(order => {
-                return order.start_time >= currentDateStart && order.start_time <= currentDateEnd;
+                const orderStart = new Date(order.start_time);
+                const orderEnd = new Date(order.end_time);
+
+                // 日付をまたぐオーダーの処理
+                if (orderEnd < orderStart) {
+                    orderEnd.setDate(orderEnd.getDate() + 1);
+                }
+
+                return (orderStart < currentDateEnd && orderEnd > currentDateStart);
             });
         },
         currentWeekOffset() {
             return this.selectedDateOffset;
         },
+        ordersWithCastAssignment() {
+            return this.filteredOrders.map(order => {
+                const castIndex = this.casts.findIndex(cast => cast.cast_id === order.ActualModel);
+                const startTime = new Date(order.start_time);
+                const endTime = new Date(order.end_time);
+
+                // 日付をまたぐオーダーの処理
+                if (endTime < startTime) {
+                    endTime.setDate(endTime.getDate() + 1);
+                }
+                console.log(startTime, endTime);
+
+                return {
+                    ...order,
+                    castIndex: castIndex !== -1 ? castIndex : this.casts.length,
+                    start_time: startTime,
+                    end_time: endTime
+                };
+            });
+        }
     },
     methods: {
         async fetchCasts() {
@@ -169,6 +199,8 @@ export default {
                     start_time: new Date(order.ScheduledTime),
                     end_time: new Date(new Date(order.ScheduledTime).getTime() + order.CourseMin * 60000)
                 }));
+                // オーダーを取得した後、現在の日付に対応するオーダーをフィルタリング
+                this.setDate(this.selectedDateOffset);
             } catch (error) {
                 console.error('オーダーの取得に失敗しました:', error);
                 this.orders = [];
@@ -185,7 +217,7 @@ export default {
             // オーダーの到着予想時間と実モデルを更新する
         },
         formatHour(hour) {
-            return `${(hour + 24) % 24}:00`;
+            return `${(hour + 5) % 24}:00`;
         },
         formatTime(time) {
             return time.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
@@ -194,10 +226,23 @@ export default {
             const startTime = order.start_time;
             const endTime = order.end_time;
             const duration = (endTime - startTime) / (1000 * 60); // 分単位での期間
-            const dayStart = new Date(startTime);
+            const dayStart = new Date(this.currentDate);
             dayStart.setHours(6, 0, 0, 0);
-            const startPercentage = ((startTime - dayStart) / (24 * 60 * 60 * 1000)) * 100;
-            const widthPercentage = (duration / (24 * 60)) * 100;
+            const dayEnd = new Date(dayStart);
+            dayEnd.setDate(dayEnd.getDate() + 1);
+            dayEnd.setHours(5, 59, 59, 999);
+
+            let startPercentage = ((startTime - dayStart) / (24 * 60 * 60 * 1000)) * 100;
+            let widthPercentage = (duration / (24 * 60)) * 100;
+
+            // 日付をまたぐオーダーの処理
+            if (startTime < dayStart) {
+                startPercentage = 0;
+                widthPercentage = ((endTime - dayStart) / (24 * 60 * 60 * 1000)) * 100;
+            } else if (endTime > dayEnd) {
+                widthPercentage = ((dayEnd - startTime) / (24 * 60 * 60 * 1000)) * 100;
+            }
+
             const top = (order.ActualModel ? this.casts.findIndex(cast => cast.cast_id === order.ActualModel) : this.casts.length) * 50 + 50;
 
             return {
@@ -216,7 +261,7 @@ export default {
             };
         },
         getOrderColor(order) {
-            // ここでオーダーに応じて色を返す処理を実装
+            // ここでオーダーに応じて色を返す処理実装
             // 例: オーダーのタイプや状態に基づいて色を決定
             const colors = ['indigo', 'cyan', 'green', 'amber', 'pink', 'purple', 'blue', 'teal'];
             return colors[order.ID % colors.length];
@@ -231,7 +276,10 @@ export default {
         },
         getDateForHour(hour) {
             const date = new Date(this.currentDate);
-            date.setHours(hour + 5);
+            if (hour >= 19) {
+                date.setDate(date.getDate() + 1);
+            }
+            date.setHours((hour + 5) % 24, 0, 0, 0);
             return date;
         },
         async changeDate(days) {
@@ -270,10 +318,22 @@ export default {
             );
             return currentWeekDay === -1 ? this.selectedDateOffset : currentWeekDay;
         },
+        getDayStart() {
+            const start = new Date(this.currentDate);
+            start.setHours(6, 0, 0, 0);
+            return start;
+        },
+        getDayEnd() {
+            const end = new Date(this.currentDate);
+            end.setDate(end.getDate() + 1);
+            end.setHours(5, 59, 59, 999);
+            return end;
+        }
     },
     async mounted() {
         this.weekStart = this.getMonday(new Date());
         this.currentDate = new Date(this.weekStart);
+        this.selectedDateOffset = this.getCurrentDayOffset();
         await this.fetchCasts();
         await this.fetchOrders();
     },
@@ -313,7 +373,7 @@ export default {
     height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    position: absolute;
+    position: relative;
     top: 0;
     left: 0;
 }

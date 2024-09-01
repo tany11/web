@@ -3,9 +3,9 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
-	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,6 +27,11 @@ func (h *OrderHandler) Create(c *gin.Context) {
 
 	orders.CompletionFlg = "0"
 	orders.IsDeleted = "0"
+
+	// ScheduledTimeが設定されていない場合、現在時刻を使用
+	if orders.ScheduledTime.IsZero() {
+		orders.ScheduledTime = time.Now()
+	}
 
 	err := h.useCase.Create(&orders)
 	if err != nil {
@@ -189,9 +194,6 @@ func (h *OrderHandler) DeleteFlg(c *gin.Context) {
 func (h *OrderHandler) ListSchedule(c *gin.Context) {
 	startDate := c.Query("start_time")
 	endDate := c.Query("end_time")
-
-	fmt.Println("startDate", startDate)
-	fmt.Println("endDate", endDate)
 
 	orders, err := h.useCase.ListSchedule(startDate, endDate)
 	if err != nil {
