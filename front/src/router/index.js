@@ -12,7 +12,7 @@ import StoreRegistration from '../components/StoreRegistration.vue'
 import StoreEdit from '../components/StoreEdit.vue'
 import MediaRegistration from '../components/MediaForm.vue'
 import Timeboard from '../views/TimeBoard.vue'
-import TimeSchedule from '../views/time.vue'
+
 const routes = [
     { path: '/', redirect: '/login' },
     { path: '/login', name: 'Login', component: Login },
@@ -28,7 +28,6 @@ const routes = [
     { path: '/media-registration', component: MediaRegistration, meta: { requiresAuth: true } },
     { path: '/customer-registration', component: CustomerRegistration, meta: { requiresAuth: true } },
     { path: '/timeboard', component: Timeboard, meta: { requiresAuth: true } },
-    { path: '/timeschedule', component: TimeSchedule, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({
