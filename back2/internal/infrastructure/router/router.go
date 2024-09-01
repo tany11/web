@@ -49,6 +49,7 @@ func SetupRouter(
 		v1.DELETE("/orders/:id", orderHandler.Delete)
 		v1.GET("/orders/reserved", orderHandler.ListReserved)
 		v1.GET("/orders/scheduled", orderHandler.ListSchedule)
+		v1.PUT("/orders/:id/schedule", orderHandler.UpdateSchedule)
 
 		// Group routes
 		v1.POST("/group", groupHandler.Create)

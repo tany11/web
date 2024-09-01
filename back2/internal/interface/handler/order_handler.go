@@ -203,3 +203,49 @@ func (h *OrderHandler) ListSchedule(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": orders})
 }
+
+func (h *OrderHandler) UpdateSchedule(c *gin.Context) {
+	id := c.Param("id")
+	actualModel := c.Query("actual_model")
+	scheduledTimeStr := c.Query("scheduled_time")
+
+	// パラメータの検証
+	if id == "" || actualModel == "" || scheduledTimeStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "必要なパラメータが不足しています"})
+		return
+	}
+
+	// 日時の解析
+	scheduledTime, err := time.Parse(time.RFC3339, scheduledTimeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "無効な日時形式です"})
+		return
+	}
+
+	// IDの解析
+	orderID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "無効なオーダーIDです"})
+		return
+	}
+
+	// オーダーの取得
+	order, err := h.useCase.GetByID(orderID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "オーダーの取得に失敗しました: " + err.Error()})
+		return
+	}
+
+	// オーダーの更新
+	order.ActualModel = actualModel
+	order.ScheduledTime = scheduledTime
+
+	// 更新処理
+	err = h.useCase.Update(order)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
+}

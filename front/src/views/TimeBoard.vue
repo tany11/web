@@ -25,17 +25,12 @@
                 <v-col cols="2" class="cast-column">
                     <v-list dense class="cast-list">
                         <v-list-item class="px-2 time-header-placeholder">
-                            <v-list-item-content></v-list-item-content>
                         </v-list-item>
                         <v-list-item v-for="cast in casts" :key="cast.cast_id" class="px-2 cast-item">
-                            <v-list-item-content>
-                                <v-list-item-title>{{ cast.name }}</v-list-item-title>
-                            </v-list-item-content>
+                            <v-list-item-title>{{ cast.name }}</v-list-item-title>
                         </v-list-item>
                         <v-list-item class="px-2 cast-item">
-                            <v-list-item-content>
-                                <v-list-item-title>フリー枠</v-list-item-title>
-                            </v-list-item-content>
+                            <v-list-item-title>フリー枠</v-list-item-title>
                         </v-list-item>
                     </v-list>
                 </v-col>
@@ -63,9 +58,14 @@
                                     </div>
                                 </div>
                                 <!-- オーダー表示 -->
-                                <OrderItem v-for="order in ordersWithCastAssignment" :key="order.ID" :order="order"
-                                    :timelineStart="timelineStart" :dayStart="getDayStart()" :dayEnd="getDayEnd()"
-                                    :casts="casts" @update="updateOrder" />
+                                <draggable v-model="ordersWithCastAssignment" group="orders" :animation="200"
+                                    item-key="ID" @end="onDragEnd">
+                                    <template #item="{ element }">
+                                        <OrderItem :order="element" :timelineStart="timelineStart"
+                                            :dayStart="getDayStart()" :dayEnd="getDayEnd()" :casts="casts"
+                                            @update="updateOrder" />
+                                    </template>
+                                </draggable>
                             </v-card-text>
                         </div>
                     </div>
@@ -185,8 +185,10 @@ export default {
             this.isLoading = true;
             try {
                 const startDate = new Date(this.weekStart);
+                startDate.setHours(6, 0, 0, 0);
                 const endDate = new Date(startDate);
                 endDate.setDate(endDate.getDate() + 7);
+                endDate.setHours(5, 59, 59, 999);
 
                 const response = await axios.get(`${this.apiBaseUrl}/orders/scheduled`, {
                     params: {
@@ -208,13 +210,22 @@ export default {
                 this.isLoading = false;
             }
         },
-        updateOrder(updatedOrder) {
+        async updateOrder(updatedOrder) {
             const index = this.orders.findIndex(order => order.ID === updatedOrder.ID);
             if (index !== -1) {
-                this.$set(this.orders, index, updatedOrder);
+                this.orders[index] = updatedOrder;
             }
-            // ここでAPIを呼び出してサーバー側のデータを更新する
-            // オーダーの到着予想時間と実モデルを更新する
+
+            try {
+                await axios.put(`${this.apiBaseUrl}/orders/${updatedOrder.ID}/schedule`, null, {
+                    params: {
+                        actual_model: updatedOrder.ActualModel,
+                        scheduled_time: updatedOrder.start_time.toISOString()
+                    }
+                });
+            } catch (error) {
+                console.error('オーダーの更新に失敗しました:', error);
+            }
         },
         formatHour(hour) {
             return `${(hour + 5) % 24}:00`;
@@ -328,6 +339,65 @@ export default {
             end.setDate(end.getDate() + 1);
             end.setHours(5, 59, 59, 999);
             return end;
+        },
+        onDragEnd(event) {
+            const newOrder = this.ordersWithCastAssignment[event.newIndex];
+            const newStartTime = this.calculateNewStartTime(event);
+            const newCastId = this.calculateNewCastId(event);
+
+            newOrder.start_time = newStartTime;
+            newOrder.end_time = new Date(newStartTime.getTime() + newOrder.CourseMin * 60000);
+            newOrder.ActualModel = newCastId;
+
+            console.log('ドラッグ終了:', {
+                newOrder,
+                newStartTime: newStartTime.toISOString(),
+                newCastId
+            });
+
+            this.updateOrderSchedule(newOrder);
+        },
+        calculateNewStartTime(event) {
+            const scheduleContent = this.$el.querySelector('.schedule-content');
+            const rect = scheduleContent.getBoundingClientRect();
+            const offsetX = event.originalEvent.clientX - rect.left;
+
+            const cellWidth = rect.width / (24 * 4); // 1日24時間、15分ごとのセル
+            const quarterHours = Math.floor(offsetX / cellWidth);
+
+            const newStartTime = new Date(this.currentDate);
+            newStartTime.setHours(6, 0, 0, 0); // 日の開始時刻を6:00に設定
+            newStartTime.setMinutes(newStartTime.getMinutes() + quarterHours * 15);
+
+            return newStartTime;
+        },
+        calculateNewCastId(event) {
+            const scheduleContent = this.$el.querySelector('.schedule-content');
+            const rect = scheduleContent.getBoundingClientRect();
+            const offsetY = event.originalEvent.clientY - rect.top;
+
+            const rowHeight = 50; // キャスト行の高さ（ピクセル）
+            const castIndex = Math.floor(offsetY / rowHeight) - 1; // -1 は時間ヘッダーの分
+
+            return (castIndex >= 0 && castIndex < this.casts.length) ? this.casts[castIndex].cast_id : 'free';
+        },
+        async updateOrderSchedule(updatedOrder) {
+            try {
+                await axios.put(`${this.apiBaseUrl}/orders/${updatedOrder.ID}/schedule`, null, {
+                    params: {
+                        actual_model: updatedOrder.ActualModel,
+                        scheduled_time: updatedOrder.start_time.toISOString()
+                    }
+                });
+                // 成功した場合、ローカルのオーダーデータを更新
+                const index = this.orders.findIndex(order => order.ID === updatedOrder.ID);
+                if (index !== -1) {
+                    this.orders.splice(index, 1, updatedOrder);
+                }
+            } catch (error) {
+                console.error('オーダーの更新に失敗しました:', error);
+                // エラー処理（例：ユーザーに通知）
+            }
         }
     },
     async mounted() {
@@ -339,7 +409,6 @@ export default {
     },
 };
 </script>
-
 <style scoped>
 .cast-column {
     position: sticky;
@@ -414,6 +483,8 @@ export default {
 .schedule-grid {
     position: relative;
     margin-top: 0;
+    z-index: 1;
+    /* スケジュールグリッドのz-indexを1に設定 */
 }
 
 .schedule-row {
@@ -435,6 +506,145 @@ export default {
 
 .quarter-cell:last-child {
     border-right: none;
+}
+
+.order-items-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    /* オーダーアイテムのz-indexを2に設定 */
+}
+
+.order-item {
+    position: absolute;
+    z-index: 3;
+    top: calc(var(--top) + 50px);
+}
+
+.order-content {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--vt-c-indigo-darker);
+}
+
+
+
+
+
+
+.cast-column {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: white;
+    border-right: 1px solid #e0e0e0;
+}
+
+.cast-list {
+    padding-top: 0;
+}
+
+.time-header-placeholder {
+    height: 50px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.cast-item {
+    height: 50px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.schedule-column {
+    overflow: hidden;
+    position: relative;
+}
+
+.schedule-scroll-container {
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+    top: 0;
+    left: 0;
+}
+
+.schedule-content {
+    width: 1200px;
+    position: relative;
+}
+
+.time-header {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 1;
+    height: 50px;
+}
+
+.hour-label {
+    width: 50px;
+    text-align: center;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    padding-bottom: 2px;
+    border-right: 1px solid #e0e0e0;
+}
+
+.date-label {
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.schedule-grid {
+    position: relative;
+    margin-top: 0;
+    z-index: 1;
+    /* スケジュールグリッドのz-indexを1に設定 */
+}
+
+.schedule-row {
+    display: flex;
+    height: 50px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.hour-cell {
+    width: 100px;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+}
+
+.quarter-cell {
+    flex: 1;
+    border-right: 1px dashed #e0e0e0;
+}
+
+.quarter-cell:last-child {
+    border-right: none;
+}
+
+.order-items-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    /* オーダーアイテムのz-indexを2に設定 */
 }
 
 .order-item {
