@@ -35,15 +35,19 @@
 
                             <v-row>
                                 <v-col cols="5">
-                                    <v-text-field v-model="courseMin" label="コース（分）" type="number"
-                                        :step="10"></v-text-field>
+                                    <v-text-field v-model="courseMin" label="コース（分）" type="number" :step="10"
+                                        @keydown.up.prevent="adjustCourseMin(-10)"
+                                        @keydown.down.prevent="adjustCourseMin(10)">
+                                    </v-text-field>
                                 </v-col>
                                 <v-col cols="2" class="d-flex justify-center align-center">
                                     <span class="text-h5">+</span>
                                 </v-col>
                                 <v-col cols="5">
-                                    <v-text-field v-model="extraCourse" label="（分）" type="number"
-                                        :step="5"></v-text-field>
+                                    <v-text-field v-model="extraCourse" label="（分）" type="number" :step="5"
+                                        @keydown.up.prevent="adjustExtraCourse(-5)"
+                                        @keydown.down.prevent="adjustExtraCourse(5)">
+                                    </v-text-field>
                                 </v-col>
                             </v-row>
 
@@ -236,7 +240,7 @@ export default {
             return this.staffList.filter(staff => staff.office_flg === "1");
         },
         displayableFields() {
-            const excludedFields = ['GroupID', 'CustomerID', 'UpdatedAt', 'CompletionFlg', 'IsDeleted', 'ExtraCourse', 'PostalCode'];
+            const excludedFields = ['GroupID', 'CustomerID', 'UpdatedAt', 'CompletionFlg', 'IsDeleted', 'ExtraCourse', 'PostalCode', 'DummyStoreFlg'];
             return this.currentOrder
                 ? Object.keys(this.currentOrder).reduce((acc, key) => {
                     if (!excludedFields.includes(key)) {
@@ -543,7 +547,7 @@ export default {
                 this.fetchOrders();
                 this.isEditing = false;
             } catch (error) {
-                console.error('オーダーの更新に失敗しました:', error);
+                console.error('オーダーの新に失敗しました:', error);
             }
         },
         async confirmDelete() {
@@ -791,6 +795,12 @@ export default {
             if (!dateTimeString) return null;
             const date = new Date(dateTimeString);
             return date.toISOString();
+        },
+        adjustCourseMin(amount) {
+            this.courseMin = Math.max(0, (this.courseMin || 0) + amount);
+        },
+        adjustExtraCourse(amount) {
+            this.extraCourse = Math.max(0, (this.extraCourse || 0) + amount);
         },
     },
     async mounted() {

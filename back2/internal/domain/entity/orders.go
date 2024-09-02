@@ -30,6 +30,7 @@ type Orders struct {
 	ScheduledTime     time.Time //予定時間
 	CreatedAt         time.Time //作成日
 	UpdatedAt         time.Time //更新日
+	DummyStoreFlg     string    //ダミー店舗フラグ
 	CompletionFlg     string    //完了フラグ
 	IsDeleted         string    //削除フラグ
 }

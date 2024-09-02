@@ -4,6 +4,11 @@
             <v-col cols="12" sm="8" md="6">
                 <h1 class="text-h4 text-center mb-6">店舗登録</h1>
                 <v-form @submit.prevent="submitForm">
+                    <v-radio-group v-model="selectedStore" row>
+                        <v-radio label="高円寺店" value="0"></v-radio>
+                        <v-radio label="立川店" value="1"></v-radio>
+                    </v-radio-group>
+
                     <v-text-field v-model.number="storeCode" label="店舗コード *" type="number" required
                         min="0"></v-text-field>
 
@@ -31,6 +36,7 @@ export default {
         const store = useStore()
         const storeCode = ref('')
         const storeName = ref('')
+        const selectedStore = ref('0')
         const registrationResult = ref('')
         const resultClass = ref('')
 
@@ -47,6 +53,7 @@ export default {
             const formData = {
                 storeCode: parseInt(storeCode.value, 10),
                 storeName: storeName.value,
+                DummyStoreFlg: selectedStore.value === '1' ? '1' : '0'
             }
             if (confirm('この店舗を登録してもよろしいですか？')) {
                 try {
@@ -66,11 +73,13 @@ export default {
         const resetForm = () => {
             storeCode.value = ''
             storeName.value = ''
+            selectedStore.value = '0'
         }
 
         return {
             storeCode,
             storeName,
+            selectedStore,
             submitForm,
             isFormValid,
             registrationResult,

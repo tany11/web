@@ -63,7 +63,7 @@
                                     <template #item="{ element }">
                                         <OrderItem :order="element" :timelineStart="timelineStart"
                                             :dayStart="getDayStart()" :dayEnd="getDayEnd()" :casts="casts"
-                                            @update="updateOrder" />
+                                            @update="updateOrder" @order-clicked="handleOrderClicked" />
                                     </template>
                                 </draggable>
                             </v-card-text>
@@ -75,6 +75,9 @@
         <v-overlay :value="isLoading">
             <v-progress-circular indeterminate size="64"></v-progress-circular>
         </v-overlay>
+        <v-dialog v-model="showOrderModal" max-width="800px">
+            <OrderDetail :order="selectedOrder" @close="closeOrderModal" @order-updated="fetchOrders" />
+        </v-dialog>
     </v-container>
 </template>
 
@@ -83,12 +86,14 @@ import axios from 'axios';
 import { mapState } from 'vuex';
 import draggable from 'vuedraggable/src/vuedraggable'
 import OrderItem from '@/components/OrderItem.vue';
+import OrderDetail from '@/components/OrderDetail.vue';
 
 export default {
     name: 'TimeBoard',
     components: {
         draggable,
         OrderItem,
+        OrderDetail
     },
     data() {
         return {
@@ -98,6 +103,8 @@ export default {
             isLoading: false,
             weekStart: null,
             selectedDateOffset: 0, // 初期値を0に設定
+            showOrderModal: false,
+            selectedOrder: null
         };
     },
     computed: {
@@ -271,12 +278,6 @@ export default {
                 textOverflow: 'ellipsis',
             };
         },
-        getOrderColor(order) {
-            // ここでオーダーに応じて色を返す処理実装
-            // 例: オーダーのタイプや状態に基づいて色を決定
-            const colors = ['indigo', 'cyan', 'green', 'amber', 'pink', 'purple', 'blue', 'teal'];
-            return colors[order.ID % colors.length];
-        },
         timeToMinutes(time) {
             const [hours, minutes] = time.split(':').map(Number);
             return hours * 60 + minutes;
@@ -398,6 +399,14 @@ export default {
                 console.error('オーダーの更新に失敗しました:', error);
                 // エラー処理（例：ユーザーに通知）
             }
+        },
+        handleOrderClicked(order) {
+            this.selectedOrder = order;
+            this.showOrderModal = true;
+        },
+        closeOrderModal() {
+            this.showOrderModal = false;
+            this.selectedOrder = null;
         }
     },
     async mounted() {

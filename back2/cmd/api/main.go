@@ -40,7 +40,7 @@ func main() {
 	castUseCase := usecase.NewCastUseCase(castRepo)
 	customerUseCase := usecase.NewCustomerUseCase(customerRepo, orderRepo)
 	groupUseCase := usecase.NewGroupUseCase(groupRepo)
-	orderUseCase := usecase.NewOrderUseCase(orderRepo, customerOrderRepo)
+	orderUseCase := usecase.NewOrderUseCase(orderRepo, customerOrderRepo, storeRepo)
 	staffUseCase := usecase.NewStaffUseCase(staffRepo)
 	storeUseCase := usecase.NewStoreUseCase(storeRepo)
 	mediaUseCase := usecase.NewMediaUseCase(mediaRepo)

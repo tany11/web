@@ -1,5 +1,6 @@
 <template>
-    <div :style="orderStyle" class="order-item" draggable="true" @dragstart="onDragStart" @dragend="onDragEnd">
+    <div :style="orderStyle" class="order-item" draggable="true" @dragstart="onDragStart" @dragend="onDragEnd"
+        @click="onClick">
         <v-card class="order-content" :color="orderColor">
             {{ order.CustomerName }} - {{ formatTime(order.start_time) }}
         </v-card>
@@ -34,13 +35,15 @@ export default {
             const widthPercentage = (duration / (24 * 60)) * 100;
             const top = (order.castIndex * 50) + 50;
 
+            const backgroundColor = this.getOrderColor(order);
+
             return {
                 position: 'absolute',
                 left: `${startPercentage}%`,
                 width: `${widthPercentage}%`,
                 top: `${top}px`,
                 height: '46px',
-                backgroundColor: order.ActualModel ? 'var(--vt-c-indigo)' : 'var(--vt-c-divider-light-1)',
+                backgroundColor: backgroundColor,
                 border: '2px solid var(--color-border)',
                 borderRadius: '4px',
                 padding: '2px',
@@ -50,8 +53,17 @@ export default {
             };
         },
         getOrderColor(order) {
-            const colors = ['indigo', 'cyan', 'green', 'amber', 'pink', 'purple', 'blue', 'teal'];
-            return colors[order.ID % colors.length];
+            if (order.ActualModel === "") {
+                return 'gray';
+            } else if (order.CompletionFlg === "1") {
+                return 'darkred';
+            } else if (order.DummyStoreFlg === "0") {
+                return 'orange';
+            } else if (order.DummyStoreFlg === "1") {
+                return 'green';
+            } else {
+                return 'gray';
+            }
         },
         onDragStart(event) {
             event.dataTransfer.setData('text/plain', this.order.ID);
@@ -59,6 +71,9 @@ export default {
         },
         onDragEnd(event) {
             this.$emit('dragend', event);
+        },
+        onClick() {
+            this.$emit('order-clicked', this.order);
         }
     },
     computed: {

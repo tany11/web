@@ -12,12 +12,14 @@ import (
 type OrderUseCase struct {
 	orderRepo    repository.OrderRepository
 	customerRepo repository.CustomerRepository
+	storeRepo    repository.StoreRepository // 追加
 }
 
-func NewOrderUseCase(orderRepo repository.OrderRepository, customerRepo repository.CustomerRepository) *OrderUseCase {
+func NewOrderUseCase(orderRepo repository.OrderRepository, customerRepo repository.CustomerRepository, storeRepo repository.StoreRepository) *OrderUseCase {
 	return &OrderUseCase{
 		orderRepo:    orderRepo,
 		customerRepo: customerRepo,
+		storeRepo:    storeRepo, // 追加
 	}
 }
 
@@ -56,8 +58,14 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 		}
 	}
 
-	// 顧客IDを注文データに設定
+	// ストアをIDで検索し、DummyStoreFlgを取得
+	store, err := uc.storeRepo.GetByID(int64(order.StoreID))
+	if err != nil {
+		return fmt.Errorf("ストア検索中にエラーが発生しました: %w", err)
+	}
+	order.DummyStoreFlg = store.DummyStoreFlg
 
+	// 顧客IDを注文データに設定
 	order.CustomerID = customer.ID
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
@@ -98,6 +106,30 @@ func (uc *OrderUseCase) GetByID(id int64) (*entity.Orders, error) {
 }
 
 func (uc *OrderUseCase) Update(order *entity.Orders) error {
+	// 顧客IDで顧客を取得
+	customer, err := uc.customerRepo.GetByID(order.CustomerID)
+	if err != nil {
+		return fmt.Errorf("顧客取得中にエラーが発生しました: %w", err)
+	}
+
+	// 電話番号が異なる場合、上書き
+	if customer.PhoneNumber != order.PhoneNumber {
+		customer.PhoneNumber = order.PhoneNumber
+		customer.UpdatedAt = time.Now()
+		err = uc.customerRepo.Update(customer)
+		if err != nil {
+			return fmt.Errorf("顧客情報の更新に失敗しました: %w", err)
+		}
+	}
+
+	// ストアをIDで検索し、DummyStoreFlgを取得
+	store, err := uc.storeRepo.GetByID(int64(order.StoreID))
+	if err != nil {
+		return fmt.Errorf("ストア検索中にエラーが発生しました: %w", err)
+	}
+	order.DummyStoreFlg = store.DummyStoreFlg
+
+	// 注文を更新
 	return uc.orderRepo.Update(order)
 }
 
