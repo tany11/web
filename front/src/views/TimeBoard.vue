@@ -5,6 +5,11 @@
             <v-card-title class="text-h4 font-weight-bold blue-grey lighten-5 py-4">
                 タイムボード
             </v-card-title>
+            <v-col cols="1" class="memo-column">
+                <v-btn color="primary" @click="openNewMemoModal">
+                    メモ追加
+                </v-btn>
+            </v-col>
             <!-- 日付切り替えボタンを修正 -->
             <v-card-text>
                 <v-row align="center" justify="space-between">
@@ -36,7 +41,7 @@
                     </v-list>
                 </v-col>
                 <!-- スケジュール本体 -->
-                <v-col cols="10" class="schedule-column" :key="'schedule-column'">
+                <v-col cols="9" class="schedule-column" :key="'schedule-column'">
                     <div class="schedule-scroll-container">
                         <div class="schedule-content">
                             <v-card-text class="pa-0">
@@ -67,10 +72,21 @@
                                             @update="updateOrder" @order-clicked="handleOrderClicked" />
                                     </template>
                                 </draggable>
+                                <!-- メモ表示 -->
+                                <draggable v-model="memosWithCastAssignment" group="memos" :animation="200"
+                                    item-key="ID" @end="onMemoDragEnd">
+                                    <template #item="{ element }">
+                                        <MemoItem :memo="element" :timelineStart="timelineStart"
+                                            :dayStart="getDayStart()" :dayEnd="getDayEnd()" :casts="casts"
+                                            @update="updateMemoSchedule" @memo-clicked="handleMemoClicked" />
+                                    </template>
+                                </draggable>
                             </v-card-text>
                         </div>
                     </div>
                 </v-col>
+                <!-- メモボタン -->
+
             </v-row>
         </v-card>
         <v-overlay :value="isLoading">
@@ -78,6 +94,12 @@
         </v-overlay>
         <v-dialog v-model="showOrderModal" max-width="800px">
             <OrderDetail :order="selectedOrder" @close="closeOrderModal" @order-updated="fetchOrders" />
+        </v-dialog>
+        <v-dialog v-model="showMemoModal" max-width="800px">
+            <MemoDetail :memo="selectedMemo" @close="closeMemoModal" @memo-updated="fetchMemos" />
+        </v-dialog>
+        <v-dialog v-model="showNewMemoModal" max-width="800px">
+            <MemoDetail :memo="newMemo" @close="closeNewMemoModal" @memo-updated="handleNewMemoCreated" />
         </v-dialog>
     </v-container>
 </template>
@@ -88,13 +110,17 @@ import { mapState } from 'vuex';
 import draggable from 'vuedraggable/src/vuedraggable'
 import OrderItem from '@/components/OrderItem.vue';
 import OrderDetail from '@/components/OrderDetail.vue';
+import MemoItem from '@/components/MemoItem.vue';
+import MemoDetail from '@/components/MemoDetail.vue';
 
 export default {
     name: 'TimeBoard',
     components: {
         draggable,
         OrderItem,
-        OrderDetail
+        OrderDetail,
+        MemoItem,
+        MemoDetail
     },
     data() {
         return {
@@ -105,7 +131,12 @@ export default {
             weekStart: null,
             selectedDateOffset: 0, // 初期値を0に設定
             showOrderModal: false,
-            selectedOrder: null
+            selectedOrder: null,
+            memos: [],
+            showMemoModal: false,
+            selectedMemo: null,
+            showNewMemoModal: false,
+            newMemo: {},
         };
     },
     computed: {
@@ -156,6 +187,29 @@ export default {
                 return (orderStart < currentDateEnd && orderEnd > currentDateStart);
             });
         },
+        filteredMemos() {
+            if (this.selectedDateOffset === null) {
+                return [];
+            }
+            const currentDateStart = new Date(this.currentDate);
+            currentDateStart.setHours(6, 0, 0, 0);
+            const currentDateEnd = new Date(currentDateStart);
+            currentDateEnd.setDate(currentDateEnd.getDate() + 1);
+            currentDateEnd.setHours(5, 59, 59, 999)
+            console.log(this.memos);
+
+            return this.memos.filter(memo => {
+                const memoStart = new Date(memo.start_time);
+                const memoEnd = new Date(memo.end_time);
+
+                // 日付をまたぐメモの処理
+                if (memoEnd < memoStart) {
+                    memoEnd.setDate(memoEnd.getDate() + 1);
+                }
+
+                return (memoStart < currentDateEnd && memoEnd > currentDateStart);
+            });
+        },
         currentWeekOffset() {
             return this.selectedDateOffset;
         },
@@ -169,10 +223,29 @@ export default {
                 if (endTime < startTime) {
                     endTime.setDate(endTime.getDate() + 1);
                 }
-                console.log(startTime, endTime);
 
                 return {
                     ...order,
+                    castIndex: castIndex !== -1 ? castIndex : this.casts.length,
+                    start_time: startTime,
+                    end_time: endTime
+                };
+            });
+        },
+        memosWithCastAssignment() {
+            return this.filteredMemos.map(memo => {
+                const castIndex = this.casts.findIndex(cast => cast.cast_id === memo.ActualModel);
+                const startTime = new Date(memo.start_time);
+                const endTime = new Date(memo.end_time);
+
+                // 日付をまたぐメモの処理
+                if (endTime < startTime) {
+                    endTime.setDate(endTime.getDate() + 1);
+                }
+                console.log(startTime, endTime);
+
+                return {
+                    ...memo,
                     castIndex: castIndex !== -1 ? castIndex : this.casts.length,
                     start_time: startTime,
                     end_time: endTime
@@ -212,7 +285,7 @@ export default {
                 // オーダーを取得した後、現在の日付に対応するオーダーをフィルタリング
                 this.setDate(this.selectedDateOffset);
             } catch (error) {
-                console.error('オーダーの取得に失敗しました:', error);
+                console.error('オーダーの取得に失敗ました:', error);
                 this.orders = [];
             } finally {
                 this.isLoading = false;
@@ -408,7 +481,104 @@ export default {
         closeOrderModal() {
             this.showOrderModal = false;
             this.selectedOrder = null;
-        }
+        },
+        async fetchMemos() {
+            try {
+                const startDate = new Date(this.weekStart);
+                startDate.setHours(6, 0, 0, 0);
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 7);
+                endDate.setHours(5, 59, 59, 999);
+
+                const response = await axios.get(`${this.apiBaseUrl}/tips/schedule`, {
+                    params: {
+                        start_time: startDate.toISOString(),
+                        end_time: endDate.toISOString(),
+                    }
+                });
+
+                console.log('API Response:', response.data);
+
+                this.memos = (response.data.data || []).map(memo => {
+                    const start_time = new Date(memo.ScheduledTime);
+                    const end_time = new Date(new Date(memo.ScheduledTime).getTime() + memo.ScheduledBox * 60000);
+                    console.log("てすと", start_time, end_time);
+                    return {
+                        ...memo,
+                        start_time,
+                        end_time
+                    };
+                });
+
+                console.log('Processed Memos:', this.memos);
+            } catch (error) {
+                console.error('メモの取得に失敗しました:', error);
+                this.memos = [];
+            }
+        },
+        handleMemoClicked(memo) {
+            this.selectedMemo = memo;
+            this.showMemoModal = true;
+        },
+        closeMemoModal() {
+            this.showMemoModal = false;
+            this.selectedMemo = null;
+        },
+        onMemoDragEnd(event) {
+            const newMemo = this.memosWithCastAssignment[event.newIndex];
+            const newStartTime = this.calculateNewStartTime(event);
+            const newCastId = this.calculateNewCastId(event);
+
+            // 開始時間を更新
+            newMemo.start_time = newStartTime;
+            // 終了時間を更新（ScheduledBoxを使用）
+            newMemo.end_time = new Date(newStartTime.getTime() + newMemo.ScheduledBox * 60000);
+            newMemo.ActualModel = newCastId;
+
+            this.updateMemoSchedule(newMemo);
+        },
+        async updateMemoSchedule(updatedMemo) {
+            try {
+                await axios.put(`${this.apiBaseUrl}/tips/${updatedMemo.ID}/schedule`, null, {
+                    params: {
+                        actual_model: updatedMemo.ActualModel,
+                        scheduled_time: updatedMemo.start_time.toISOString(),
+                        scheduled_box: updatedMemo.ScheduledBox,
+                        title: updatedMemo.Title,
+                        notes: updatedMemo.Notes
+                    }
+                });
+                // 成功した場合、ローカルのメモデータを更新
+                const index = this.memos.findIndex(memo => memo.ID === updatedMemo.ID);
+                if (index !== -1) {
+                    this.memos.splice(index, 1, {
+                        ...updatedMemo,
+                        end_time: new Date(updatedMemo.start_time.getTime() + updatedMemo.ScheduledBox * 60000)
+                    });
+                }
+            } catch (error) {
+                console.error('メモの更新に失敗しました:', error);
+            }
+        },
+        openNewMemoModal() {
+            this.newMemo = {
+                ID: null,  // IDをnullに設定
+                start_time: new Date(this.currentDate),
+                end_time: new Date(new Date(this.currentDate).getTime() + 30 * 60000), // 30分後を終了時間とする
+                ActualModel: '',
+                Title: '',
+                Notes: '',
+                ScheduledBox: 30, // デフォルトで30分
+            };
+            this.showNewMemoModal = true;
+        },
+        closeNewMemoModal() {
+            this.showNewMemoModal = false;
+        },
+        async handleNewMemoCreated() {
+            await this.fetchMemos();
+            this.closeNewMemoModal();
+        },
     },
     async mounted() {
         this.weekStart = this.getMonday(new Date());
@@ -416,6 +586,7 @@ export default {
         this.selectedDateOffset = this.getCurrentDayOffset();
         await this.fetchCasts();
         await this.fetchOrders();
+        await this.fetchMemos();
     },
 };
 </script>
@@ -710,5 +881,12 @@ export default {
 
 .date-header {
     display: none;
+}
+
+.memo-column {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 10px;
 }
 </style>

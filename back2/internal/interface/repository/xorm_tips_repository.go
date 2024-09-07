@@ -55,7 +55,17 @@ func (r *XormTipsRepository) ListReserved(groupID, offset, limit int) ([]*entity
 }
 
 func (r *XormTipsRepository) Update(tips *entity.Tips) error {
-	_, err := r.engine.ID(tips.ID).Update(tips)
+	session := r.engine.ID(tips.ID)
+
+	if tips.ActualModel == "" {
+		session = session.Cols("actual_model")
+	}
+
+	if !tips.ScheduledTime.IsZero() {
+		session = session.Cols("scheduled_time")
+	}
+
+	_, err := session.Update(tips)
 	return err
 }
 
@@ -74,7 +84,7 @@ func (r *XormTipsRepository) UpdateIsDeleted(id int64) error {
 	return err
 }
 
-func (r *XormTipsRepository) ListSchedule(startDate, endDate string) ([]*entity.Tips, error) {
+func (r *XormTipsRepository) ListSchedule(groupID int, startDate, endDate string) ([]*entity.Tips, error) {
 
 	tips := make([]*entity.Tips, 0)
 	err := r.engine.Where("scheduled_time >= ?", startDate).

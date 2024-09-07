@@ -4,11 +4,8 @@
         <v-card-text>
             <v-form @submit.prevent="updateOrder">
                 <v-row>
-                    <v-col cols="12" sm="6">
-                        <v-text-field v-model="order.StoreID" label="店舗コード" :items="storeList" item-title="name"
-                            item-value="id"></v-text-field>
-                    </v-col>
-                    <v-col cols="12" sm="6">
+
+                    <v-col cols="12" sm="8">
                         <v-select v-model="order.StoreID" :items="storeList" item-title="name" item-value="id"
                             label="店名"></v-select>
                     </v-col>
@@ -69,11 +66,17 @@
         </v-card-text>
         <v-card-actions>
             <v-btn @click="$emit('close')">閉じる</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="openNewMemoModal">メモ作成</v-btn>
         </v-card-actions>
+        <v-dialog v-model="showNewMemoModal" max-width="800px">
+            <MemoDetail :memo="newMemo" @close="closeNewMemoModal" @memo-updated="handleMemoCreated" />
+        </v-dialog>
     </v-card>
 </template>
 
 <script>
+import MemoDetail from './MemoDetail.vue';
 import axios from 'axios';
 import { mapState } from 'vuex';
 
@@ -81,13 +84,18 @@ export default {
     props: {
         order: Object
     },
+    components: {
+        MemoDetail
+    },
     data() {
         return {
             storeList: [],
             castList: [],
             driverStaffList: [],
             officeStaffList: [],
-            mediaList: []
+            mediaList: [],
+            showNewMemoModal: false,
+            newMemo: {}
         };
     },
     computed: {
@@ -98,7 +106,7 @@ export default {
             let hours = date.getHours();
             const minutes = date.getMinutes().toString().padStart(2, '0');
 
-            // 24時以降の処���
+            // 24時以降の処理
             if (hours >= 24) {
                 hours = hours % 24;
             }
@@ -153,6 +161,20 @@ export default {
         },
         adjustValue(field, amount) {
             this.order[field] = Math.max(0, (this.order[field] || 0) + amount);
+        },
+        openNewMemoModal() {
+            this.newMemo = {
+                ActualModel: this.order.ActualModel,
+                start_time: this.order.ScheduledTime,
+            };
+            this.showNewMemoModal = true;
+        },
+        closeNewMemoModal() {
+            this.showNewMemoModal = false;
+        },
+        handleMemoCreated() {
+            this.closeNewMemoModal();
+            this.$emit('memo-created');
         }
     },
     async mounted() {

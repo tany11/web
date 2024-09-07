@@ -632,8 +632,10 @@ export default {
                 return this.storeList.map(store => ({ text: store.name, value: store.id }));
             } else if (key === 'Media') {
                 return this.mediaList.map(media => ({ text: media.name, value: media.id }));
-            } else if (key === 'CardstaffID' || key === 'OrderStaffID' || key === 'DriverID') {
+            } else if (key === 'CardstaffID' || key === 'OrderStaffID') {
                 return this.staffList.filter(staff => staff.office_flg === "1").map(staff => ({ text: staff.name, value: staff.staff_id }));
+            } else if (key === 'DriverID') {
+                return this.staffList.filter(staff => staff.driver_flg === "1").map(staff => ({ text: staff.name, value: staff.staff_id }));
             }
             return [];
         },

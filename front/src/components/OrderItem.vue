@@ -2,7 +2,7 @@
     <div :style="orderStyle" class="order-item" draggable="true" @dragstart="onDragStart" @dragend="onDragEnd"
         @click="onClick">
         <v-card class="order-content" :color="orderColor">
-            {{ order.CustomerName }} - {{ formatTime(order.start_time) }}
+            {{ order.PhoneNumber }}
         </v-card>
     </div>
 </template>

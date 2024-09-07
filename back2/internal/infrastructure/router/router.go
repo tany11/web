@@ -100,10 +100,11 @@ func SetupRouter(
 
 		// Tips routes
 		v1.POST("/tips", tipsHandler.Create)
-		v1.GET("/tips", tipsHandler.GetAll)
-		v1.GET("/tips/:id", tipsHandler.Get)
+		v1.GET("/tips", tipsHandler.List)
+		v1.GET("/tips/schedule", tipsHandler.ListSchedule)
 		v1.PUT("/tips/:id", tipsHandler.Update)
 		v1.DELETE("/tips/:id", tipsHandler.Delete)
+		v1.PUT("/tips/:id/schedule", tipsHandler.UpdateMemo)
 
 		// Login endpoint added
 		v1.POST("/login", authHandler.Login)

@@ -43,6 +43,7 @@ func (r *XormOrderRepository) List(groupID, offset, limit int) ([]*entity.Orders
 	// 24時間前の時刻を計算
 	twentyFourHoursAgo := time.Now().Add(-24 * time.Hour)
 	err := r.engine.Where("group_i_d = ?", groupID).
+		And("completion_flg = 1").
 		And("created_at > ?", twentyFourHoursAgo).
 		Limit(limit, offset).
 		Find(&orders)
@@ -61,7 +62,17 @@ func (r *XormOrderRepository) ListByCustomerID(customerID int) ([]*entity.Orders
 }
 
 func (r *XormOrderRepository) Update(order *entity.Orders) error {
-	_, err := r.engine.ID(order.ID).Update(order)
+	session := r.engine.ID(order.ID)
+
+	if order.ActualModel == "" {
+		session = session.Cols("actual_model")
+	}
+
+	if !order.ScheduledTime.IsZero() {
+		session = session.Cols("scheduled_time")
+	}
+
+	_, err := session.Update(order)
 	return err
 }
 
