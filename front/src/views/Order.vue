@@ -755,7 +755,7 @@ export default {
                 this.filteredStores = [...this.storeList];
             } else {
                 this.filteredStores = this.storeList.filter(store =>
-                    store.store_code.toString().startsWith(this.storeCode)
+                    store.store_code.toString() === this.storeCode
                 );
             }
 

@@ -210,7 +210,7 @@ func (h *OrderHandler) UpdateSchedule(c *gin.Context) {
 	scheduledTimeStr := c.Query("scheduled_time")
 
 	// パラメータの検証
-	if id == "" || actualModel == "" || scheduledTimeStr == "" {
+	if id == "" || scheduledTimeStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "必要なパラメータが不足しています"})
 		return
 	}

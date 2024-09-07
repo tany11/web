@@ -54,15 +54,15 @@ export default {
         },
         getOrderColor(order) {
             if (order.ActualModel === "") {
-                return 'gray';
+                return '#808080';
             } else if (order.CompletionFlg === "1") {
-                return 'darkred';
+                return '#8b0000';
             } else if (order.DummyStoreFlg === "0") {
                 return 'orange';
             } else if (order.DummyStoreFlg === "1") {
                 return 'green';
             } else {
-                return 'gray';
+                return '#808080';
             }
         },
         onDragStart(event) {

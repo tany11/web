@@ -1,6 +1,7 @@
 <template>
     <v-container fluid>
         <v-card class="mx-auto" max-width="1200">
+            <!-- メモ機能が欲しいよ！！！！！！！！ -->
             <v-card-title class="text-h4 font-weight-bold blue-grey lighten-5 py-4">
                 タイムボード
             </v-card-title>
@@ -380,7 +381,7 @@ export default {
             const rowHeight = 50; // キャスト行の高さ（ピクセル）
             const castIndex = Math.floor(offsetY / rowHeight) - 1; // -1 は時間ヘッダーの分
 
-            return (castIndex >= 0 && castIndex < this.casts.length) ? this.casts[castIndex].cast_id : 'free';
+            return (castIndex >= 0 && castIndex < this.casts.length) ? this.casts[castIndex].cast_id : '';
         },
         async updateOrderSchedule(updatedOrder) {
             try {
@@ -466,7 +467,7 @@ export default {
     border-bottom: 1px solid #e0e0e0;
     position: sticky;
     top: 0;
-    background-color: white;
+    background-color: var(--color-background);
     z-index: 1;
     height: 50px;
 }
@@ -542,11 +543,6 @@ export default {
     font-weight: bold;
     color: var(--vt-c-indigo-darker);
 }
-
-
-
-
-
 
 .cast-column {
     position: sticky;
@@ -590,12 +586,17 @@ export default {
     position: relative;
 }
 
+.time-header,
+.hour-label {
+    background-color: var(--color-background);
+}
+
 .time-header {
     display: flex;
     border-bottom: 1px solid #e0e0e0;
     position: sticky;
     top: 0;
-    background-color: white;
+    background-color: var(--color-background);
     z-index: 1;
     height: 50px;
 }
@@ -671,6 +672,7 @@ export default {
     font-weight: bold;
     color: var(--vt-c-indigo-darker);
 }
+
 
 @media (prefers-color-scheme: dark) {
     .time-board {

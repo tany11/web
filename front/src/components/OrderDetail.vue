@@ -61,9 +61,8 @@
                     label="カード"></v-select>
                 <v-select v-model="order.OrderStaffID" :items="officeStaffList" item-title="name" item-value="staff_id"
                     label="受注者"></v-select>
-                <!-- 到着時刻は時間が見れるだけでよい -->
-                <v-text-field v-model="order.ScheduledTime" label="到着時刻" type="datetime-local"
-                    :step="900"></v-text-field>
+                <!-- 到着時刻の表示を変更 -->
+                <v-text-field v-model="formattedScheduledTime" label="到着時刻" readonly></v-text-field>
 
                 <v-btn color="primary" block type="submit">更新</v-btn>
             </v-form>
@@ -92,7 +91,23 @@ export default {
         };
     },
     computed: {
-        ...mapState(['apiBaseUrl'])
+        ...mapState(['apiBaseUrl']),
+        formattedScheduledTime() {
+            if (!this.order || !this.order.ScheduledTime) return '';
+            const date = new Date(this.order.ScheduledTime);
+            let hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+
+            // 24時以降の処���
+            if (hours >= 24) {
+                hours = hours % 24;
+            }
+
+            // 時間を文字列に変換し、必要に応じて先頭にゼロを追加
+            const hoursStr = hours.toString().padStart(2, '0');
+
+            return `${hoursStr}:${minutes}`;
+        }
     },
     methods: {
         async fetchDropdownData() {
@@ -123,6 +138,11 @@ export default {
                 this.order.ReservationFee = parseInt(this.order.ReservationFee, 10);
                 this.order.TransportationFee = parseInt(this.order.TransportationFee, 10);
                 this.order.TravelCost = parseInt(this.order.TravelCost, 10);
+
+                // ActualModelが空の場合、空文字列を明示的に設定
+                if (!this.order.ActualModel) {
+                    this.order.ActualModel = '';
+                }
 
                 await axios.put(`${this.apiBaseUrl}/orders/${this.order.ID}`, this.order);
                 this.$emit('close');
