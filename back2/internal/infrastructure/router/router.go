@@ -21,6 +21,7 @@ func SetupRouter(
 	storeHandler *handler.StoreHandler,
 	mediaHandler *handler.MediaHandler,
 	masterHandler *handler.MasterHandler,
+	tipsHandler *handler.TipsHandler,
 ) {
 	// Apply global middleware
 	engine.Use(RecordUaAndTime)
@@ -96,6 +97,13 @@ func SetupRouter(
 		v1.GET("/master/:id", masterHandler.Get)
 		v1.PUT("/master/:id", masterHandler.Update)
 		v1.DELETE("/master/:id", masterHandler.Delete)
+
+		// Tips routes
+		v1.POST("/tips", tipsHandler.Create)
+		v1.GET("/tips", tipsHandler.GetAll)
+		v1.GET("/tips/:id", tipsHandler.Get)
+		v1.PUT("/tips/:id", tipsHandler.Update)
+		v1.DELETE("/tips/:id", tipsHandler.Delete)
 
 		// Login endpoint added
 		v1.POST("/login", authHandler.Login)
