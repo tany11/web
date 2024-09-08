@@ -14,4 +14,5 @@ type OrderRepository interface {
 	UpdateIsDeleted(id int64) error
 	GetTotalPriceAndUseTime(customerID int) (int, int, error)
 	ListSchedule(startDate, endDate string) ([]*entity.Orders, error)
+	UpdateSchedule(order *entity.Orders) error
 }

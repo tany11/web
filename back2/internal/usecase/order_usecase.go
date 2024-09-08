@@ -36,7 +36,8 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 		newCustomer := &entity.Customer{
 			PhoneNumber:  order.PhoneNumber,
 			CustomerName: order.CustomerName,
-			Address:      order.Address,
+			City1:        order.City,
+			Address1:     order.Address,
 			GroupID:      1,
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
@@ -131,6 +132,10 @@ func (uc *OrderUseCase) Update(order *entity.Orders) error {
 
 	// 注文を更新
 	return uc.orderRepo.Update(order)
+}
+
+func (uc *OrderUseCase) UpdateSchedule(order *entity.Orders) error {
+	return uc.orderRepo.UpdateSchedule(order)
 }
 
 func (uc *OrderUseCase) Delete(id int64) error {

@@ -3,6 +3,7 @@ package repository
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/domain/repository"
+	"fmt"
 	"log"
 	"time"
 
@@ -62,15 +63,13 @@ func (r *XormOrderRepository) ListByCustomerID(customerID int) ([]*entity.Orders
 }
 
 func (r *XormOrderRepository) Update(order *entity.Orders) error {
+	_, err := r.engine.ID(order.ID).Update(order)
+	return err
+}
+func (r *XormOrderRepository) UpdateSchedule(order *entity.Orders) error {
 	session := r.engine.ID(order.ID)
-
-	if order.ActualModel == "" {
-		session = session.Cols("actual_model")
-	}
-
-	if !order.ScheduledTime.IsZero() {
-		session = session.Cols("scheduled_time")
-	}
+	session = session.Cols("actual_model")
+	session = session.Cols("scheduled_time")
 
 	_, err := session.Update(order)
 	return err
@@ -82,12 +81,15 @@ func (r *XormOrderRepository) Delete(id int64) error {
 }
 
 func (r *XormOrderRepository) UpdateCompletionFlg(id int64) error {
-	_, err := r.engine.ID(id).Update(new(entity.Orders))
+	order := &entity.Orders{CompletionFlg: "1"}
+	_, err := r.engine.ID(id).Cols("completion_flg").Update(order)
 	return err
 }
 
 func (r *XormOrderRepository) UpdateIsDeleted(id int64) error {
-	_, err := r.engine.ID(id).Update(new(entity.Orders))
+	order := &entity.Orders{IsDeleted: "1"}
+	fmt.Println("おおおおだああああああーーーーーーーー", order)
+	_, err := r.engine.ID(id).Cols("is_deleted").Update(order)
 	return err
 }
 
@@ -122,6 +124,7 @@ func (r *XormOrderRepository) ListSchedule(startDate, endDate string) ([]*entity
 	orders := make([]*entity.Orders, 0)
 	err := r.engine.Where("scheduled_time >= ?", startDate).
 		And("scheduled_time <= ?", endDate).
+		And("is_deleted = 0").
 		Find(&orders)
 	return orders, err
 }

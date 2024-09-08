@@ -174,8 +174,6 @@ func (h *TipsHandler) UpdateSchedule(c *gin.Context) {
 	id := c.Param("id")
 	actualModel := c.Query("actual_model")
 	scheduledTimeStr := c.Query("scheduled_time")
-	fmt.Println("あくちゅあるもでる", actualModel)
-	fmt.Println("すけじゅーるたいむ", scheduledTimeStr)
 
 	// パラメータの検証
 	if id == "" || scheduledTimeStr == "" {

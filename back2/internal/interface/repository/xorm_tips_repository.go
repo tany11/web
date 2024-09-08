@@ -3,6 +3,7 @@ package repository
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/domain/repository"
+	"fmt"
 	"log"
 	"time"
 
@@ -18,6 +19,8 @@ func NewXormTipsRepository(engine *xorm.Engine) repository.TipsRepository {
 }
 
 func (r *XormTipsRepository) Create(tips *entity.Tips) error {
+	tips.IsDeleted = "0"
+	tips.CompletionFlg = "0"
 	_, err := r.engine.Insert(tips)
 	if err != nil {
 		log.Printf("データベースへのヒント挿入に失敗しました。エラー: %v", err)
@@ -48,6 +51,7 @@ func (r *XormTipsRepository) List(groupID, offset, limit int) ([]*entity.Tips, e
 		Find(&tips)
 	return tips, err
 }
+
 func (r *XormTipsRepository) ListReserved(groupID, offset, limit int) ([]*entity.Tips, error) {
 	tips := make([]*entity.Tips, 0)
 	err := r.engine.Where("group_i_d = ?", groupID).Where("completion_flg = 0").Where("is_deleted = 0").Limit(limit, offset).Find(&tips)
@@ -56,13 +60,33 @@ func (r *XormTipsRepository) ListReserved(groupID, offset, limit int) ([]*entity
 
 func (r *XormTipsRepository) Update(tips *entity.Tips) error {
 	session := r.engine.ID(tips.ID)
-
+	fmt.Println("ちっぷす", tips)
 	if tips.ActualModel == "" {
 		session = session.Cols("actual_model")
 	}
 
 	if !tips.ScheduledTime.IsZero() {
 		session = session.Cols("scheduled_time")
+	}
+
+	if tips.ScheduledBox != "" {
+		session = session.Cols("scheduled_box")
+	}
+
+	if tips.Title != "" {
+		session = session.Cols("title")
+	}
+
+	if tips.Notes != "" {
+		session = session.Cols("notes")
+	}
+
+	if tips.CompletionFlg != "" {
+		session = session.Cols("completion_flg")
+	}
+
+	if tips.IsDeleted != "" {
+		session = session.Cols("is_deleted")
 	}
 
 	_, err := session.Update(tips)
@@ -89,6 +113,7 @@ func (r *XormTipsRepository) ListSchedule(groupID int, startDate, endDate string
 	tips := make([]*entity.Tips, 0)
 	err := r.engine.Where("scheduled_time >= ?", startDate).
 		And("scheduled_time <= ?", endDate).
+		And("is_deleted = 0").
 		Find(&tips)
 	return tips, err
 }

@@ -147,20 +147,13 @@ func (h *OrderHandler) UpdateCompletionFlg(c *gin.Context) {
 	}
 
 	// 現在の注文を取得
-	order, err := h.useCase.GetByID(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文の取得に失敗しました: " + err.Error()})
+	if err := h.useCase.UpdateCompletionFlg(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文の更新に失敗しました: " + err.Error()})
 		return
 	}
-	if order == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "注文が見つかりません"})
-		return
-	}
-
-	order.CompletionFlg = "1"
 
 	// 更新を実行
-	if err := h.useCase.Update(order); err != nil {
+	if err := h.useCase.UpdateCompletionFlg(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文の更新に失敗しました: " + err.Error()})
 		return
 	}
@@ -175,15 +168,11 @@ func (h *OrderHandler) DeleteFlg(c *gin.Context) {
 		return
 	}
 
-	order, err := h.useCase.GetByID(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := h.useCase.UpdateIsDeleted(id); err != nil {
 		return
 	}
 
-	order.IsDeleted = "1"
-
-	if err := h.useCase.Update(order); err != nil {
+	if err := h.useCase.UpdateIsDeleted(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -241,7 +230,7 @@ func (h *OrderHandler) UpdateSchedule(c *gin.Context) {
 	order.ScheduledTime = scheduledTime
 
 	// 更新処理
-	err = h.useCase.Update(order)
+	err = h.useCase.UpdateSchedule(order)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

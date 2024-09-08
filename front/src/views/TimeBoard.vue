@@ -1,16 +1,21 @@
 <template>
     <v-container fluid>
         <v-card class="mx-auto" max-width="1200">
-            <!-- メモ機能が欲しいよ！！！！！！！！ -->
             <v-card-title class="text-h4 font-weight-bold blue-grey lighten-5 py-4">
                 タイムボード
             </v-card-title>
-            <v-col cols="1" class="memo-column">
-                <v-btn color="primary" @click="openNewMemoModal">
-                    メモ追加
-                </v-btn>
-            </v-col>
-            <!-- 日付切り替えボタンを修正 -->
+            <v-row justify="end" class="mr-2">
+                <v-col cols="auto">
+                    <v-btn color="primary" @click="openNewMemoModal">
+                        メモ
+                    </v-btn>
+                </v-col>
+                <v-col cols="auto">
+                    <v-btn color="success" @click="openNewOrderModal">
+                        受注
+                    </v-btn>
+                </v-col>
+            </v-row>
             <v-card-text>
                 <v-row align="center" justify="space-between">
                     <v-col cols="auto">
@@ -85,8 +90,6 @@
                         </div>
                     </div>
                 </v-col>
-                <!-- メモボタン -->
-
             </v-row>
         </v-card>
         <v-overlay :value="isLoading">
@@ -100,6 +103,10 @@
         </v-dialog>
         <v-dialog v-model="showNewMemoModal" max-width="800px">
             <MemoDetail :memo="newMemo" @close="closeNewMemoModal" @memo-updated="handleNewMemoCreated" />
+        </v-dialog>
+        <v-dialog v-model="showNewOrderModal" max-width="800px">
+            <OrderDetail :order="newOrder" :is-new="true" @close="closeNewOrderModal"
+                @order-updated="handleNewOrderCreated" />
         </v-dialog>
     </v-container>
 </template>
@@ -129,7 +136,7 @@ export default {
             currentDate: new Date(),
             isLoading: false,
             weekStart: null,
-            selectedDateOffset: 0, // 初期値を0に設定
+            selectedDateOffset: 0,
             showOrderModal: false,
             selectedOrder: null,
             memos: [],
@@ -137,6 +144,8 @@ export default {
             selectedMemo: null,
             showNewMemoModal: false,
             newMemo: {},
+            showNewOrderModal: false,
+            newOrder: {},
         };
     },
     computed: {
@@ -579,6 +588,25 @@ export default {
             await this.fetchMemos();
             this.closeNewMemoModal();
         },
+        openNewOrderModal() {
+            this.newOrder = {
+                ID: null,
+                start_time: new Date(this.currentDate),
+                end_time: new Date(new Date(this.currentDate).getTime() + 60 * 60000),
+                ActualModel: '',
+                StoreID: null,
+                storeCode: '', // 店舗コード用のプロパティを追加
+                // 他の必要なプロパティを追加
+            };
+            this.showNewOrderModal = true;
+        },
+        closeNewOrderModal() {
+            this.showNewOrderModal = false;
+        },
+        async handleNewOrderCreated() {
+            await this.fetchOrders();
+            this.closeNewOrderModal();
+        },
     },
     async mounted() {
         this.weekStart = this.getMonday(new Date());
@@ -883,10 +911,15 @@ export default {
     display: none;
 }
 
-.memo-column {
+.memo-column,
+.order-column {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     padding-top: 10px;
+}
+
+.order-column {
+    margin-left: 10px;
 }
 </style>

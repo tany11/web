@@ -15,7 +15,22 @@
         </v-card-text>
         <v-card-actions>
             <v-btn @click="$emit('close')">閉じる</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="success" @click="completeMemo" v-if="!isNewMemo">完了</v-btn>
+            <v-btn color="error" @click="confirmDelete" v-if="!isNewMemo">削除</v-btn>
         </v-card-actions>
+
+        <v-dialog v-model="deleteConfirmDialog" max-width="300">
+            <v-card>
+                <v-card-title>削除の確認</v-card-title>
+                <v-card-text>このメモを削除してもよろしいですか？</v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn color="primary" text @click="deleteConfirmDialog = false">キャンセル</v-btn>
+                    <v-btn color="error" text @click="deleteMemo">削除</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </v-card>
 </template>
 
@@ -31,6 +46,7 @@ export default {
         return {
             editedMemo: {},
             castList: [],
+            deleteConfirmDialog: false,
         };
     },
     computed: {
@@ -83,10 +99,32 @@ export default {
             const currentValue = parseInt(this.editedMemo[field]) || 0;
             this.editedMemo[field] = Math.max(0, currentValue + step).toString();
         },
+        async completeMemo() {
+            try {
+                await axios.put(`${this.apiBaseUrl}/tips/${this.editedMemo.ID}/completion`);
+                this.$emit('close');
+                this.$emit('memo-updated');
+            } catch (error) {
+                console.error('メモの完了に失敗しました:', error);
+            }
+        },
+        confirmDelete() {
+            this.deleteConfirmDialog = true;
+        },
+        async deleteMemo() {
+            try {
+                await axios.put(`${this.apiBaseUrl}/tips/${this.editedMemo.ID}/delete`);
+                this.deleteConfirmDialog = false;
+                this.$emit('close');
+                this.$emit('memo-deleted', this.editedMemo.ID);
+            } catch (error) {
+                console.error('メモの削除に失敗しました:', error);
+            }
+        },
     },
     created() {
         this.editedMemo = {
-            ID: null,
+            ID: '',
             Title: '',
             Content: '',
             ActualModel: '',

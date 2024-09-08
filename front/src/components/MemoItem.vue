@@ -53,16 +53,10 @@ export default {
             };
         },
         getMemoColor(memo) {
-            if (memo.ActualModel === "") {
-                return '#808080';
-            } else if (memo.CompletionFlg === "1") {
-                return '#8b0000';
-            } else if (memo.DummyStoreFlg === "0") {
-                return 'orange';
-            } else if (memo.DummyStoreFlg === "1") {
-                return 'green';
+            if (memo.CompletionFlg === "1") {
+                return '#9E76B4';
             } else {
-                return '#808080';
+                return '#7F1184';
             }
         },
         onDragStart(event) {

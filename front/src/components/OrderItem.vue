@@ -2,7 +2,7 @@
     <div :style="orderStyle" class="order-item" draggable="true" @dragstart="onDragStart" @dragend="onDragEnd"
         @click="onClick">
         <v-card class="order-content" :color="orderColor">
-            {{ order.PhoneNumber }}
+            {{ lastFourDigits }}
         </v-card>
     </div>
 </template>
@@ -53,10 +53,10 @@ export default {
             };
         },
         getOrderColor(order) {
-            if (order.ActualModel === "") {
-                return '#808080';
-            } else if (order.CompletionFlg === "1") {
+            if (order.CompletionFlg === "1") {
                 return '#8b0000';
+            } else if (order.ActualModel === "") {
+                return '#808080';
             } else if (order.DummyStoreFlg === "0") {
                 return 'orange';
             } else if (order.DummyStoreFlg === "1") {
@@ -82,6 +82,9 @@ export default {
         },
         orderColor() {
             return this.getOrderColor(this.order);
+        },
+        lastFourDigits() {
+            return this.order.PhoneNumber.slice(-4);
         }
     }
 };
