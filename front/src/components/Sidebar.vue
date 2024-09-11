@@ -23,7 +23,7 @@ export default {
           icon: 'mdi-view-dashboard',
           items: [
             { title: 'ダッシュボード', to: '/dashboard' },
-            { title: '受注', to: '/order' },
+            // { title: '受注', to: '/order' },
             { title: 'タイムボード', to: '/timeboard' },
           ],
         },

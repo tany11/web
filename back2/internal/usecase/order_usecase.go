@@ -36,13 +36,19 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 		newCustomer := &entity.Customer{
 			PhoneNumber:  order.PhoneNumber,
 			CustomerName: order.CustomerName,
-			City1:        order.City,
-			Address1:     order.Address,
 			GroupID:      1,
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
-			// 他の必要な顧客情報をここで設定
 		}
+
+		if order.UsageType == "1" {
+			newCustomer.City1 = order.City
+			newCustomer.Address1 = order.Address
+		} else {
+			newCustomer.City3 = order.City
+			newCustomer.Address3 = order.Address
+		}
+
 		err = uc.customerRepo.Create(newCustomer)
 		log.Printf("顧客を作成しました")
 		if err != nil {
@@ -53,6 +59,25 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 		log.Printf("既存の顧客が見つかりました")
 		// 既存の顧客のUpdatedAtを更新
 		customer.UpdatedAt = time.Now()
+		if order.UsageType == "1" {
+			if customer.City1 == "" {
+				customer.City1 = order.City
+			} else if customer.City1 == order.City {
+				customer.City1 = order.City
+			} else {
+				customer.City2 = order.City
+			}
+			if customer.Address1 == "" {
+				customer.Address1 = order.Address
+			} else if customer.Address1 == order.Address {
+				customer.Address1 = order.Address
+			} else {
+				customer.Address2 = order.Address
+			}
+		} else {
+			customer.City3 = order.City
+			customer.Address3 = order.Address
+		}
 		err = uc.customerRepo.Update(customer)
 		if err != nil {
 			return fmt.Errorf("顧客情報の更新に失敗しました: %w", err)
@@ -136,6 +161,7 @@ func (uc *OrderUseCase) Update(order *entity.Orders) error {
 
 func (uc *OrderUseCase) UpdateSchedule(order *entity.Orders) error {
 	return uc.orderRepo.UpdateSchedule(order)
+
 }
 
 func (uc *OrderUseCase) Delete(id int64) error {

@@ -117,10 +117,22 @@ func (h *MasterHandler) ListForDropdown(c *gin.Context) {
 	simplifiedStaffs := make([]gin.H, len(masters))
 	for i, master := range masters {
 		simplifiedStaffs[i] = gin.H{
-			"id":   master.StatusCode,
-			"name": master.StatusName,
+			"id":   master.ClassificationCode,
+			"name": master.ClassificationName,
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": simplifiedStaffs})
+}
+
+func (h *MasterHandler) ListForUsage(c *gin.Context) {
+	groupID := 1
+	masters, err := h.useCase.ListForUsage(groupID)
+	if err != nil {
+		log.Printf("Error in ListForUsage: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": masters})
 }

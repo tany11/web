@@ -3,19 +3,27 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
+	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"back2/internal/infrastructure/websocket"
 
 	"github.com/gin-gonic/gin"
 )
 
 type OrderHandler struct {
-	useCase *usecase.OrderUseCase
+	orderUseCase    usecase.OrderUseCase
+	websocketServer *websocket.Server
 }
 
-func NewOrderHandler(useCase *usecase.OrderUseCase) *OrderHandler {
-	return &OrderHandler{useCase: useCase}
+func NewOrderHandler(orderUseCase *usecase.OrderUseCase, websocketServer *websocket.Server) *OrderHandler {
+	return &OrderHandler{
+		orderUseCase:    *orderUseCase,
+		websocketServer: websocketServer,
+	}
 }
 
 func (h *OrderHandler) Create(c *gin.Context) {
@@ -33,11 +41,18 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		orders.ScheduledTime = time.Now()
 	}
 
-	err := h.useCase.Create(&orders)
+	err := h.orderUseCase.Create(&orders)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// WebSocket通を送信
+	newOrderJSON, _ := json.Marshal(map[string]interface{}{
+		"type":  "order_update",
+		"order": orders,
+	})
+	h.websocketServer.BroadcastMessage(newOrderJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": orders})
 }
@@ -48,7 +63,7 @@ func (h *OrderHandler) GetAll(c *gin.Context) {
 
 	groupID := 0 // 固定値として1を使用
 
-	orders, err := h.useCase.List(groupID, page, pageSize)
+	orders, err := h.orderUseCase.List(groupID, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文リストの取得に失敗しました: " + err.Error()})
 		return
@@ -68,7 +83,7 @@ func (h *OrderHandler) ListReserved(c *gin.Context) {
 
 	groupID := 0 // 固定値として1を使用
 
-	orders, err := h.useCase.ListReserved(groupID, page, pageSize)
+	orders, err := h.orderUseCase.ListReserved(groupID, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "予約リストの取得に失敗しました: " + err.Error()})
 		return
@@ -89,7 +104,7 @@ func (h *OrderHandler) Get(c *gin.Context) {
 		return
 	}
 
-	order, err := h.useCase.GetByID(id)
+	order, err := h.orderUseCase.GetByID(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -116,10 +131,17 @@ func (h *OrderHandler) Update(c *gin.Context) {
 	}
 	order.ID = id
 
-	if err := h.useCase.Update(&order); err != nil {
+	if err := h.orderUseCase.Update(&order); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// WebSocket通知を送信
+	updatedOrderJSON, _ := json.Marshal(map[string]interface{}{
+		"type":  "order_update",
+		"order": order,
+	})
+	h.websocketServer.BroadcastMessage(updatedOrderJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": order})
 }
@@ -131,7 +153,7 @@ func (h *OrderHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.Delete(id); err != nil {
+	if err := h.orderUseCase.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -147,16 +169,31 @@ func (h *OrderHandler) UpdateCompletionFlg(c *gin.Context) {
 	}
 
 	// 現在の注文を取得
-	if err := h.useCase.UpdateCompletionFlg(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文の更新に失敗しました: " + err.Error()})
+	_, err = h.orderUseCase.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文の取得に失敗しました: " + err.Error()})
 		return
 	}
 
 	// 更新を実行
-	if err := h.useCase.UpdateCompletionFlg(id); err != nil {
+	if err := h.orderUseCase.UpdateCompletionFlg(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文の更新に失敗しました: " + err.Error()})
 		return
 	}
+
+	// 更新後の注文を再取得
+	updatedOrder, err := h.orderUseCase.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新後の注文の取得に失敗しました: " + err.Error()})
+		return
+	}
+
+	// WebSocket通知を送信
+	updatedOrderJSON, _ := json.Marshal(map[string]interface{}{
+		"type":  "order_update",
+		"order": updatedOrder,
+	})
+	h.websocketServer.BroadcastMessage(updatedOrderJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": "注文の完了フラグが更新されました"})
 }
@@ -168,11 +205,18 @@ func (h *OrderHandler) DeleteFlg(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.UpdateIsDeleted(id); err != nil {
+	if err := h.orderUseCase.UpdateIsDeleted(id); err != nil {
 		return
 	}
 
-	if err := h.useCase.UpdateIsDeleted(id); err != nil {
+	// WebSocket通知を送信
+	deletedOrderJSON, _ := json.Marshal(map[string]interface{}{
+		"type":    "order_delete",
+		"orderId": id,
+	})
+	h.websocketServer.BroadcastMessage(deletedOrderJSON)
+
+	if err := h.orderUseCase.UpdateIsDeleted(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -184,13 +228,21 @@ func (h *OrderHandler) ListSchedule(c *gin.Context) {
 	startDate := c.Query("start_time")
 	endDate := c.Query("end_time")
 
-	orders, err := h.useCase.ListSchedule(startDate, endDate)
+	orders, err := h.orderUseCase.ListSchedule(startDate, endDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": orders})
+	// 削除フラグが立っていないオーダーのみをフィルタリング
+	activeOrders := make([]entity.Orders, 0)
+	for _, order := range orders {
+		if order.IsDeleted != "1" {
+			activeOrders = append(activeOrders, *order)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": activeOrders})
 }
 
 func (h *OrderHandler) UpdateSchedule(c *gin.Context) {
@@ -219,7 +271,7 @@ func (h *OrderHandler) UpdateSchedule(c *gin.Context) {
 	}
 
 	// オーダーの取得
-	order, err := h.useCase.GetByID(orderID)
+	order, err := h.orderUseCase.GetByID(orderID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "オーダーの取得に失敗しました: " + err.Error()})
 		return
@@ -229,12 +281,36 @@ func (h *OrderHandler) UpdateSchedule(c *gin.Context) {
 	order.ActualModel = actualModel
 	order.ScheduledTime = scheduledTime
 
-	// 更新処理
-	err = h.useCase.UpdateSchedule(order)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	done := make(chan bool)
+	errChan := make(chan error)
+	go func() {
+		log.Println("Starting UpdateSchedule operation")
+		err := h.orderUseCase.UpdateSchedule(order)
+		if err != nil {
+			log.Printf("Error in UpdateSchedule: %v", err)
+			errChan <- err
+		} else {
+			log.Println("UpdateSchedule operation completed successfully")
+			done <- true
+		}
+	}()
 
-	c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
+	select {
+	case <-done:
+		log.Println("UpdateSchedule completed within timeout")
+		// オーダーの更新が成功した場合、WebSocketを通じて通知
+		updatedOrderJSON, _ := json.Marshal(map[string]interface{}{
+			"type":  "order_update",
+			"order": order,
+		})
+		log.Printf("Broadcasting message: %s", string(updatedOrderJSON))
+		h.websocketServer.BroadcastMessage(updatedOrderJSON)
+		c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
+	case err := <-errChan:
+		log.Printf("Error occurred during UpdateSchedule: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	case <-time.After(10 * time.Second):
+		log.Println("UpdateSchedule operation timed out")
+		c.JSON(http.StatusRequestTimeout, gin.H{"error": "処理がタイムアウトしました"})
+	}
 }

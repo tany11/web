@@ -3,20 +3,27 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"back2/internal/infrastructure/websocket"
+
 	"github.com/gin-gonic/gin"
 )
 
 type TipsHandler struct {
-	useCase *usecase.TipsUseCase
+	useCase         *usecase.TipsUseCase
+	websocketServer *websocket.Server
 }
 
-func NewTipsHandler(useCase *usecase.TipsUseCase) *TipsHandler {
-	return &TipsHandler{useCase: useCase}
+func NewTipsHandler(useCase *usecase.TipsUseCase, websocketServer *websocket.Server) *TipsHandler {
+	return &TipsHandler{
+		useCase:         useCase,
+		websocketServer: websocketServer,
+	}
 }
 
 func (h *TipsHandler) Create(c *gin.Context) {
@@ -36,6 +43,13 @@ func (h *TipsHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// WebSocket通知を送信
+	newMemoJSON, _ := json.Marshal(map[string]interface{}{
+		"type": "memo_update",
+		"memo": tips,
+	})
+	h.websocketServer.BroadcastMessage(newMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": tips})
 }
@@ -86,6 +100,13 @@ func (h *TipsHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// WebSocket通知を送信
+	updatedMemoJSON, _ := json.Marshal(map[string]interface{}{
+		"type": "memo_update",
+		"memo": tips,
+	})
+	h.websocketServer.BroadcastMessage(updatedMemoJSON)
+
 	c.JSON(http.StatusOK, gin.H{"data": tips})
 }
 
@@ -111,10 +132,10 @@ func (h *TipsHandler) UpdateCompletionFlg(c *gin.Context) {
 		return
 	}
 
-	// 現在の注文を取得
+	// 現在のヒントを取得
 	tips, err := h.useCase.GetByID(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "注文の取得に失敗しました: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ヒントの取得に失敗しました: " + err.Error()})
 		return
 	}
 	if tips == nil {
@@ -125,10 +146,17 @@ func (h *TipsHandler) UpdateCompletionFlg(c *gin.Context) {
 	tips.CompletionFlg = "1"
 
 	// 更新を実行
-	if err := h.useCase.Update(tips); err != nil {
+	if err := h.useCase.UpdateCompletionFlg(id, tips); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ヒントの更新に失敗しました: " + err.Error()})
 		return
 	}
+
+	// WebSocket通知を送信
+	updatedMemoJSON, _ := json.Marshal(map[string]interface{}{
+		"type": "memo_update",
+		"memo": tips,
+	})
+	h.websocketServer.BroadcastMessage(updatedMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": "ヒントの完了フラグが更新されました"})
 }
@@ -148,10 +176,17 @@ func (h *TipsHandler) DeleteFlg(c *gin.Context) {
 
 	tips.IsDeleted = "1"
 
-	if err := h.useCase.Update(tips); err != nil {
+	if err := h.useCase.UpdateIsDeleted(id, tips); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ヒントの更新に失敗しました: " + err.Error()})
 		return
 	}
+
+	// WebSocket通知を送信
+	deletedMemoJSON, _ := json.Marshal(map[string]interface{}{
+		"type":   "memo_delete",
+		"memoId": id,
+	})
+	h.websocketServer.BroadcastMessage(deletedMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": "ヒントの削除フラグが更新されました"})
 }
@@ -167,7 +202,15 @@ func (h *TipsHandler) ListSchedule(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": tips})
+	// 削除フラグが立っていないメモのみをフィルタリング
+	activeTips := make([]entity.Tips, 0)
+	for _, tip := range tips {
+		if tip.IsDeleted != "1" {
+			activeTips = append(activeTips, *tip)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": activeTips})
 }
 
 func (h *TipsHandler) UpdateSchedule(c *gin.Context) {
@@ -213,6 +256,13 @@ func (h *TipsHandler) UpdateSchedule(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// オーダーの更新が成功した場合、WebSocketを通じて通知
+	updatedOrderJSON, _ := json.Marshal(map[string]interface{}{
+		"type":  "order_update",
+		"order": tips,
+	})
+	h.websocketServer.BroadcastMessage(updatedOrderJSON)
 
 	c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
 }
@@ -263,6 +313,13 @@ func (h *TipsHandler) UpdateMemo(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// メモの更新が成功した場合、WebSocketを通じて通知
+	updatedMemoJSON, _ := json.Marshal(map[string]interface{}{
+		"type": "memo_update",
+		"memo": tips,
+	})
+	h.websocketServer.BroadcastMessage(updatedMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
 }

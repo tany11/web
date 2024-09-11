@@ -19,6 +19,9 @@ func NewXormOrderRepository(engine *xorm.Engine) repository.OrderRepository {
 }
 
 func (r *XormOrderRepository) Create(order *entity.Orders) error {
+	if order.ModelName == "" {
+		order.ModelName = "F"
+	}
 	_, err := r.engine.Insert(order)
 	if err != nil {
 		log.Printf("データベースへの注文挿入に失敗しました。エラー: %v", err)

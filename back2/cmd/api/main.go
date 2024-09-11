@@ -6,6 +6,7 @@ import (
 
 	"back2/internal/infrastructure/database"
 	"back2/internal/infrastructure/router"
+	"back2/internal/infrastructure/websocket"
 	"back2/internal/interface/handler"
 	"back2/internal/interface/repository"
 	"back2/internal/usecase"
@@ -51,15 +52,23 @@ func main() {
 	castHandler := handler.NewCastHandler(castUseCase)
 	customerHandler := handler.NewCustomerHandler(customerUseCase, orderUseCase)
 	groupHandler := handler.NewGroupHandler(groupUseCase)
-	orderHandler := handler.NewOrderHandler(orderUseCase)
+	orderHandler := handler.NewOrderHandler(orderUseCase, websocket.NewServer())
 	staffHandler := handler.NewStaffHandler(staffUseCase)
 	authHandler := handler.NewAuthHandler(staffUseCase)
 	storeHandler := handler.NewStoreHandler(storeUseCase)
 	mediaHandler := handler.NewMediaHandler(mediaUseCase)
 	masterHandler := handler.NewMasterHandler(masterUseCase)
-	tipsHandler := handler.NewTipsHandler(tipsUseCase)
+	tipsHandler := handler.NewTipsHandler(tipsUseCase, websocket.NewServer())
 	// Ginエンジンの設定
 	engine := gin.Default()
+	// WebSocketサーバーの初期化
+	wsServer := websocket.NewServer()
+	go wsServer.Run()
+
+	orderHandler = handler.NewOrderHandler(orderUseCase, wsServer)
+	tipsHandler = handler.NewTipsHandler(tipsUseCase, wsServer)
+
+	// CORSの設定
 	config := cors.DefaultConfig()
 	frontUrl := os.Getenv("FRONT_URL")
 	log.Println(frontUrl)
@@ -78,7 +87,9 @@ func main() {
 		authHandler,
 		storeHandler,
 		mediaHandler,
-		masterHandler, tipsHandler)
+		masterHandler,
+		tipsHandler,
+		wsServer)
 
 	// サーバーの起動
 	if err := engine.Run(":3000"); err != nil {

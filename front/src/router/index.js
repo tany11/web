@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
-import Order from '../views/Order.vue'
+// import Order from '../views/Order.vue'
 import CustomerRegistration from '../components/CustomerRegistration.vue'
 import StaffRegistration from '../components/StaffRegistration.vue'
 import CastRegistration from '../components/CastRegistration.vue'
@@ -18,7 +18,7 @@ const routes = [
     { path: '/login', name: 'Login', component: Login },
     { path: '/register', component: Register },
     { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
-    { path: '/order', component: Order, meta: { requiresAuth: true } },
+    //   { path: '/order', component: Order, meta: { requiresAuth: true } },
     { path: '/staff-registration', component: StaffRegistration, meta: { requiresAuth: true } },
     { path: '/staff-edit', component: StaffEdit, meta: { requiresAuth: true } },
     { path: '/cast-registration', component: CastRegistration, meta: { requiresAuth: true } },

@@ -3,6 +3,7 @@ package router
 import (
 	"time"
 
+	"back2/internal/infrastructure/websocket"
 	"back2/internal/interface/handler"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,7 @@ func SetupRouter(
 	mediaHandler *handler.MediaHandler,
 	masterHandler *handler.MasterHandler,
 	tipsHandler *handler.TipsHandler,
+	wsServer *websocket.Server,
 ) {
 	// Apply global middleware
 	engine.Use(RecordUaAndTime)
@@ -97,6 +99,7 @@ func SetupRouter(
 		v1.GET("/master/:id", masterHandler.Get)
 		v1.PUT("/master/:id", masterHandler.Update)
 		v1.DELETE("/master/:id", masterHandler.Delete)
+		v1.GET("/master/usage", masterHandler.ListForUsage)
 
 		// Tips routes
 		v1.POST("/tips", tipsHandler.Create)
@@ -111,6 +114,11 @@ func SetupRouter(
 		// Login endpoint added
 		v1.POST("/login", authHandler.Login)
 		v1.POST("/logout", authHandler.Logout)
+
+		// WebSocket route
+		v1.GET("/ws", func(c *gin.Context) {
+			wsServer.HandleWebSocket(c.Writer, c.Request)
+		})
 	}
 }
 

@@ -2,7 +2,8 @@
     <div :style="orderStyle" class="order-item" draggable="true" @dragstart="onDragStart" @dragend="onDragEnd"
         @click="onClick">
         <v-card class="order-content" :color="orderColor">
-            {{ lastFourDigits }}
+            <div>{{ order.City }}</div>
+            <div>{{ lastFourDigits }}</div>
         </v-card>
     </div>
 </template>
@@ -100,6 +101,7 @@ export default {
 .order-content {
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     font-size: 12px;

@@ -61,9 +61,8 @@ func (r *XormTipsRepository) ListReserved(groupID, offset, limit int) ([]*entity
 func (r *XormTipsRepository) Update(tips *entity.Tips) error {
 	session := r.engine.ID(tips.ID)
 	fmt.Println("ちっぷす", tips)
-	if tips.ActualModel == "" {
-		session = session.Cols("actual_model")
-	}
+
+	session = session.Cols("actual_model")
 
 	if !tips.ScheduledTime.IsZero() {
 		session = session.Cols("scheduled_time")
@@ -98,13 +97,21 @@ func (r *XormTipsRepository) Delete(id int64) error {
 	return err
 }
 
-func (r *XormTipsRepository) UpdateCompletionFlg(id int64) error {
-	_, err := r.engine.ID(id).Update(new(entity.Tips))
+func (r *XormTipsRepository) UpdateCompletionFlg(id int64, tips *entity.Tips) error {
+	session := r.engine.ID(id)
+	if tips.CompletionFlg != "" {
+		session = session.Cols("completion_flg")
+	}
+	_, err := session.Update(tips)
 	return err
 }
 
-func (r *XormTipsRepository) UpdateIsDeleted(id int64) error {
-	_, err := r.engine.ID(id).Update(new(entity.Tips))
+func (r *XormTipsRepository) UpdateIsDeleted(id int64, tips *entity.Tips) error {
+	session := r.engine.ID(id)
+	if tips.IsDeleted != "" {
+		session = session.Cols("is_deleted")
+	}
+	_, err := session.Update(tips)
 	return err
 }
 

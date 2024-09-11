@@ -68,3 +68,9 @@ func (r *XormMasterRepository) ListForDropdown(groupID int) ([]*entity.Master, e
 	err := r.engine.Cols("i_d", "master_name").Find(&masters)
 	return masters, err
 }
+
+func (r *XormMasterRepository) ListForUsage(groupID int) ([]*entity.Master, error) {
+	masters := make([]*entity.Master, 0)
+	err := r.engine.Where("classification_name = ?", "UsageType").Find(&masters)
+	return masters, err
+}

@@ -51,12 +51,12 @@ func (uc *TipsUseCase) Delete(id int64) error {
 	return uc.tipsRepo.Delete(id)
 }
 
-func (uc *TipsUseCase) UpdateCompletionFlg(id int64) error {
-	return uc.tipsRepo.UpdateCompletionFlg(id)
+func (uc *TipsUseCase) UpdateCompletionFlg(id int64, tips *entity.Tips) error {
+	return uc.tipsRepo.UpdateCompletionFlg(id, tips)
 }
 
-func (uc *TipsUseCase) UpdateIsDeleted(id int64) error {
-	return uc.tipsRepo.UpdateIsDeleted(id)
+func (uc *TipsUseCase) UpdateIsDeleted(id int64, tips *entity.Tips) error {
+	return uc.tipsRepo.UpdateIsDeleted(id, tips)
 }
 
 func (uc *TipsUseCase) ListSchedule(groupID int, startDate, endDate string) ([]*entity.Tips, error) {

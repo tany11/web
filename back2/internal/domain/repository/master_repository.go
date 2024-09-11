@@ -9,4 +9,5 @@ type MasterRepository interface {
 	Update(master *entity.Master) error
 	Delete(id int64) error
 	ListForDropdown(groupID int) ([]*entity.Master, error)
+	ListForUsage(groupID int) ([]*entity.Master, error)
 }

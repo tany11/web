@@ -96,7 +96,7 @@
             <v-progress-circular indeterminate size="64"></v-progress-circular>
         </v-overlay>
         <v-dialog v-model="showOrderModal" max-width="800px">
-            <OrderDetail :order="selectedOrder" @close="closeOrderModal" @order-updated="fetchOrders" />
+            <OrderDetail :order="selectedOrder" :is-new="false" @close="closeOrderModal" @order-updated="fetchOrders" />
         </v-dialog>
         <v-dialog v-model="showMemoModal" max-width="800px">
             <MemoDetail :memo="selectedMemo" @close="closeMemoModal" @memo-updated="fetchMemos" />
@@ -119,6 +119,7 @@ import OrderItem from '@/components/OrderItem.vue';
 import OrderDetail from '@/components/OrderDetail.vue';
 import MemoItem from '@/components/MemoItem.vue';
 import MemoDetail from '@/components/MemoDetail.vue';
+import { useWebSocket } from '@/utils/websocket';
 
 export default {
     name: 'TimeBoard',
@@ -128,6 +129,10 @@ export default {
         OrderDetail,
         MemoItem,
         MemoDetail
+    },
+    setup() {
+        const { socket, isConnected, connect } = useWebSocket();
+        return { wsSocket: socket, wsIsConnected: isConnected, wsConnect: connect };
     },
     data() {
         return {
@@ -146,6 +151,9 @@ export default {
             newMemo: {},
             showNewOrderModal: false,
             newOrder: {},
+            socket: null,
+            filteredOrders: [],
+            filteredMemos: [],
         };
     },
     computed: {
@@ -174,56 +182,12 @@ export default {
             }
             return dates;
         },
-        filteredOrders() {
-            if (this.selectedDateOffset === null) {
-                return [];
-            }
-            const currentDateStart = new Date(this.currentDate);
-            currentDateStart.setHours(6, 0, 0, 0);
-            const currentDateEnd = new Date(currentDateStart);
-            currentDateEnd.setDate(currentDateEnd.getDate() + 1);
-            currentDateEnd.setHours(5, 59, 59, 999);
 
-            return this.orders.filter(order => {
-                const orderStart = new Date(order.start_time);
-                const orderEnd = new Date(order.end_time);
-
-                // 日付をまたぐオーダーの処理
-                if (orderEnd < orderStart) {
-                    orderEnd.setDate(orderEnd.getDate() + 1);
-                }
-
-                return (orderStart < currentDateEnd && orderEnd > currentDateStart);
-            });
-        },
-        filteredMemos() {
-            if (this.selectedDateOffset === null) {
-                return [];
-            }
-            const currentDateStart = new Date(this.currentDate);
-            currentDateStart.setHours(6, 0, 0, 0);
-            const currentDateEnd = new Date(currentDateStart);
-            currentDateEnd.setDate(currentDateEnd.getDate() + 1);
-            currentDateEnd.setHours(5, 59, 59, 999)
-            console.log(this.memos);
-
-            return this.memos.filter(memo => {
-                const memoStart = new Date(memo.start_time);
-                const memoEnd = new Date(memo.end_time);
-
-                // 日付をまたぐメモの処理
-                if (memoEnd < memoStart) {
-                    memoEnd.setDate(memoEnd.getDate() + 1);
-                }
-
-                return (memoStart < currentDateEnd && memoEnd > currentDateStart);
-            });
-        },
         currentWeekOffset() {
             return this.selectedDateOffset;
         },
         ordersWithCastAssignment() {
-            return this.filteredOrders.map(order => {
+            return (this.filteredOrders || []).map(order => {
                 const castIndex = this.casts.findIndex(cast => cast.cast_id === order.ActualModel);
                 const startTime = new Date(order.start_time);
                 const endTime = new Date(order.end_time);
@@ -242,7 +206,7 @@ export default {
             });
         },
         memosWithCastAssignment() {
-            return this.filteredMemos.map(memo => {
+            return (this.filteredMemos || []).map(memo => {
                 const castIndex = this.casts.findIndex(cast => cast.cast_id === memo.ActualModel);
                 const startTime = new Date(memo.start_time);
                 const endTime = new Date(memo.end_time);
@@ -286,11 +250,13 @@ export default {
                         end_time: endDate.toISOString(),
                     }
                 });
-                this.orders = (response.data.data || []).map(order => ({
-                    ...order,
-                    start_time: new Date(order.ScheduledTime),
-                    end_time: new Date(new Date(order.ScheduledTime).getTime() + order.CourseMin * 60000)
-                }));
+                this.orders = (response.data.data || [])
+                    .filter(order => order.IsDeleted !== "1")
+                    .map(order => ({
+                        ...order,
+                        start_time: new Date(order.ScheduledTime),
+                        end_time: new Date(new Date(order.ScheduledTime).getTime() + order.CourseMin * 60000)
+                    }));
                 // オーダーを取得した後、現在の日付に対応するオーダーをフィルタリング
                 this.setDate(this.selectedDateOffset);
             } catch (error) {
@@ -473,14 +439,16 @@ export default {
                         scheduled_time: updatedOrder.start_time.toISOString()
                     }
                 });
-                // 成功した場合、ローカルのオーダーデータを更新
-                const index = this.orders.findIndex(order => order.ID === updatedOrder.ID);
-                if (index !== -1) {
-                    this.orders.splice(index, 1, updatedOrder);
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'order_update',
+                        order: updatedOrder
+                    }));
                 }
             } catch (error) {
                 console.error('オーダーの更新に失敗しました:', error);
-                // エラー処理（例：ユーザーに通知）
+                // エラー理（例：ユーザーに通知）
             }
         },
         handleOrderClicked(order) {
@@ -489,7 +457,9 @@ export default {
         },
         closeOrderModal() {
             this.showOrderModal = false;
-            this.selectedOrder = null;
+            this.$nextTick(() => {
+                this.selectedOrder = null;
+            });
         },
         async fetchMemos() {
             try {
@@ -508,16 +478,18 @@ export default {
 
                 console.log('API Response:', response.data);
 
-                this.memos = (response.data.data || []).map(memo => {
-                    const start_time = new Date(memo.ScheduledTime);
-                    const end_time = new Date(new Date(memo.ScheduledTime).getTime() + memo.ScheduledBox * 60000);
-                    console.log("てすと", start_time, end_time);
-                    return {
-                        ...memo,
-                        start_time,
-                        end_time
-                    };
-                });
+                this.memos = (response.data.data || [])
+                    .filter(memo => memo.IsDeleted !== "1")
+                    .map(memo => {
+                        const start_time = new Date(memo.ScheduledTime);
+                        const end_time = new Date(new Date(memo.ScheduledTime).getTime() + memo.ScheduledBox * 60000);
+                        console.log("てすと", start_time, end_time);
+                        return {
+                            ...memo,
+                            start_time,
+                            end_time
+                        };
+                    });
 
                 console.log('Processed Memos:', this.memos);
             } catch (error) {
@@ -557,13 +529,12 @@ export default {
                         notes: updatedMemo.Notes
                     }
                 });
-                // 成功した場合、ローカルのメモデータを更新
-                const index = this.memos.findIndex(memo => memo.ID === updatedMemo.ID);
-                if (index !== -1) {
-                    this.memos.splice(index, 1, {
-                        ...updatedMemo,
-                        end_time: new Date(updatedMemo.start_time.getTime() + updatedMemo.ScheduledBox * 60000)
-                    });
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'memo_update',
+                        memo: updatedMemo
+                    }));
                 }
             } catch (error) {
                 console.error('メモの更新に失敗しました:', error);
@@ -599,6 +570,7 @@ export default {
                 // 他の必要なプロパティを追加
             };
             this.showNewOrderModal = true;
+            this.isNew = true;
         },
         closeNewOrderModal() {
             this.showNewOrderModal = false;
@@ -606,6 +578,141 @@ export default {
         async handleNewOrderCreated() {
             await this.fetchOrders();
             this.closeNewOrderModal();
+        },
+        setupWebSocketListeners() {
+            if (this.wsSocket) {
+                this.wsSocket.onopen = () => {
+                    console.log('WebSocket connection established');
+                };
+                this.wsSocket.onmessage = (event) => {
+                    console.log('Received WebSocket message:', event.data);
+                    const data = JSON.parse(event.data);
+                    switch (data.type) {
+                        case 'order_update':
+                            this.handleOrderUpdate(data.order);
+                            break;
+                        case 'order_delete':
+                            this.handleOrderDelete(data.orderId);
+                            break;
+                        case 'memo_update':
+                            this.handleMemoUpdate(data.memo);
+                            break;
+                        case 'memo_delete':
+                            this.handleMemoDelete(data.memoId);
+                            break;
+                    }
+                };
+                this.wsSocket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                this.wsSocket.onclose = () => {
+                    console.log('WebSocket connection closed');
+                };
+            }
+        },
+
+        handleOrderUpdate(updatedOrder) {
+            const index = this.orders.findIndex(order => order.ID === updatedOrder.ID);
+            if (index !== -1) {
+                // 既存のオーダーを更新
+                this.orders[index] = {
+                    ...this.orders[index],
+                    ...updatedOrder,
+                    start_time: new Date(updatedOrder.ScheduledTime),
+                    end_time: new Date(new Date(updatedOrder.ScheduledTime).getTime() + updatedOrder.CourseMin * 60000)
+                };
+            } else {
+                // 新しいオーダーを追加
+                this.orders.push({
+                    ...updatedOrder,
+                    start_time: new Date(updatedOrder.ScheduledTime),
+                    end_time: new Date(new Date(updatedOrder.ScheduledTime).getTime() + updatedOrder.CourseMin * 60000)
+                });
+            }
+            // フィルタリングされたオーダーを更新
+            this.updateFilteredItems();
+        },
+
+        handleMemoUpdate(updatedMemo) {
+            const index = this.memos.findIndex(memo => memo.ID === updatedMemo.ID);
+            if (index !== -1) {
+                // 既存のメモを更新
+                this.memos[index] = {
+                    ...this.memos[index],
+                    ...updatedMemo,
+                    start_time: new Date(updatedMemo.ScheduledTime),
+                    end_time: new Date(new Date(updatedMemo.ScheduledTime).getTime() + updatedMemo.ScheduledBox * 60000)
+                };
+            } else {
+                // 新しいメモを追加
+                this.memos.push({
+                    ...updatedMemo,
+                    start_time: new Date(updatedMemo.ScheduledTime),
+                    end_time: new Date(new Date(updatedMemo.ScheduledTime).getTime() + updatedMemo.ScheduledBox * 60000)
+                });
+            }
+            // フィルタリングされたメモを更新
+            this.updateFilteredItems();
+        },
+
+        handleOrderDelete(orderId) {
+            this.orders = this.orders.filter(order => order.ID !== orderId);
+            this.updateFilteredItems();
+        },
+
+        handleMemoDelete(memoId) {
+            this.memos = this.memos.filter(memo => memo.ID !== memoId);
+            this.updateFilteredItems();
+        },
+
+        updateFilteredItems() {
+            this.filteredOrders = this.getFilteredOrders();
+            this.filteredMemos = this.getFilteredMemos();
+        },
+        getFilteredOrders() {
+            if (this.selectedDateOffset === null) {
+                return [];
+            }
+            const currentDateStart = new Date(this.currentDate);
+            currentDateStart.setHours(6, 0, 0, 0);
+            const currentDateEnd = new Date(currentDateStart);
+            currentDateEnd.setDate(currentDateEnd.getDate() + 1);
+            currentDateEnd.setHours(5, 59, 59, 999);
+
+            return this.orders.filter(order => {
+                const orderStart = new Date(order.start_time);
+                const orderEnd = new Date(order.end_time);
+
+                // 日付をまたぐオーダーの処理
+                if (orderEnd < orderStart) {
+                    orderEnd.setDate(orderEnd.getDate() + 1);
+                }
+
+                return (orderStart < currentDateEnd && orderEnd > currentDateStart);
+            });
+        },
+        getFilteredMemos() {
+            if (this.selectedDateOffset === null) {
+                return [];
+            }
+            const currentDateStart = new Date(this.currentDate);
+            currentDateStart.setHours(6, 0, 0, 0);
+            const currentDateEnd = new Date(currentDateStart);
+            currentDateEnd.setDate(currentDateEnd.getDate() + 1);
+            currentDateEnd.setHours(5, 59, 59, 999)
+            console.log(this.memos);
+
+            return this.memos.filter(memo => {
+                const memoStart = new Date(memo.start_time);
+                const memoEnd = new Date(memo.end_time);
+
+                // 日付をまたぐメモの処理
+                if (memoEnd < memoStart) {
+                    memoEnd.setDate(memoEnd.getDate() + 1);
+                }
+
+                return (memoStart < currentDateEnd && memoEnd > currentDateStart);
+            });
         },
     },
     async mounted() {
@@ -615,6 +722,15 @@ export default {
         await this.fetchCasts();
         await this.fetchOrders();
         await this.fetchMemos();
+        this.updateFilteredItems();
+        this.wsConnect();
+        console.log('WebSocket connection attempt');
+        this.setupWebSocketListeners();
+    },
+    watch: {
+        currentDate() {
+            this.updateFilteredItems();
+        }
     },
 };
 </script>

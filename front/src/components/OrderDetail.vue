@@ -1,8 +1,16 @@
 <template>
-    <v-card>
+    <v-card v-if="order">
         <v-card-title>{{ isNew ? '新規オーダー' : 'オーダー詳細' }}</v-card-title>
         <v-card-text>
-            <v-form @submit.prevent="submitForm">
+            <v-form @submit.prevent="submitForm" ref="form" v-model="formIsValid">
+                <v-row>
+                    <v-col cols="12">
+                        <v-radio-group v-model="order.UsageType" inline :rules="[v => !!v || '利用タイプは必須です']" required>
+                            <v-radio v-for="usage in usageTypes" :key="usage.ID" :label="usage.DisplayName"
+                                :value="usage.ClassificationCode" class="mr-4"></v-radio>
+                        </v-radio-group>
+                    </v-col>
+                </v-row>
                 <v-row v-if="isNew">
                     <v-col cols="12" sm="6">
                         <v-text-field v-model="order.storeCode" label="店舗コード" @input="filterStores"></v-text-field>
@@ -124,18 +132,27 @@
                 <v-text-field v-else v-model="formattedScheduledTime" label="到着時刻" readonly></v-text-field>
 
                 <v-row>
-                    <v-col>
-                        <v-btn color="primary" block type="submit">{{ isNew ? '登録' : '更新' }}</v-btn>
+                    <v-col cols="4">
+                        <v-btn color="primary" block type="submit" :disabled="!formIsValid">{{ isNew ? '登録' : '更新'
+                            }}</v-btn>
                     </v-col>
-                    <v-col v-if="!isNew">
+                    <v-col cols="4" v-if="!isNew">
+                        <v-btn color="success" block @click="showOrderText">テキスト表示</v-btn>
+                    </v-col>
+                    <v-col cols="4" v-if="!isNew">
                         <v-btn color="error" block @click="confirmDelete">削除</v-btn>
                     </v-col>
                 </v-row>
             </v-form>
         </v-card-text>
         <v-card-actions>
-            <v-btn @click="$emit('close')">閉じる</v-btn>
+            <v-btn @click="closeDialog">閉じる</v-btn>
         </v-card-actions>
+    </v-card>
+    <v-card v-else>
+        <v-card-text>
+            オーダー情報が見つかりません。
+        </v-card-text>
     </v-card>
 
     <v-dialog v-model="showCustomerModal" max-width="600px">
@@ -166,7 +183,7 @@
     <v-dialog v-model="deleteConfirmDialog" max-width="300">
         <v-card>
             <v-card-title>確認</v-card-title>
-            <v-card-text>このオーダーを削除しても���ろしいですか？</v-card-text>
+            <v-card-text>このオダーを削除してもろしいですか？</v-card-text>
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="primary" text @click="deleteConfirmDialog = false; proceedWithDeletion()">はい</v-btn>
@@ -174,16 +191,23 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+
+    <OrderTextDisplay ref="orderTextDisplay" :orderDetails="formatOrderDetails()" />
 </template>
 
 <script>
 import axios from 'axios';
 import { mapState } from 'vuex';
 import CustomerDetail from './CustomerDetail.vue';
+import { useWebSocket } from '@/utils/websocket';
+import OrderTextDisplay from './OrderTextDisplay.vue';
 
 export default {
     props: {
-        order: Object,
+        order: {
+            type: Object,
+            default: () => ({})
+        },
         isNew: {
             type: Boolean,
             default: false
@@ -191,7 +215,8 @@ export default {
     },
     emits: ['close', 'order-updated'],
     components: {
-        CustomerDetail
+        CustomerDetail,
+        OrderTextDisplay
     },
     data() {
         return {
@@ -213,6 +238,8 @@ export default {
             filteredOfficeStaffList: [],
             confirmDialog: false,
             deleteConfirmDialog: false,
+            usageTypes: [],
+            formIsValid: false,
         };
     },
     computed: {
@@ -230,16 +257,27 @@ export default {
             const hoursStr = hours.toString().padStart(2, '0');
 
             return `${hoursStr}:${minutes}`;
+        },
+        formattedDateAndCount() {
+            const now = new Date();
+            const date = this.getAdjustedDate(now);
+            const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            // 本数のカウントロジックは実際のデータに基づいて実装する必要があます
+
+            return `${month}月${day}日(${dayOfWeek}) 本数：`;
         }
     },
     methods: {
         async fetchDropdownData() {
             try {
-                const [stores, casts, staff, media] = await Promise.all([
+                const [stores, casts, staff, media, usage] = await Promise.all([
                     axios.get(`${this.apiBaseUrl}/store/dropdown`),
                     axios.get(`${this.apiBaseUrl}/cast/dropdown`),
                     axios.get(`${this.apiBaseUrl}/staff/dropdown`),
-                    axios.get(`${this.apiBaseUrl}/media/dropdown`)
+                    axios.get(`${this.apiBaseUrl}/media/dropdown`),
+                    axios.get(`${this.apiBaseUrl}/master/usage`)
                 ]);
 
                 this.storeList = stores.data.data || [];
@@ -253,6 +291,8 @@ export default {
 
                 this.filteredDriverStaffList = [...this.driverStaffList];
                 this.filteredOfficeStaffList = [...this.officeStaffList];
+
+                this.usageTypes = usage.data.data || [];
             } catch (error) {
                 console.error('ドロップダウンデータの取得に失敗しました:', error);
             }
@@ -265,6 +305,11 @@ export default {
             }
         },
         async createOrder() {
+            if (!this.$refs.form.validate()) {
+                this.showAlert('必須項目を入力してください。', 'error');
+                return;
+            }
+
             try {
                 // 日時フィールドをフォーマット
                 if (this.order.ScheduledTime) {
@@ -283,12 +328,25 @@ export default {
                 this.$emit('order-updated');
                 this.$emit('close');
                 this.showAlert('オーダーが正常に作成されました。', 'success');
+
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'order_update',
+                        order: response.data
+                    }));
+                }
             } catch (error) {
                 console.error('オーダーの作成に失敗しました:', error);
                 this.showAlert('オーダーの作成に失敗しました。', 'error');
             }
         },
         async updateOrder() {
+            if (!this.$refs.form.validate()) {
+                this.showAlert('必須項目を入力してください。', 'error');
+                return;
+            }
+
             try {
                 // INT項目の値を整数に変換
                 const intFields = ['CourseMin', 'ExtraTime', 'ExtraCourse', 'Price', 'ReservationFee', 'TransportationFee', 'TravelCost'];
@@ -302,10 +360,18 @@ export default {
                     this.order.ActualModel = '';
                 }
 
-                await axios.put(`${this.apiBaseUrl}/orders/${this.order.ID}`, this.order);
+                const response = await axios.put(`${this.apiBaseUrl}/orders/${this.order.ID}`, this.order);
                 this.$emit('order-updated');
                 this.$emit('close');
-                this.showAlert('オー���ーが正常に更新されました。', 'success');
+                this.showAlert('オーダーが正常に更新されました。', 'success');
+
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'order_update',
+                        order: response.data
+                    }));
+                }
             } catch (error) {
                 console.error('オーダーの更新に失敗しました:', error);
                 this.showAlert('オーダーの更新に失敗しました。', 'error');
@@ -331,7 +397,7 @@ export default {
                     }
                 } catch (error) {
                     console.error('顧客詳細の取得に失敗しました', error);
-                    this.showAlert('顧��情報が見つかりません。', 'error');
+                    this.showAlert('顧客情報が見つかりません。', 'error');
                 }
             } else {
                 this.showAlert('電話番号が入力されていません。', 'warning');
@@ -367,7 +433,13 @@ export default {
                     if (response.data && response.data.data) {
                         this.$nextTick(() => {
                             this.order.CustomerName = response.data.data.CustomerName || '';
-                            this.order.Address = response.data.data.Address || '';
+                            if (this.order.UsageType === "1") {
+                                this.order.City = response.data.data.City1 || '';
+                                this.order.Address = response.data.data.Address1 || '';
+                            } else {
+                                this.order.City = response.data.data.City3 || '';
+                                this.order.Address = response.data.data.Address3 || '';
+                            }
                             console.log('データが更新されました:', this.order.CustomerName, this.order.Address);
                         });
                     }
@@ -381,13 +453,21 @@ export default {
         },
         async proceedWithConfirmation() {
             try {
-                await axios.put(`${this.apiBaseUrl}/orders/${this.order.ID}/completion`);
+                const response = await axios.put(`${this.apiBaseUrl}/orders/${this.order.ID}/completion`);
                 this.$emit('order-updated');
                 this.$emit('close');
                 this.showAlert('オーダーが確定されました。', 'success');
+
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'order_update',
+                        order: response.data
+                    }));
+                }
             } catch (error) {
                 console.error('オーダーの確定に失敗しました:', error);
-                this.showAlert('オーダーの確定に失敗しました。', 'error');
+                this.showAlert('オーダーの確定に敗しました。', 'error');
             }
         },
         async confirmDelete() {
@@ -399,9 +479,17 @@ export default {
                 this.$emit('order-updated');
                 this.$emit('close');
                 this.showAlert('オーダーが削除されました。', 'success');
+
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'order_delete',
+                        orderId: this.order.ID
+                    }));
+                }
             } catch (error) {
                 console.error('オーダーの削除に失敗しました:', error);
-                this.showAlert('オーダーの削除に失敗しました。', 'error');
+                this.showAlert('オーダーの削除に���敗しました。', 'error');
             }
         },
         filterDrivers() {
@@ -415,6 +503,79 @@ export default {
                 staff.name.toLowerCase().includes(this.orderStaffFilter.toLowerCase())
             );
         },
+        showOrderText() {
+            this.$refs.orderTextDisplay.show();
+        },
+        formatOrderDetails() {
+            if (!this.order) {
+                return ''; // orderがnullの場合は空文字列を返す
+            }
+            const details = [
+                this.formattedDateAndCount,
+                `店名: ${this.getStoreName(this.order.StoreID)}`,
+                `電話番号: ${this.order.PhoneNumber || ''}`,
+                `お客様名: ${this.order.CustomerName || ''}`,
+                `モデル名: ${this.order.ModelName || ''}(${this.getCastName(this.order.ActualModel)})`,
+                `コース: ${this.order.CourseMin || ''}+${this.order.ExtraCourse || ''}分`,
+                `料金: ¥${this.order.Price || ''}`,
+                `市区町村: ${this.order.City || ''}`,
+                `住所: ${this.order.Address || ''}`,
+                `送り: ${this.getDriverName(this.order.DriverID)}`,
+                `指名料: ¥${this.order.ReservationFee || ''}`,
+                `交通費: ¥${this.order.TransportationFee || ''}`,
+                `出張費: ¥${this.order.TravelCost || ''}`,
+                `媒体: ${this.getMediaName(this.order.Media)}`,
+                `備考: ${this.order.Notes || ''}`,
+                `カード対応者: ${this.getCardStaffName(this.order.CardStaffID)}`,
+                `受注者: ${this.getOrderStaffName(this.order.OrderStaffID)}`,
+                `受付時間: ${this.formatCreatedAtTime(this.order.CreatedAt)}`
+            ];
+            return details.join('\n');
+        },
+        formatCreatedAtTime(createdAt) {
+            if (!createdAt) return '';
+            const date = new Date(createdAt);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        },
+        getStoreName(id) {
+            const store = this.storeList.find(s => s.id === id);
+            return store ? store.name : '';
+        },
+        getCastName(id) {
+            const cast = this.castList.find(c => c.cast_id === id);
+            return cast ? cast.name : '';
+        },
+        getDriverName(id) {
+            const driver = this.driverStaffList.find(d => d.staff_id === id);
+            return driver ? driver.name : '';
+        },
+        getMediaName(id) {
+            const media = this.mediaList.find(m => m.id === id);
+            return media ? media.name : '';
+        },
+        getCardStaffName(id) {
+            const cardStaff = this.officeStaffList.find(d => d.staff_id === id);
+            return cardStaff ? cardStaff.name : '';
+        },
+        getOrderStaffName(id) {
+            const orderStaff = this.officeStaffList.find(d => d.staff_id === id);
+            return orderStaff ? orderStaff.name : '';
+        },
+        getAdjustedDate(date) {
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+
+            if (hours < 6 || (hours === 5 && minutes <= 59)) {
+                // 6:00未満の場合、前日の日付を返す
+                date.setDate(date.getDate() - 1);
+            }
+            return date;
+        },
+        closeDialog() {
+            this.$emit('close');
+        },
     },
     watch: {
         driverFilter() {
@@ -426,6 +587,19 @@ export default {
         orderStaffFilter() {
             this.filterOfficeStaff();
         },
+        // フォームの有効性を監視
+        '$refs.form': {
+            handler(form) {
+                if (form) {
+                    this.formIsValid = form.validate();
+                }
+            },
+            deep: true
+        }
+    },
+    setup() {
+        const { socket, isConnected } = useWebSocket();
+        return { wsSocket: socket, wsIsConnected: isConnected };
     },
     async mounted() {
         await this.fetchDropdownData();

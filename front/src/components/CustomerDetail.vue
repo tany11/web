@@ -33,8 +33,27 @@
                         <v-col cols="12">
                             <v-list-item>
                                 <v-list-item-content>
-                                    <v-list-item-title>住所</v-list-item-title>
-                                    <v-list-item-subtitle>{{ customer.Address }}</v-list-item-subtitle>
+                                    <v-list-item-title>住所1</v-list-item-title>
+                                    <v-list-item-subtitle>{{ customer.City1 }}{{ customer.Address1
+                                        }}</v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </v-col>
+                        <v-col cols="12">
+                            <v-list-item>
+                                <v-list-item-content>
+                                    <v-list-item-title>住所2</v-list-item-title>
+                                    <v-list-item-subtitle>{{ customer.City2 }}{{ customer.Address2
+                                        }}</v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </v-col>
+                        <v-col cols="12">
+                            <v-list-item>
+                                <v-list-item-content>
+                                    <v-list-item-title>住所3</v-list-item-title>
+                                    <v-list-item-subtitle>{{ customer.City3 }}{{ customer.Address3
+                                        }}</v-list-item-subtitle>
                                 </v-list-item-content>
                             </v-list-item>
                         </v-col>

@@ -10,9 +10,13 @@
                 <v-text-field v-model="editedMemo.ScheduledBox" label="予定枠(30分単位)" type="text" :step="30"
                     @keydown.down.prevent="adjustValue('ScheduledBox', 30)"
                     @keydown.up.prevent="adjustValue('ScheduledBox', -30)"></v-text-field>
+                <v-text-field v-if="isNewMemo" v-model="editedMemo.ScheduledTime" label="予定時刻"
+                    type="datetime-local"></v-text-field>
+                <v-text-field v-else v-model="formattedScheduledTime" label="予定時刻" readonly></v-text-field>
                 <v-btn color="primary" block type="submit">{{ isNewMemo ? '作成' : '更新' }}</v-btn>
             </v-form>
         </v-card-text>
+
         <v-card-actions>
             <v-btn @click="$emit('close')">閉じる</v-btn>
             <v-spacer></v-spacer>
@@ -37,6 +41,7 @@
 <script>
 import axios from 'axios';
 import { mapState } from 'vuex';
+import { useWebSocket } from '@/utils/websocket';
 
 export default {
     props: {
@@ -69,6 +74,10 @@ export default {
             return `${hoursStr}:${minutes}`;
         },
     },
+    setup() {
+        const { socket, isConnected } = useWebSocket();
+        return { wsSocket: socket, wsIsConnected: isConnected };
+    },
     methods: {
         async fetchCastList() {
             try {
@@ -91,6 +100,14 @@ export default {
                 }
                 this.$emit('close');
                 this.$emit('memo-updated', response.data);
+
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'memo_update',
+                        memo: response.data
+                    }));
+                }
             } catch (error) {
                 console.error('メモの保存に失敗しました:', error);
             }
@@ -101,9 +118,17 @@ export default {
         },
         async completeMemo() {
             try {
-                await axios.put(`${this.apiBaseUrl}/tips/${this.editedMemo.ID}/completion`);
+                const response = await axios.put(`${this.apiBaseUrl}/tips/${this.editedMemo.ID}/completion`);
                 this.$emit('close');
                 this.$emit('memo-updated');
+
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'memo_update',
+                        memo: response.data
+                    }));
+                }
             } catch (error) {
                 console.error('メモの完了に失敗しました:', error);
             }
@@ -117,6 +142,14 @@ export default {
                 this.deleteConfirmDialog = false;
                 this.$emit('close');
                 this.$emit('memo-deleted', this.editedMemo.ID);
+
+                // WebSocket経由で更新を送信
+                if (this.wsIsConnected && this.wsSocket) {
+                    this.wsSocket.send(JSON.stringify({
+                        type: 'memo_delete',
+                        memoId: this.editedMemo.ID
+                    }));
+                }
             } catch (error) {
                 console.error('メモの削除に失敗しました:', error);
             }

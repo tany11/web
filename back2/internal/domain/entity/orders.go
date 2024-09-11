@@ -9,6 +9,7 @@ type Orders struct {
 	GroupID           int       //グループID
 	StoreID           int       //店舗ID
 	PhoneNumber       string    //顧客電話番号
+	UsageType         string    //利用種別
 	CustomerName      string    //顧客名
 	CustomerID        int64     //顧客ID
 	ModelName         string    //モデル名

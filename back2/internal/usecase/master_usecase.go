@@ -37,3 +37,7 @@ func (uc *MasterUseCase) Delete(id int64) error {
 func (uc *MasterUseCase) ListForDropdown(groupID int) ([]*entity.Master, error) {
 	return uc.repo.ListForDropdown(groupID)
 }
+
+func (uc *MasterUseCase) ListForUsage(groupID int) ([]*entity.Master, error) {
+	return uc.repo.ListForUsage(groupID)
+}
