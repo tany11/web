@@ -6,7 +6,7 @@ import (
 
 type Tips struct {
 	ID            int64     //メモのID
-	GroupID       int       //グループID
+	GroupID       int64     //グループID
 	ActualModel   string    //実際のモデル
 	Title         string    //タイトル
 	Notes         string    //メモ

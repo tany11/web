@@ -28,6 +28,11 @@ func NewTipsHandler(useCase *usecase.TipsUseCase, websocketServer *websocket.Ser
 
 func (h *TipsHandler) Create(c *gin.Context) {
 	var tips entity.Tips
+	groupID, exists := c.Get("group_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "グループIDが見つかりません"})
+		return
+	}
 	if err := c.ShouldBindJSON(&tips); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -38,7 +43,7 @@ func (h *TipsHandler) Create(c *gin.Context) {
 		tips.ScheduledTime = time.Now()
 	}
 
-	err := h.useCase.Create(&tips)
+	err := h.useCase.Create(&tips, int(groupID.(float64)))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -49,7 +54,7 @@ func (h *TipsHandler) Create(c *gin.Context) {
 		"type": "memo_update",
 		"memo": tips,
 	})
-	h.websocketServer.BroadcastMessage(newMemoJSON)
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(newMemoJSON))
 
 	c.JSON(http.StatusOK, gin.H{"data": tips})
 }
@@ -105,7 +110,7 @@ func (h *TipsHandler) Update(c *gin.Context) {
 		"type": "memo_update",
 		"memo": tips,
 	})
-	h.websocketServer.BroadcastMessage(updatedMemoJSON)
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(updatedMemoJSON))
 
 	c.JSON(http.StatusOK, gin.H{"data": tips})
 }
@@ -156,7 +161,7 @@ func (h *TipsHandler) UpdateCompletionFlg(c *gin.Context) {
 		"type": "memo_update",
 		"memo": tips,
 	})
-	h.websocketServer.BroadcastMessage(updatedMemoJSON)
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(updatedMemoJSON))
 
 	c.JSON(http.StatusOK, gin.H{"data": "ヒントの完了フラグが更新されました"})
 }
@@ -186,7 +191,7 @@ func (h *TipsHandler) DeleteFlg(c *gin.Context) {
 		"type":   "memo_delete",
 		"memoId": id,
 	})
-	h.websocketServer.BroadcastMessage(deletedMemoJSON)
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(deletedMemoJSON))
 
 	c.JSON(http.StatusOK, gin.H{"data": "ヒントの削除フラグが更新されました"})
 }
@@ -194,9 +199,13 @@ func (h *TipsHandler) DeleteFlg(c *gin.Context) {
 func (h *TipsHandler) ListSchedule(c *gin.Context) {
 	startDate := c.Query("start_time")
 	endDate := c.Query("end_time")
-	groupID := 0
+	groupID, exists := c.Get("group_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "グループIDが見つかりません"})
+		return
+	}
 
-	tips, err := h.useCase.ListSchedule(int(groupID), startDate, endDate)
+	tips, err := h.useCase.ListSchedule(int(groupID.(float64)), startDate, endDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -262,7 +271,7 @@ func (h *TipsHandler) UpdateSchedule(c *gin.Context) {
 		"type":  "order_update",
 		"order": tips,
 	})
-	h.websocketServer.BroadcastMessage(updatedOrderJSON)
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(updatedOrderJSON))
 
 	c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
 }
@@ -319,7 +328,7 @@ func (h *TipsHandler) UpdateMemo(c *gin.Context) {
 		"type": "memo_update",
 		"memo": tips,
 	})
-	h.websocketServer.BroadcastMessage(updatedMemoJSON)
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(updatedMemoJSON))
 
 	c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
 }

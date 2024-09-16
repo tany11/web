@@ -3,6 +3,7 @@ package router
 import (
 	"time"
 
+	"back2/internal/infrastructure/middleware"
 	"back2/internal/infrastructure/websocket"
 	"back2/internal/interface/handler"
 
@@ -28,97 +29,105 @@ func SetupRouter(
 	// Apply global middleware
 	engine.Use(RecordUaAndTime)
 
+	public := engine.Group("/api/v1")
+	{
+		public.POST("/login", authHandler.Login)
+		public.POST("/logout", authHandler.Logout)
+		public.GET("/socket.io/", func(c *gin.Context) {
+			wsServer.Serve(c.Writer, c.Request)
+		})
+		public.POST("/socket.io/", func(c *gin.Context) {
+			wsServer.Serve(c.Writer, c.Request)
+		})
+	}
 	// API v1 routes
-	v1 := engine.Group("/api/v1")
+
+	protected := engine.Group("/api/v1")
+	protected.Use(middleware.JWTAuthMiddleware())
 	{
 		// Customer routes
-		v1.POST("/customers", customerHandler.Create)
-		v1.GET("/customers", customerHandler.GetAll)
-		v1.GET("/customers/:id", customerHandler.Get)
-		v1.GET("/customers/phone/:phone", customerHandler.GetByPhone)
-		v1.GET("/customers/detail/:phone", customerHandler.GetDetail)
-		v1.GET("/customers/list", customerHandler.List)
-		v1.GET("/customers/search", customerHandler.GetSearchList)
-		v1.PUT("/customers/:id", customerHandler.Get)
-		v1.DELETE("/customers/:id", customerHandler.Delete)
+		protected.POST("/customers", customerHandler.Create)
+		protected.GET("/customers", customerHandler.GetAll)
+		protected.GET("/customers/:id", customerHandler.Get)
+		protected.GET("/customers/phone/:phone", customerHandler.GetByPhone)
+		protected.GET("/customers/detail/:phone", customerHandler.GetDetail)
+		protected.GET("/customers/list", customerHandler.List)
+		protected.GET("/customers/search", customerHandler.GetSearchList)
+		protected.PUT("/customers/:id", customerHandler.Get)
+		protected.DELETE("/customers/:id", customerHandler.Delete)
 
 		// Order routes
-		v1.POST("/orders", orderHandler.Create)
-		v1.PUT("/orders/:id", orderHandler.Update)
-		v1.PUT("/orders/:id/completion", orderHandler.UpdateCompletionFlg)
-		v1.PUT("/orders/:id/delete", orderHandler.DeleteFlg)
-		v1.GET("/orders", orderHandler.GetAll)
-		v1.GET("/orders/:id", orderHandler.Get)
-		v1.DELETE("/orders/:id", orderHandler.Delete)
-		v1.GET("/orders/reserved", orderHandler.ListReserved)
-		v1.GET("/orders/scheduled", orderHandler.ListSchedule)
-		v1.PUT("/orders/:id/schedule", orderHandler.UpdateSchedule)
+		protected.POST("/orders", orderHandler.Create)
+		protected.PUT("/orders/:id", orderHandler.Update)
+		protected.PUT("/orders/:id/completion", orderHandler.UpdateCompletionFlg)
+		protected.PUT("/orders/:id/delete", orderHandler.DeleteFlg)
+		protected.GET("/orders", orderHandler.GetAll)
+		protected.GET("/orders/:id", orderHandler.Get)
+		protected.DELETE("/orders/:id", orderHandler.Delete)
+		protected.GET("/orders/reserved", orderHandler.ListReserved)
+		protected.GET("/orders/scheduled", orderHandler.ListSchedule)
+		protected.PUT("/orders/:id/schedule", orderHandler.UpdateSchedule)
 
 		// Group routes
-		v1.POST("/group", groupHandler.Create)
-		v1.GET("/group", groupHandler.GetAll)
-		v1.GET("/group/:id", groupHandler.Get)
-		v1.PUT("/group/:id", groupHandler.Update)
-		v1.DELETE("/group/:id", groupHandler.Delete)
+		protected.POST("/group", groupHandler.Create)
+		protected.GET("/group", groupHandler.GetAll)
+		protected.GET("/group/:id", groupHandler.Get)
+		protected.PUT("/group/:id", groupHandler.Update)
+		protected.DELETE("/group/:id", groupHandler.Delete)
 
 		// Cast routes
-		v1.POST("/cast", castHandler.Create)
-		v1.GET("/cast", castHandler.GetAll)
-		v1.GET("/cast/:id", castHandler.Get)
-		v1.PUT("/cast/:id", castHandler.Update)
-		v1.DELETE("/cast/:id", castHandler.Delete)
-		v1.GET("/cast/dropdown", castHandler.ListForDropdown)
+		protected.POST("/cast", castHandler.Create)
+		protected.GET("/cast", castHandler.GetAll)
+		protected.GET("/cast/:id", castHandler.Get)
+		protected.PUT("/cast/:id", castHandler.Update)
+		protected.DELETE("/cast/:id", castHandler.Delete)
+		protected.GET("/cast/dropdown", castHandler.ListForDropdown)
+		protected.PUT("/cast/:id/working", castHandler.UpdateWorkingFlg)
 
 		// Staff routes
-		v1.POST("/staff", staffHandler.Create)
-		v1.GET("/staff", staffHandler.GetAll)
-		v1.GET("/staff/:id", staffHandler.Get)
-		v1.PUT("/staff/:id", staffHandler.Update)
-		v1.DELETE("/staff/:id", staffHandler.Delete)
-		v1.GET("/staff/dropdown", staffHandler.ListForDropdown)
+		protected.POST("/staff", staffHandler.Create)
+		protected.GET("/staff", staffHandler.GetAll)
+		protected.GET("/staff/:id", staffHandler.Get)
+		protected.PUT("/staff/:id", staffHandler.Update)
+		protected.DELETE("/staff/:id", staffHandler.Delete)
+		protected.GET("/staff/dropdown", staffHandler.ListForDropdown)
 
 		// Store routes
-		v1.POST("/store", storeHandler.Create)
-		v1.GET("/store", storeHandler.GetAll)
-		v1.GET("/store/:id", storeHandler.Get)
-		v1.PUT("/store/:id", storeHandler.Update)
-		v1.DELETE("/store/:id", storeHandler.Delete)
-		v1.GET("/store/dropdown", storeHandler.ListForDropdown)
+		protected.POST("/store", storeHandler.Create)
+		protected.GET("/store", storeHandler.GetAll)
+		protected.GET("/store/:id", storeHandler.Get)
+		protected.PUT("/store/:id", storeHandler.Update)
+		protected.DELETE("/store/:id", storeHandler.Delete)
+		protected.GET("/store/dropdown", storeHandler.ListForDropdown)
 
 		// Media routes
-		v1.POST("/media", mediaHandler.Create)
-		v1.GET("/media", mediaHandler.GetAll)
-		v1.GET("/media/:id", mediaHandler.Get)
-		v1.PUT("/media/:id", mediaHandler.Update)
-		v1.DELETE("/media/:id", mediaHandler.Delete)
-		v1.GET("/media/dropdown", mediaHandler.ListForDropdown)
+		protected.POST("/media", mediaHandler.Create)
+		protected.GET("/media", mediaHandler.GetAll)
+		protected.GET("/media/:id", mediaHandler.Get)
+		protected.PUT("/media/:id", mediaHandler.Update)
+		protected.DELETE("/media/:id", mediaHandler.Delete)
+		protected.GET("/media/dropdown", mediaHandler.ListForDropdown)
 
 		// Master routes
-		v1.POST("/master", masterHandler.Create)
-		v1.GET("/master", masterHandler.GetAll)
-		v1.GET("/master/:id", masterHandler.Get)
-		v1.PUT("/master/:id", masterHandler.Update)
-		v1.DELETE("/master/:id", masterHandler.Delete)
-		v1.GET("/master/usage", masterHandler.ListForUsage)
+		protected.POST("/master", masterHandler.Create)
+		protected.GET("/master", masterHandler.GetAll)
+		protected.GET("/master/:id", masterHandler.Get)
+		protected.PUT("/master/:id", masterHandler.Update)
+		protected.DELETE("/master/:id", masterHandler.Delete)
+		protected.GET("/master/usage", masterHandler.ListForUsage)
 
 		// Tips routes
-		v1.POST("/tips", tipsHandler.Create)
-		v1.GET("/tips", tipsHandler.List)
-		v1.GET("/tips/schedule", tipsHandler.ListSchedule)
-		v1.PUT("/tips/:id", tipsHandler.Update)
-		v1.DELETE("/tips/:id", tipsHandler.Delete)
-		v1.PUT("/tips/:id/schedule", tipsHandler.UpdateMemo)
-		v1.PUT("/tips/:id/completion", tipsHandler.UpdateCompletionFlg)
-		v1.PUT("/tips/:id/delete", tipsHandler.DeleteFlg)
-
-		// Login endpoint added
-		v1.POST("/login", authHandler.Login)
-		v1.POST("/logout", authHandler.Logout)
+		protected.POST("/tips", tipsHandler.Create)
+		protected.GET("/tips", tipsHandler.List)
+		protected.GET("/tips/schedule", tipsHandler.ListSchedule)
+		protected.PUT("/tips/:id", tipsHandler.Update)
+		protected.DELETE("/tips/:id", tipsHandler.Delete)
+		protected.PUT("/tips/:id/schedule", tipsHandler.UpdateMemo)
+		protected.PUT("/tips/:id/completion", tipsHandler.UpdateCompletionFlg)
+		protected.PUT("/tips/:id/delete", tipsHandler.DeleteFlg)
 
 		// WebSocket route
-		v1.GET("/ws", func(c *gin.Context) {
-			wsServer.HandleWebSocket(c.Writer, c.Request)
-		})
+
 	}
 }
 

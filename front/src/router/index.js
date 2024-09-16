@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import store from '../store'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
@@ -27,7 +28,7 @@ const routes = [
     { path: '/store-edit', component: StoreEdit, meta: { requiresAuth: true } },
     { path: '/media-registration', component: MediaRegistration, meta: { requiresAuth: true } },
     { path: '/customer-registration', component: CustomerRegistration, meta: { requiresAuth: true } },
-    { path: '/timeboard', component: Timeboard, meta: { requiresAuth: true } },
+    { path: '/timeboard', name: 'Timeboard', component: Timeboard, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({
@@ -36,7 +37,16 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    const isLoggedIn = localStorage.getItem('token') !== null && localStorage.getItem('userId') !== null
+    const isLoggedIn = store.state.isLoggedIn
+
+    // TimeBoardコンポーネントから離れる際にWebSocket接続を閉じる
+    if (from.name === 'Timeboard') {
+        const timeBoardComponent = from.matched[0].instances.default;
+        if (timeBoardComponent && timeBoardComponent.closeWebSocketConnection) {
+            timeBoardComponent.closeWebSocketConnection();
+        }
+    }
+
     if (to.matched.some(record => record.meta.requiresAuth) && !isLoggedIn) {
         next('/login')
     } else if ((to.path === '/login' || to.path === '/register') && isLoggedIn) {

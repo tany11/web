@@ -78,6 +78,7 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 			customer.City3 = order.City
 			customer.Address3 = order.Address
 		}
+
 		err = uc.customerRepo.Update(customer)
 		if err != nil {
 			return fmt.Errorf("顧客情報の更新に失敗しました: %w", err)
@@ -95,6 +96,9 @@ func (uc *OrderUseCase) Create(order *entity.Orders) error {
 	order.CustomerID = customer.ID
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
+	if order.CourseMin == 0 {
+		order.CourseMin = 60
+	}
 
 	// 注文を作成
 	err = uc.orderRepo.Create(order)
@@ -184,6 +188,6 @@ func (uc *OrderUseCase) GetTotalPriceAndUseTime(customerID int) (int, int, error
 	return uc.orderRepo.GetTotalPriceAndUseTime(customerID)
 }
 
-func (uc *OrderUseCase) ListSchedule(startDate, endDate string) ([]*entity.Orders, error) {
-	return uc.orderRepo.ListSchedule(startDate, endDate)
+func (uc *OrderUseCase) ListSchedule(groupID int, startDate, endDate string) ([]*entity.Orders, error) {
+	return uc.orderRepo.ListSchedule(groupID, startDate, endDate)
 }

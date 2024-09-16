@@ -38,6 +38,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// JWTトークンの生成
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"staff_id": staff.StaffID,
+		"group_id": staff.GroupID,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
@@ -51,6 +52,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token":    tokenString,
 		"staff_id": staff.StaffID,
+		"group_id": staff.GroupID,
 		"message":  "Logged in successfully",
 	})
 }

@@ -11,7 +11,8 @@
                     </v-btn>
                 </v-col>
                 <v-col cols="auto">
-                    <v-btn color="success" @click="openNewOrderModal">
+                    <v-btn color="success" @click="openNewOrderModal" @click.ctrl="openNewOrderInNewTab"
+                        @click.shift="openNewOrderInNewWindow">
                         受注
                     </v-btn>
                 </v-col>
@@ -120,6 +121,7 @@ import OrderDetail from '@/components/OrderDetail.vue';
 import MemoItem from '@/components/MemoItem.vue';
 import MemoDetail from '@/components/MemoDetail.vue';
 import { useWebSocket } from '@/utils/websocket';
+import { onBeforeUnmount } from 'vue';
 
 export default {
     name: 'TimeBoard',
@@ -131,8 +133,16 @@ export default {
         MemoDetail
     },
     setup() {
-        const { socket, isConnected, connect } = useWebSocket();
-        return { wsSocket: socket, wsIsConnected: isConnected, wsConnect: connect };
+        const { socket, isConnected, connect, disconnect } = useWebSocket();
+
+        // コンポーネントが破棄される前にWebSocket接続を閉じる
+        onBeforeUnmount(() => {
+            if (isConnected.value) {
+                disconnect();
+            }
+        });
+
+        return { wsSocket: socket, wsIsConnected: isConnected, wsConnect: connect, wsDisconnect: disconnect };
     },
     data() {
         return {
@@ -230,7 +240,8 @@ export default {
         async fetchCasts() {
             try {
                 const response = await axios.get(`${this.apiBaseUrl}/cast/dropdown`);
-                this.casts = response.data.data || [];
+                this.casts = (response.data.data || []).filter(cast => cast.working_flg === "1");
+                console.log("出勤中のキャスト", this.casts);
             } catch (error) {
                 console.error('キャストリストの取得に失敗しました:', error);
             }
@@ -548,7 +559,7 @@ export default {
                 ActualModel: '',
                 Title: '',
                 Notes: '',
-                ScheduledBox: 30, // デフォルトで30分
+                ScheduledBox: '', // デフォルトで30分
             };
             this.showNewMemoModal = true;
         },
@@ -559,21 +570,35 @@ export default {
             await this.fetchMemos();
             this.closeNewMemoModal();
         },
-        openNewOrderModal() {
-            this.newOrder = {
-                ID: null,
-                start_time: new Date(this.currentDate),
-                end_time: new Date(new Date(this.currentDate).getTime() + 60 * 60000),
-                ActualModel: '',
-                StoreID: null,
-                storeCode: '', // 店舗コード用のプロパティを追加
-                // 他の必要なプロパティを追加
-            };
-            this.showNewOrderModal = true;
-            this.isNew = true;
+        openNewOrderModal(event) {
+            if (!event.ctrlKey && !event.shiftKey) {
+                this.newOrder = {
+                    ID: null,
+                    start_time: new Date(this.currentDate),
+                    end_time: new Date(new Date(this.currentDate).getTime() + 60 * 60000),
+                    ActualModel: '',
+                    StoreID: null,
+                    storeCode: '', // 店舗コード用のプロパティを追加
+                    // 他の必要なプロパティを追加
+                };
+                this.showNewOrderModal = true;
+                this.isNew = true;
+            }
+        },
+        openNewOrderInNewTab(event) {
+            event.preventDefault();
+            const newOrderUrl = `${window.location.origin}${this.$route.path}?newOrder=true`;
+            window.open(newOrderUrl, '_blank');
+        },
+        openNewOrderInNewWindow(event) {
+            event.preventDefault();
+            const newOrderUrl = `${window.location.origin}${this.$route.path}?newOrder=true`;
+            const windowFeatures = 'width=800,height=600,resizable,scrollbars=yes,status=1';
+            window.open(newOrderUrl, '_blank', windowFeatures);
         },
         closeNewOrderModal() {
             this.showNewOrderModal = false;
+            this.newOrder = null;
         },
         async handleNewOrderCreated() {
             await this.fetchOrders();
@@ -714,6 +739,13 @@ export default {
                 return (memoStart < currentDateEnd && memoEnd > currentDateStart);
             });
         },
+
+        // WebSocket接続を閉じるメソッド
+        closeWebSocketConnection() {
+            if (this.wsIsConnected && this.wsSocket) {
+                this.wsDisconnect();
+            }
+        },
     },
     async mounted() {
         this.weekStart = this.getMonday(new Date());
@@ -726,6 +758,13 @@ export default {
         this.wsConnect();
         console.log('WebSocket connection attempt');
         this.setupWebSocketListeners();
+
+
+        // URLパラメータをチェックして新規オーダーモーダルを開く
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('newOrder') === 'true') {
+            this.openNewOrderModal({ ctrlKey: false, shiftKey: false });
+        }
     },
     watch: {
         currentDate() {

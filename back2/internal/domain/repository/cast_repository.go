@@ -10,4 +10,6 @@ type CastRepository interface {
 	Update(cast *entity.Cast) error
 	Delete(id int64) error
 	ListForDropdown(groupID int) ([]*entity.Cast, error) // 新しいメソッドを追加
+	UpdateWorkingFlg(id int64) error
+	ResetAllWorkingFlags() error // 新しいメソッドを追加
 }

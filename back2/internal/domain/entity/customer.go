@@ -6,7 +6,7 @@ import (
 
 type Customer struct {
 	ID           int64     `xorm:"pk autoincr"`                     //id
-	GroupID      int       `xorm:"notnull"`                         //グループID
+	GroupID      int64     `xorm:"notnull"`                         //グループID
 	CustomerName string    `xorm:"varchar(30) notnull"`             //顧客名
 	PhoneNumber  string    `xorm:"varchar(15) notnull"`             //電話番号
 	City1        string    `xorm:"text"`                            //市区町村1
@@ -23,7 +23,7 @@ type Customer struct {
 
 type CustomerOrder struct {
 	ID           int64            `xorm:"pk autoincr"`         //id
-	GroupID      int              `xorm:"notnull"`             //グループID
+	GroupID      int64            `xorm:"notnull"`             //グループID
 	CustomerName string           `xorm:"varchar(30) notnull"` //顧客名
 	PhoneNumber  string           `xorm:"varchar(15) notnull"` //電話番号
 	City1        string           `xorm:"text"`                //市区町村1

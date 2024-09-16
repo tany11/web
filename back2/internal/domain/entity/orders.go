@@ -6,8 +6,8 @@ import (
 
 type Orders struct {
 	ID                int64     //オーダーのID
-	GroupID           int       //グループID
-	StoreID           int       //店舗ID
+	GroupID           int64     //グループID
+	StoreID           int64     //店舗ID
 	PhoneNumber       string    //顧客電話番号
 	UsageType         string    //利用種別
 	CustomerName      string    //顧客名

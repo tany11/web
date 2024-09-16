@@ -9,13 +9,25 @@
             <v-col>
                 <v-data-table :headers="headers" :items="casts" :items-per-page="10" :loading="loading"
                     class="elevation-1">
-                    <template v-slot:item.actions="{ item }">
-                        <v-btn small color="primary" @click="openModal(item)" class="mr-2">
-                            詳細
-                        </v-btn>
-                        <v-btn small color="error" @click="confirmDelete(item)">
-                            削除
-                        </v-btn>
+                    <template v-slot:item="{ item }">
+                        <tr>
+                            <td class="working-btn-cell">
+                                <v-btn small :color="item.WorkingFlg === '1' ? 'success' : 'primary'"
+                                    :class="{ 'lighten-3': item.WorkingFlg === '1' }" @click="toggleWorking(item)"
+                                    class="working-btn">
+                                    {{ item.WorkingFlg === '1' ? '出勤中' : '出勤' }}
+                                </v-btn>
+                            </td>
+                            <td>{{ item.CastName }}</td>
+                            <td>
+                                <v-btn small color="primary" @click="openModal(item)" class="mr-2">
+                                    詳細
+                                </v-btn>
+                                <v-btn small color="error" @click="confirmDelete(item)">
+                                    削除
+                                </v-btn>
+                            </td>
+                        </tr>
                     </template>
                 </v-data-table>
             </v-col>
@@ -63,6 +75,7 @@ export default {
         const errorMessage = ref('')
 
         const headers = [
+            { text: '出勤状態', value: 'WorkingFlg', sortable: false },
             { text: 'キャスト名', value: 'CastName' },
             { text: '操作', value: 'actions', sortable: false }
         ]
@@ -78,6 +91,17 @@ export default {
                 errorMessage.value = 'キャスト一覧の取得に失敗しました'
             } finally {
                 loading.value = false
+            }
+        }
+
+        const toggleWorking = async (cast) => {
+            try {
+                await axios.put(`${store.state.apiBaseUrl}/cast/${cast.ID}/working`)
+                await fetchCasts() // キャスト一覧を再取得してWorkingFlgを更新
+            } catch (error) {
+                console.error('出勤状態の更新に失敗しました', error)
+                showError.value = true
+                errorMessage.value = '出勤状態の更新に失敗しました'
             }
         }
 
@@ -126,8 +150,24 @@ export default {
             openModal,
             closeModal,
             confirmDelete,
-            deleteCast
+            deleteCast,
+            toggleWorking
         }
     }
 }
 </script>
+
+<style scoped>
+.v-btn.lighten-3 {
+    opacity: 0.7;
+}
+
+.working-btn-cell {
+    width: 80px;
+    padding-right: 8px !important;
+}
+
+.working-btn {
+    width: 72px;
+}
+</style>

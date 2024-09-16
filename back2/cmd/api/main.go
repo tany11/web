@@ -3,8 +3,11 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
+	"back2/internal/batch"
 	"back2/internal/infrastructure/database"
+	"back2/internal/infrastructure/middleware"
 	"back2/internal/infrastructure/router"
 	"back2/internal/infrastructure/websocket"
 	"back2/internal/interface/handler"
@@ -52,31 +55,27 @@ func main() {
 	castHandler := handler.NewCastHandler(castUseCase)
 	customerHandler := handler.NewCustomerHandler(customerUseCase, orderUseCase)
 	groupHandler := handler.NewGroupHandler(groupUseCase)
-	orderHandler := handler.NewOrderHandler(orderUseCase, websocket.NewServer())
+	wsServer, err := websocket.NewServer()
+	orderHandler := handler.NewOrderHandler(orderUseCase, wsServer)
 	staffHandler := handler.NewStaffHandler(staffUseCase)
 	authHandler := handler.NewAuthHandler(staffUseCase)
 	storeHandler := handler.NewStoreHandler(storeUseCase)
 	mediaHandler := handler.NewMediaHandler(mediaUseCase)
 	masterHandler := handler.NewMasterHandler(masterUseCase)
-	tipsHandler := handler.NewTipsHandler(tipsUseCase, websocket.NewServer())
+	tipsHandler := handler.NewTipsHandler(tipsUseCase, wsServer)
 	// Ginエンジンの設定
 	engine := gin.Default()
-	// WebSocketサーバーの初期化
-	wsServer := websocket.NewServer()
-	go wsServer.Run()
-
-	orderHandler = handler.NewOrderHandler(orderUseCase, wsServer)
-	tipsHandler = handler.NewTipsHandler(tipsUseCase, wsServer)
-
 	// CORSの設定
 	config := cors.DefaultConfig()
 	frontUrl := os.Getenv("FRONT_URL")
 	log.Println(frontUrl)
 	config.AllowOrigins = []string{frontUrl} // フロントエンドのオリジンを指定
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	config.AllowCredentials = true
+	config.ExposeHeaders = []string{"Content-Length"}
+	config.MaxAge = 12 * time.Hour
 	engine.Use(cors.New(config))
-
 	// ルーターのセットアップ
 	router.SetupRouter(engine,
 		castHandler,
@@ -90,6 +89,10 @@ func main() {
 		masterHandler,
 		tipsHandler,
 		wsServer)
+
+	// バッチ処理のスケジューリング
+	batch.ScheduleResetWorkingFlag(castRepo)
+	engine.Use(middleware.JWTAuthMiddleware())
 
 	// サーバーの起動
 	if err := engine.Run(":3000"); err != nil {

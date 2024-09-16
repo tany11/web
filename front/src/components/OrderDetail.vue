@@ -3,21 +3,15 @@
         <v-card-title>{{ isNew ? '新規オーダー' : 'オーダー詳細' }}</v-card-title>
         <v-card-text>
             <v-form @submit.prevent="submitForm" ref="form" v-model="formIsValid">
-                <v-row>
-                    <v-col cols="12">
-                        <v-radio-group v-model="order.UsageType" inline :rules="[v => !!v || '利用タイプは必須です']" required>
-                            <v-radio v-for="usage in usageTypes" :key="usage.ID" :label="usage.DisplayName"
-                                :value="usage.ClassificationCode" class="mr-4"></v-radio>
-                        </v-radio-group>
-                    </v-col>
-                </v-row>
+
                 <v-row v-if="isNew">
                     <v-col cols="12" sm="6">
-                        <v-text-field v-model="order.storeCode" label="店舗コード" @input="filterStores"></v-text-field>
+                        <v-text-field v-model="order.storeCode" :label="requiredLabel('店舗コード')" @input="filterStores"
+                            :rules="[v => !!v || '店舗コードは必須です']"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6">
                         <v-select v-model="order.StoreID" :items="filteredStores" item-title="name" item-value="id"
-                            label="店名"></v-select>
+                            :label="requiredLabel('店名')" :rules="[v => !!v || '店名は必須です']"></v-select>
                     </v-col>
                 </v-row>
                 <v-row v-else>
@@ -30,13 +24,27 @@
                     </v-col>
                 </v-row>
 
-                <v-text-field v-model="order.PhoneNumber" label="電話番号" @blur="isNew ? fetchCustomerInfo() : null">
+                <v-text-field v-model="order.PhoneNumber" :label="requiredLabel('電話番号')"
+                    @blur="isNew ? fetchCustomerInfo() : null" :rules="[
+                        v => !!v || '電話番号は必須です',
+                        v => /^(0\d{1,4}-?\d{1,4}-?\d{4})$/.test(v) || '正しい電話番号の形式で入力してください'
+                    ]">
                     <template v-slot:append>
                         <v-btn text small color="primary" @click="showCustomerDetail" v-if="order.PhoneNumber">
                             詳細
                         </v-btn>
                     </template>
                 </v-text-field>
+
+                <v-row>
+                    <v-col cols="12">
+                        <v-radio-group v-model="order.UsageType" inline :rules="[v => !!v || '利用タイプは必須です']" required
+                            :label="requiredLabel('利用タイプ')" :class="{ 'required-field': isNew }">
+                            <v-radio v-for="usage in usageTypes" :key="usage.ID" :label="usage.DisplayName"
+                                :value="usage.ClassificationCode" class="mr-4"></v-radio>
+                        </v-radio-group>
+                    </v-col>
+                </v-row>
                 <v-text-field v-model="order.CustomerName" label="お客様名"></v-text-field>
                 <v-text-field v-model="order.ModelName" label="モデル名"></v-text-field>
 
@@ -84,11 +92,10 @@
                 </v-row>
 
                 <v-text-field v-model.number="order.Price" label="料金" type="number" prefix="¥" :step="1000"
-                    @keydown.down.prevent="adjustValue('Price', 1000)"
-                    @keydown.up.prevent="adjustValue('Price', -1000)">
-                </v-text-field>
-                <v-text-field v-model="order.City" label="市区町村"></v-text-field>
-                <v-text-field v-model="order.Address" label="住所"></v-text-field>
+                    @keydown.down.prevent="adjustValue('Price', 1000)" @keydown.up.prevent="adjustValue('Price', -1000)"
+                    @keydown.tab="handleTabPress"></v-text-field>
+                <v-text-field v-model="order.City" label="市区町村" lang="ja" v-ime-on ref="cityInput"></v-text-field>
+                <v-text-field v-model="order.Address" label="住所" lang="ja"></v-text-field>
 
                 <v-select v-model="order.DriverID" :items="filteredDriverStaffList" item-title="name"
                     item-value="staff_id" label="送り">
@@ -151,7 +158,7 @@
     </v-card>
     <v-card v-else>
         <v-card-text>
-            オーダー情報が見つかりません。
+            オダー情報が見つかりません。
         </v-card-text>
     </v-card>
 
@@ -171,7 +178,7 @@
     <v-dialog v-model="confirmDialog" max-width="300">
         <v-card>
             <v-card-title>確認</v-card-title>
-            <v-card-text>このオーダーを確定してもよろしいですか？</v-card-text>
+            <v-card-text>このオーダーを確定して��よろしいですか？</v-card-text>
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="primary" text @click="confirmDialog = false; proceedWithConfirmation()">はい</v-btn>
@@ -240,6 +247,7 @@ export default {
             deleteConfirmDialog: false,
             usageTypes: [],
             formIsValid: false,
+            isComposing: false
         };
     },
     computed: {
@@ -264,7 +272,7 @@ export default {
             const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
             const month = date.getMonth() + 1;
             const day = date.getDate();
-            // 本数のカウントロジックは実際のデータに基づいて実装する必要があます
+            // 本数のカウントロジックは実際のデータ基づいて実装する必要があます
 
             return `${month}月${day}日(${dayOfWeek}) 本数：`;
         }
@@ -427,7 +435,7 @@ export default {
             }
         },
         async fetchCustomerInfo() {
-            if (this.isNew && this.order.PhoneNumber) {
+            if (this.isNew && this.order.PhoneNumber && this.validatePhoneNumber(this.order.PhoneNumber)) {
                 try {
                     const response = await axios.get(`${this.apiBaseUrl}/customers/phone/${this.order.PhoneNumber}`);
                     if (response.data && response.data.data) {
@@ -489,7 +497,7 @@ export default {
                 }
             } catch (error) {
                 console.error('オーダーの削除に失敗しました:', error);
-                this.showAlert('オーダーの削除に���敗しました。', 'error');
+                this.showAlert('オーダーの削除に敗しました。', 'error');
             }
         },
         filterDrivers() {
@@ -576,6 +584,22 @@ export default {
         closeDialog() {
             this.$emit('close');
         },
+        requiredLabel(label) {
+            return this.isNew ? `${label} *` : label;
+        },
+        validatePhoneNumber(phoneNumber) {
+            const phoneRegex = /^(0\d{1,4}-?\d{1,4}-?\d{4})$/;
+            return phoneRegex.test(phoneNumber);
+        },
+        handleTabPress(event) {
+            if (this.isComposing) {
+                event.preventDefault();
+                // IME 確定後にフォーカスを移動
+                this.$nextTick(() => {
+                    this.$refs.cityInput.$el.querySelector('input').focus();
+                });
+            }
+        }
     },
     watch: {
         driverFilter() {
@@ -597,12 +621,42 @@ export default {
             deep: true
         }
     },
+    directives: {
+        imeOn: {
+            inserted: function (el) {
+                el.querySelector('input').style.imeMode = 'active';
+            }
+        }
+    },
     setup() {
         const { socket, isConnected } = useWebSocket();
         return { wsSocket: socket, wsIsConnected: isConnected };
     },
     async mounted() {
         await this.fetchDropdownData();
+
+        document.addEventListener('compositionstart', () => {
+            this.isComposing = true;
+        });
+
+        document.addEventListener('compositionend', () => {
+            this.isComposing = false;
+        });
+    },
+    beforeDestroy() {
+        document.removeEventListener('compositionstart', this.handleCompositionStart);
+        document.removeEventListener('compositionend', this.handleCompositionEnd);
     }
 };
 </script>
+
+<style scoped>
+.required-label::after {
+    content: " *";
+    color: red;
+}
+
+.v-text-field input {
+    ime-mode: active;
+}
+</style>

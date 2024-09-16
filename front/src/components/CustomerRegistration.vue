@@ -26,40 +26,57 @@
                                     </v-col>
                                 </v-row>
                                 <v-row v-else>
-                                    <v-col cols="12" sm="6">
+                                    <v-col cols="12" sm="4">
                                         <v-text-field v-model="lastFourDigits" label="電話番号（下4桁）"
                                             placeholder="下4桁を入力してください"></v-text-field>
                                     </v-col>
-                                    <v-col cols="12" sm="6">
-                                        <v-select v-model="castID" :items="castList" item-text="name"
-                                            item-value="cast_id" label="キャスト"></v-select>
-                                    </v-col>
-                                    <v-col cols="12" sm="6">
-                                        <v-select v-model="storeID" :items="storeList" item-text="name" item-value="id"
-                                            label="店舗"></v-select>
-                                    </v-col>
-                                    <v-col cols="12" sm="6">
-                                        <v-menu v-model="startDateMenu" :close-on-content-click="false"
-                                            :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
-                                            <template v-slot:activator="{ on, attrs }">
-                                                <v-text-field v-model="startDate" label="開始日"
-                                                    prepend-icon="mdi-calendar" readonly v-bind="attrs"
-                                                    v-on="on"></v-text-field>
+                                    <v-col cols="12" sm="4">
+                                        <v-select v-model="castID" :items="castList" item-title="name"
+                                            item-value="cast_id" label="キャスト" :return-object="false" clearable
+                                            @update:model-value="onCastChange">
+                                            <template v-slot:selection="{ item }">
+                                                {{ getCastName(item.value) }}
                                             </template>
-                                            <v-date-picker v-model="startDate"
-                                                @input="startDateMenu = false"></v-date-picker>
-                                        </v-menu>
+                                        </v-select>
                                     </v-col>
-                                    <v-col cols="12" sm="6">
-                                        <v-menu v-model="endDateMenu" :close-on-content-click="false" :nudge-right="40"
-                                            transition="scale-transition" offset-y min-width="auto">
-                                            <template v-slot:activator="{ on, attrs }">
-                                                <v-text-field v-model="endDate" label="終了日" prepend-icon="mdi-calendar"
-                                                    readonly v-bind="attrs" v-on="on"></v-text-field>
+                                    <v-col cols="12" sm="4">
+                                        <v-select v-model="storeID" :items="storeList" item-title="name" item-value="id"
+                                            label="店舗" :return-object="false" clearable
+                                            @update:model-value="onStoreChange">
+                                            <template v-slot:selection="{ item }">
+                                                {{ getStoreName(item.value) }}
                                             </template>
-                                            <v-date-picker v-model="endDate"
-                                                @input="endDateMenu = false"></v-date-picker>
-                                        </v-menu>
+                                        </v-select>
+                                    </v-col>
+                                    <v-col cols="12">
+                                        <v-row>
+                                            <v-col cols="12" sm="6">
+                                                <v-menu v-model="startDateMenu" :close-on-content-click="false"
+                                                    :nudge-right="40" transition="scale-transition" offset-y
+                                                    min-width="auto">
+                                                    <template v-slot:activator="{ props }">
+                                                        <v-text-field v-model="startDateFormatted" label="開始日"
+                                                            prepend-icon="mdi-calendar" readonly
+                                                            v-bind="props"></v-text-field>
+                                                    </template>
+                                                    <v-date-picker v-model="startDate"
+                                                        @update:model-value="updateStartDate"></v-date-picker>
+                                                </v-menu>
+                                            </v-col>
+                                            <v-col cols="12" sm="6">
+                                                <v-menu v-model="endDateMenu" :close-on-content-click="false"
+                                                    :nudge-right="40" transition="scale-transition" offset-y
+                                                    min-width="auto">
+                                                    <template v-slot:activator="{ props }">
+                                                        <v-text-field v-model="endDateFormatted" label="終了日"
+                                                            prepend-icon="mdi-calendar" readonly
+                                                            v-bind="props"></v-text-field>
+                                                    </template>
+                                                    <v-date-picker v-model="endDate"
+                                                        @update:model-value="updateEndDate"></v-date-picker>
+                                                </v-menu>
+                                            </v-col>
+                                        </v-row>
                                     </v-col>
                                 </v-row>
                                 <v-row>
@@ -105,8 +122,10 @@ export default {
         const lastFourDigits = ref('')
         const castID = ref('')
         const storeID = ref('')
-        const startDate = ref('')
-        const endDate = ref('')
+        const startDate = ref(null)
+        const endDate = ref(null)
+        const startDateFormatted = ref('')
+        const endDateFormatted = ref('')
         const searchResults = ref([])
         const selectedCustomer = ref(null)
         const showList = ref(false)
@@ -193,6 +212,52 @@ export default {
             }
         }
 
+        const getCastName = (castId) => {
+            const cast = castList.value.find(c => c.cast_id === castId)
+            return cast ? cast.name : ''
+        }
+
+        const getStoreName = (storeId) => {
+            const store = storeList.value.find(s => s.id === storeId)
+            return store ? store.name : ''
+        }
+
+        const onCastChange = (value) => {
+            if (value === null) {
+                castID.value = null
+            }
+        }
+
+        const onStoreChange = (value) => {
+            if (value === null) {
+                storeID.value = null
+            }
+        }
+
+        const updateStartDate = (newDate) => {
+            startDate.value = newDate
+            startDateFormatted.value = formatDate(newDate)
+            startDateMenu.value = false
+        }
+
+        const updateEndDate = (newDate) => {
+            endDate.value = newDate
+            endDateFormatted.value = formatDate(newDate)
+            endDateMenu.value = false
+        }
+
+        const formatDate = (date) => {
+            if (!date) return ''
+            if (date instanceof Date) {
+                return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`
+            }
+            if (typeof date === 'string') {
+                const [year, month, day] = date.split('-')
+                return `${year}/${month}/${day}`
+            }
+            return ''
+        }
+
         onMounted(() => {
             fetchCastList()
             fetchStoreList()
@@ -217,7 +282,15 @@ export default {
             searchByPhone,
             searchByOther,
             showDetails,
-            closeCustomerDetail
+            closeCustomerDetail,
+            getCastName,
+            getStoreName,
+            onCastChange,
+            onStoreChange,
+            updateStartDate,
+            updateEndDate,
+            startDateFormatted,
+            endDateFormatted
         }
     }
 }

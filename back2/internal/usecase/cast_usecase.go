@@ -81,3 +81,28 @@ func (uc *CastUseCase) generateCastUniqueRandomID() (string, error) {
 	log.Println("ユニークなIDの生成に失敗しました")
 	return "", fmt.Errorf("ユニークなIDの生成に失敗しました")
 }
+
+func (uc *CastUseCase) UpdateWorkingFlg(id int64) error {
+	existingCast, err := uc.repo.GetByID(id)
+	if err != nil {
+		log.Printf("IDでキャストを取得中にエラーが発生: %v\n", err)
+		return fmt.Errorf("IDでキャストを取得中にエラーが発生: %w", err)
+	}
+	if existingCast == nil {
+		log.Println("指定されたIDのキャストが見つかりません")
+		return fmt.Errorf("指定されたIDのキャストが見つかりません")
+	}
+
+	// workingFlgをスイッチ
+	if existingCast.WorkingFlg == "1" {
+		existingCast.WorkingFlg = "0"
+	} else {
+		existingCast.WorkingFlg = "1"
+	}
+
+	return uc.repo.Update(existingCast)
+}
+
+func (uc *CastUseCase) ResetAllWorkingFlags() error {
+	return uc.repo.ResetAllWorkingFlags()
+}

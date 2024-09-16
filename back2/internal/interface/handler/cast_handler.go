@@ -73,6 +73,7 @@ func (h *CastHandler) Get(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Cast not found"})
 		return
 	}
+	cast.PasswordHash = ""
 
 	c.JSON(http.StatusOK, gin.H{"data": cast})
 }
@@ -128,11 +129,27 @@ func (h *CastHandler) ListForDropdown(c *gin.Context) {
 	simplifiedStaffs := make([]gin.H, len(casts))
 	for i, cast := range casts {
 		simplifiedStaffs[i] = gin.H{
-			"id":      cast.ID,
-			"cast_id": cast.CastID,
-			"name":    cast.CastName,
+			"id":          cast.ID,
+			"cast_id":     cast.CastID,
+			"name":        cast.CastName,
+			"working_flg": cast.WorkingFlg,
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": simplifiedStaffs})
+}
+
+func (h *CastHandler) UpdateWorkingFlg(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	if err := h.useCase.UpdateWorkingFlg(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": "Cast updated"})
 }

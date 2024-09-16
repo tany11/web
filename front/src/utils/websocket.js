@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { useStore } from 'vuex';
+import { io } from 'socket.io-client';
 
 const socket = ref(null);
 const isConnected = ref(false);
@@ -9,28 +10,52 @@ export function useWebSocket() {
 
     const connect = () => {
         const apiBaseUrl = store.state.apiBaseUrl;
-        const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + '/ws';
+        const token = store.state.token;
 
-        socket.value = new WebSocket(wsUrl);
+        console.log('Connecting with token:', token); // トークンをログ出力
 
-        socket.value.onopen = () => {
-            console.log('WebSocket接続が確立されました');
+        const socketUrl = `${apiBaseUrl}/socket.io`;  // /api/v1 プレフィックスを削除
+
+        console.log('Attempting to connect to Socket.IO:', socketUrl);
+
+        socket.value = io(socketUrl, {
+            transports: ['websocket'],
+            extraHeaders: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        socket.value.on('connect', () => {
+            console.log('Socket.IO接続が確立されました');
             isConnected.value = true;
-        };
+        });
 
-        socket.value.onclose = () => {
-            console.log('WebSocket接続が閉じられました');
+        socket.value.on('disconnect', (reason) => {
+            console.log('Socket.IO接続が閉じられました', reason, socketUrl);
             isConnected.value = false;
-        };
+        });
 
-        socket.value.onerror = (error) => {
-            console.error('WebSocketエラー:', error);
-        };
+        socket.value.on('connect_error', (error) => {
+            console.error('Socket.IOエラー:', error);
+        });
+
+        socket.value.on('message', (data) => {
+            console.log('受信したメッセージ:', data);
+            // ここでメッセージを処理します
+        });
     };
 
     const disconnect = () => {
         if (socket.value) {
-            socket.value.close();
+            socket.value.disconnect();
+        }
+    };
+
+    const sendMessage = (message) => {
+        if (socket.value && socket.value.connected) {
+            socket.value.emit('message', message);
+        } else {
+            console.error('Socket.IO is not connected.');
         }
     };
 
@@ -39,5 +64,6 @@ export function useWebSocket() {
         isConnected,
         connect,
         disconnect,
+        sendMessage,
     };
 }

@@ -18,9 +18,10 @@ func NewXormTipsRepository(engine *xorm.Engine) repository.TipsRepository {
 	return &XormTipsRepository{engine: engine}
 }
 
-func (r *XormTipsRepository) Create(tips *entity.Tips) error {
+func (r *XormTipsRepository) Create(tips *entity.Tips, groupID int) error {
 	tips.IsDeleted = "0"
 	tips.CompletionFlg = "0"
+	tips.GroupID = int64(groupID)
 	_, err := r.engine.Insert(tips)
 	if err != nil {
 		log.Printf("データベースへのヒント挿入に失敗しました。エラー: %v", err)
@@ -121,6 +122,7 @@ func (r *XormTipsRepository) ListSchedule(groupID int, startDate, endDate string
 	err := r.engine.Where("scheduled_time >= ?", startDate).
 		And("scheduled_time <= ?", endDate).
 		And("is_deleted = 0").
+		And("group_i_d = ?", groupID).
 		Find(&tips)
 	return tips, err
 }

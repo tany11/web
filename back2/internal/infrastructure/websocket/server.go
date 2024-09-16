@@ -1,97 +1,98 @@
 package websocket
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"sync"
+	"strings"
 
-	"github.com/gorilla/websocket"
+	"github.com/dgrijalva/jwt-go"
+	socketio "github.com/googollee/go-socket.io"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		origin := r.Header.Get("Origin")
-		return origin == os.Getenv("FRONT_URL")
-	},
-}
-
 type Server struct {
-	clients    map[*websocket.Conn]bool
-	broadcast  chan []byte
-	register   chan *websocket.Conn
-	unregister chan *websocket.Conn
-	mutex      sync.Mutex
+	server *socketio.Server
 }
 
-func NewServer() *Server {
-	return &Server{
-		clients:    make(map[*websocket.Conn]bool),
-		broadcast:  make(chan []byte),
-		register:   make(chan *websocket.Conn),
-		unregister: make(chan *websocket.Conn),
-	}
+func NewServer() (*Server, error) {
+	server := socketio.NewServer(nil)
+
+	server.OnConnect("/", func(s socketio.Conn) error {
+		log.Printf("新しい接続: %s", s.ID())
+		return nil
+	})
+
+	server.OnEvent("/", "join", func(s socketio.Conn, groupID int, staffID string) {
+		log.Printf("クライアントがグループに参加: %s, GroupID: %d, StaffID: %s", s.ID(), groupID, staffID)
+		s.Join(fmt.Sprintf("group_%d", groupID))
+		s.SetContext(map[string]interface{}{
+			"groupID": groupID,
+			"staffID": staffID,
+		})
+	})
+
+	server.OnEvent("/", "message", func(s socketio.Conn, msg string) {
+		context := s.Context().(map[string]interface{})
+		groupID := context["groupID"].(int)
+		log.Printf("メッセージ受信: %s, GroupID: %d", msg, groupID)
+		server.BroadcastToRoom("/", fmt.Sprintf("group_%d", groupID), "message", msg)
+	})
+
+	server.OnError("/", func(s socketio.Conn, e error) {
+		log.Printf("エラー発生: %v", e)
+	})
+
+	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+		log.Printf("接続解除: %s, 理由: %s", s.ID(), reason)
+	})
+
+	return &Server{server: server}, nil
 }
 
-func (s *Server) Run() {
-	for {
-		select {
-		case client := <-s.register:
-			s.mutex.Lock()
-			s.clients[client] = true
-			s.mutex.Unlock()
-		case client := <-s.unregister:
-			s.mutex.Lock()
-			if _, ok := s.clients[client]; ok {
-				delete(s.clients, client)
-				client.Close()
-			}
-			s.mutex.Unlock()
-		case message := <-s.broadcast:
-			s.mutex.Lock()
-			for client := range s.clients {
-				if err := client.WriteMessage(websocket.TextMessage, message); err != nil {
-					log.Printf("error: %v", err)
-					client.Close()
-					delete(s.clients, client)
-				}
-			}
-			s.mutex.Unlock()
-		}
-	}
-}
+func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
+	log.Println("Serve called")
 
-func (s *Server) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	log.Printf("WebSocket接続の試行: %s", r.RemoteAddr)
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("WebSocket接続の失敗: %v", err)
+	// トークンの検証
+	authHeader := r.Header.Get("Authorization")
+
+	if authHeader == "" {
+		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
 		return
 	}
-	log.Printf("WebSocket接続の成功: %s", r.RemoteAddr)
-	s.register <- conn
 
-	go s.readPump(conn)
-}
+	// "Bearer "プレフィックスを削除
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-func (s *Server) readPump(conn *websocket.Conn) {
-	defer func() {
-		s.unregister <- conn
-	}()
-
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
-			}
-			break
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		// メッセージを他のクライアントにブロードキャスト
-		s.broadcast <- message
+		secretKey := os.Getenv("JWT_SECRET_KEY")
+		return []byte(secretKey), nil
+	})
+
+	if err != nil || !token.Valid {
+		log.Printf("トークン検証エラー: %v", err)
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
 	}
+
+	s.server.ServeHTTP(w, r)
 }
 
-func (s *Server) BroadcastMessage(message []byte) {
-	s.broadcast <- message
+func (s *Server) BroadcastToGroup(groupID int, data interface{}) error {
+	messageBytes, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("メッセージのマーシャリングに失敗: %v", err)
+	}
+
+	roomName := fmt.Sprintf("group_%d", groupID)
+	s.server.BroadcastToRoom("/", roomName, "message", string(messageBytes))
+
+	log.Printf("グループ %d にメッセージをブロードキャスト: %s", groupID, string(messageBytes))
+	return nil
 }
+
+// ... 他のメソッドは必要に応じて追加

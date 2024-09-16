@@ -5,7 +5,7 @@ import (
 )
 
 type TipsRepository interface {
-	Create(tips *entity.Tips) error
+	Create(tips *entity.Tips, groupID int) error
 	GetByID(id int64) (*entity.Tips, error)
 	List(groupID, offset, limit int) ([]*entity.Tips, error)
 	Update(tips *entity.Tips) error

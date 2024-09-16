@@ -4,7 +4,7 @@ import "time"
 
 type Staff struct {
 	ID             int64
-	GroupID        int
+	GroupID        int64
 	StaffID        string
 	StaffLastName  string
 	StaffFirstName string

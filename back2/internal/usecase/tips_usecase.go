@@ -15,11 +15,14 @@ func NewTipsUseCase(tipsRepo repository.TipsRepository) *TipsUseCase {
 	return &TipsUseCase{tipsRepo: tipsRepo}
 }
 
-func (uc *TipsUseCase) Create(tips *entity.Tips) error {
+func (uc *TipsUseCase) Create(tips *entity.Tips, groupID int) error {
 	tips.CreatedAt = time.Now()
 	tips.UpdatedAt = time.Now()
+	if tips.ScheduledBox == "" {
+		tips.ScheduledBox = "60"
+	}
 
-	err := uc.tipsRepo.Create(tips)
+	err := uc.tipsRepo.Create(tips, groupID)
 	if err != nil {
 		return fmt.Errorf("ヒントの作成に失敗しました: %w", err)
 	}
