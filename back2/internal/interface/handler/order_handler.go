@@ -314,12 +314,15 @@ func (h *OrderHandler) UpdateSchedule(c *gin.Context) {
 	select {
 	case <-done:
 		log.Println("UpdateSchedule completed within timeout")
-		updatedOrderJSON, _ := json.Marshal(map[string]interface{}{
+		updatedOrderJSON := map[string]interface{}{
 			"type":  "order_update",
 			"order": order,
-		})
-		log.Printf("Broadcasting message: %s", string(updatedOrderJSON))
-		h.websocketServer.BroadcastToGroup(int(order.GroupID), string(updatedOrderJSON))
+		}
+		log.Printf("Broadcasting message: %+v", updatedOrderJSON)
+		err := h.websocketServer.BroadcastToGroup(int(order.GroupID), updatedOrderJSON)
+		if err != nil {
+			log.Printf("Error broadcasting message: %v", err)
+		}
 		c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
 	case err := <-errChan:
 		log.Printf("Error occurred during UpdateSchedule: %v", err)

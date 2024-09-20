@@ -606,58 +606,55 @@ export default {
         },
         setupWebSocketListeners() {
             if (this.wsSocket) {
-                this.wsSocket.onopen = () => {
-                    console.log('WebSocket connection established');
-                };
                 this.wsSocket.onmessage = (event) => {
                     console.log('Received WebSocket message:', event.data);
-                    const data = JSON.parse(event.data);
-                    switch (data.type) {
+          const data = JSON.parse(event.data);
+                if (data.content && typeof data.content === 'object') {
+                    switch (data.content.type) {
                         case 'order_update':
-                            this.handleOrderUpdate(data.order);
+                            this.handleOrderUpdate(data.content.order);
                             break;
                         case 'order_delete':
-                            this.handleOrderDelete(data.orderId);
+                            this.handleOrderDelete(data.content.orderId);
                             break;
                         case 'memo_update':
-                            this.handleMemoUpdate(data.memo);
+                            this.handleMemoUpdate(data.content.memo);
                             break;
                         case 'memo_delete':
-                            this.handleMemoDelete(data.memoId);
+                            this.handleMemoDelete(data.content.memoId);
                             break;
                     }
-                };
-                this.wsSocket.onerror = (error) => {
+                    }
+                }
+            };
+            this.wsSocket.onerror = (error) => {
                     console.error('WebSocket error:', error);
                 };
                 this.wsSocket.onclose = () => {
                     console.log('WebSocket connection closed');
                 };
-            }
-        },
-
+            },
+        
         handleOrderUpdate(updatedOrder) {
             const index = this.orders.findIndex(order => order.ID === updatedOrder.ID);
             if (index !== -1) {
                 // 既存のオーダーを更新
-                this.orders[index] = {
-                    ...this.orders[index],
-                    ...updatedOrder,
-                    start_time: new Date(updatedOrder.ScheduledTime),
-                    end_time: new Date(new Date(updatedOrder.ScheduledTime).getTime() + updatedOrder.CourseMin * 60000)
-                };
-            } else {
-                // 新しいオーダーを追加
-                this.orders.push({
-                    ...updatedOrder,
-                    start_time: new Date(updatedOrder.ScheduledTime),
-                    end_time: new Date(new Date(updatedOrder.ScheduledTime).getTime() + updatedOrder.CourseMin * 60000)
-                });
-            }
-            // フィルタリングされたオーダーを更新
-            this.updateFilteredItems();
-        },
-
+                    this.orders[index] = {
+                        ...this.orders[index],
+                        ...updatedOrder,
+                        start_time: new Date(updatedOrder.ScheduledTime),
+                        end_time: new Date(new Date(updatedOrder.ScheduledTime).getTime() + updatedOrder.CourseMin * 60000)
+                    };
+                } else {
+                    // 新しいオーダーを追加
+                    this.orders.push({
+                        ...updatedOrder,
+                        start_time: new Date(updatedOrder.ScheduledTime),
+                        end_time: new Date(new Date(updatedOrder.ScheduledTime).getTime() + updatedOrder.CourseMin * 60000)
+                    });
+                }
+                this.updateFilteredItems();
+            },
         handleMemoUpdate(updatedMemo) {
             const index = this.memos.findIndex(memo => memo.ID === updatedMemo.ID);
             if (index !== -1) {

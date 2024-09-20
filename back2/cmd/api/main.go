@@ -56,6 +56,10 @@ func main() {
 	customerHandler := handler.NewCustomerHandler(customerUseCase, orderUseCase)
 	groupHandler := handler.NewGroupHandler(groupUseCase)
 	wsServer, err := websocket.NewServer()
+	if err != nil {
+		log.Fatalf("Failed to create WebSocket server: %v", err)
+	}
+	go wsServer.Run() // この行を追加
 	orderHandler := handler.NewOrderHandler(orderUseCase, wsServer)
 	staffHandler := handler.NewStaffHandler(staffUseCase)
 	authHandler := handler.NewAuthHandler(staffUseCase)
@@ -70,6 +74,7 @@ func main() {
 	frontUrl := os.Getenv("FRONT_URL")
 	log.Println(frontUrl)
 	config.AllowOrigins = []string{frontUrl} // フロントエンドのオリジンを指定
+
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 	config.AllowCredentials = true

@@ -1,6 +1,5 @@
 import { ref } from 'vue';
 import { useStore } from 'vuex';
-import { io } from 'socket.io-client';
 
 const socket = ref(null);
 const isConnected = ref(false);
@@ -12,50 +11,53 @@ export function useWebSocket() {
         const apiBaseUrl = store.state.apiBaseUrl;
         const token = store.state.token;
 
-        console.log('Connecting with token:', token); // トークンをログ出力
+        console.log('Connecting with token:', token);
 
-        const socketUrl = `${apiBaseUrl}/socket.io`;  // /api/v1 プレフィックスを削除
+        // apiBaseUrlからホスト部分のみを抽出
+        const urlParts = new URL(apiBaseUrl);
+        const socketUrl = `${urlParts.protocol === 'https:' ? 'wss:' : 'ws:'}//${urlParts.host}/api/v1/ws`;
+        console.log('socketUrl:', socketUrl);
 
-        console.log('Attempting to connect to Socket.IO:', socketUrl);
+        socket.value = new WebSocket(`${socketUrl}?token=${token}`);
 
-        socket.value = io(socketUrl, {
-            transports: ['websocket'],
-            extraHeaders: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        socket.value.on('connect', () => {
-            console.log('Socket.IO接続が確立されました');
+        socket.value.onopen = () => {
+            console.log('WebSocket接続が確立されました');
             isConnected.value = true;
-        });
+        };
 
-        socket.value.on('disconnect', (reason) => {
-            console.log('Socket.IO接続が閉じられました', reason, socketUrl);
+        socket.value.onclose = (event) => {
+            console.log('WebSocket接続が閉じられました', event.reason);
             isConnected.value = false;
-        });
+        };
 
-        socket.value.on('connect_error', (error) => {
-            console.error('Socket.IOエラー:', error);
-        });
+        socket.value.onerror = (error) => {
+            console.error('WebSocketエラー:', error);
+        };
 
-        socket.value.on('message', (data) => {
+        socket.value.onmessage = (event) => {
+            const data = JSON.parse(event.data);
             console.log('受信したメッセージ:', data);
-            // ここでメッセージを処理します
-        });
+            
+            // メッセージの種類に応じて処理を行う
+            if (data.content && typeof data.content === 'object') {
+                if (data.content.type === 'order_update') {
+                    store.dispatch('updateOrder', data.content.order);
+                }
+            }
+        };
     };
 
     const disconnect = () => {
-        if (socket.value) {
-            socket.value.disconnect();
+        if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+            socket.value.close();
         }
     };
 
     const sendMessage = (message) => {
-        if (socket.value && socket.value.connected) {
-            socket.value.emit('message', message);
+        if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+            socket.value.send(JSON.stringify(message));
         } else {
-            console.error('Socket.IO is not connected.');
+            console.error('WebSocket is not connected.');
         }
     };
 

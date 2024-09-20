@@ -33,15 +33,14 @@ func SetupRouter(
 	{
 		public.POST("/login", authHandler.Login)
 		public.POST("/logout", authHandler.Logout)
-		public.GET("/socket.io/", func(c *gin.Context) {
-			wsServer.Serve(c.Writer, c.Request)
-		})
-		public.POST("/socket.io/", func(c *gin.Context) {
-			wsServer.Serve(c.Writer, c.Request)
-		})
 	}
-	// API v1 routes
 
+	// WebSocket用のルートを設定
+	engine.GET("/api/v1/ws", func(c *gin.Context) {
+		wsServer.Serve(c.Writer, c.Request)
+	})
+
+	// 認証が必要なルートはこの後に設定
 	protected := engine.Group("/api/v1")
 	protected.Use(middleware.JWTAuthMiddleware())
 	{
@@ -125,9 +124,6 @@ func SetupRouter(
 		protected.PUT("/tips/:id/schedule", tipsHandler.UpdateMemo)
 		protected.PUT("/tips/:id/completion", tipsHandler.UpdateCompletionFlg)
 		protected.PUT("/tips/:id/delete", tipsHandler.DeleteFlg)
-
-		// WebSocket route
-
 	}
 }
 

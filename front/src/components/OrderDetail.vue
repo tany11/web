@@ -178,7 +178,7 @@
     <v-dialog v-model="confirmDialog" max-width="300">
         <v-card>
             <v-card-title>確認</v-card-title>
-            <v-card-text>このオーダーを確定して��よろしいですか？</v-card-text>
+            <v-card-text>このオーダーを確定してよろしいですか？</v-card-text>
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="primary" text @click="confirmDialog = false; proceedWithConfirmation()">はい</v-btn>
@@ -190,7 +190,7 @@
     <v-dialog v-model="deleteConfirmDialog" max-width="300">
         <v-card>
             <v-card-title>確認</v-card-title>
-            <v-card-text>このオダーを削除してもろしいですか？</v-card-text>
+            <v-card-text>このオーダーを削除してもよろしいですか？</v-card-text>
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="primary" text @click="deleteConfirmDialog = false; proceedWithDeletion()">はい</v-btn>
