@@ -191,3 +191,7 @@ func (uc *OrderUseCase) GetTotalPriceAndUseTime(customerID int) (int, int, error
 func (uc *OrderUseCase) ListSchedule(groupID int, startDate, endDate string) ([]*entity.Orders, error) {
 	return uc.orderRepo.ListSchedule(groupID, startDate, endDate)
 }
+
+func (uc *OrderUseCase) CalcPayroll(id int64) error {
+	return uc.orderRepo.CalcPayroll(id)
+}

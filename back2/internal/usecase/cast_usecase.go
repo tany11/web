@@ -41,9 +41,8 @@ func (uc *CastUseCase) GetByID(id int64) (*entity.Cast, error) {
 	return uc.repo.GetByID(id)
 }
 
-func (uc *CastUseCase) List(groupID int, page, pageSize int) ([]*entity.Cast, error) {
-	offset := (page - 1) * pageSize
-	return uc.repo.List(groupID, offset, pageSize)
+func (uc *CastUseCase) List(groupID int) ([]*entity.Cast, error) {
+	return uc.repo.List(groupID)
 }
 
 func (uc *CastUseCase) ListForDropdown(groupID int) ([]*entity.Cast, error) {

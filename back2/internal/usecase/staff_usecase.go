@@ -46,9 +46,8 @@ func (uc *StaffUseCase) GetByStaffIID(staffID string) (*entity.Staff, error) {
 	return uc.repo.GetByStaffIID(staffID)
 }
 
-func (uc *StaffUseCase) List(groupID, page, pageSize int) ([]*entity.Staff, error) {
-	offset := (page - 1) * pageSize
-	return uc.repo.List(groupID, offset, pageSize)
+func (uc *StaffUseCase) List(groupID int) ([]*entity.Staff, error) {
+	return uc.repo.List(groupID)
 }
 
 func (uc *StaffUseCase) ListForDropdown(groupID int) ([]*entity.Staff, error) {

@@ -3,7 +3,6 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
-	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -60,11 +59,11 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		return
 	}
 
-	newOrderJSON, _ := json.Marshal(map[string]interface{}{
+	newOrderJSON := map[string]interface{}{
 		"type":  "order_update",
 		"order": orders,
-	})
-	h.websocketServer.BroadcastToGroup(int(orders.GroupID), string(newOrderJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(orders.GroupID), newOrderJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": orders})
 }
@@ -157,11 +156,11 @@ func (h *OrderHandler) Update(c *gin.Context) {
 		return
 	}
 
-	updatedOrderJSON, _ := json.Marshal(map[string]interface{}{
+	updatedOrderJSON := map[string]interface{}{
 		"type":  "order_update",
 		"order": order,
-	})
-	h.websocketServer.BroadcastToGroup(int(order.GroupID), string(updatedOrderJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(order.GroupID), updatedOrderJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": order})
 }
@@ -205,11 +204,13 @@ func (h *OrderHandler) UpdateCompletionFlg(c *gin.Context) {
 		return
 	}
 
-	updatedOrderJSON, _ := json.Marshal(map[string]interface{}{
+	h.orderUseCase.CalcPayroll(id)
+
+	updatedOrderJSON := map[string]interface{}{
 		"type":  "order_update",
 		"order": updatedOrder,
-	})
-	h.websocketServer.BroadcastToGroup(int(updatedOrder.GroupID), string(updatedOrderJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(updatedOrder.GroupID), updatedOrderJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": "注文の完了フラグが更新されました"})
 }
@@ -232,11 +233,11 @@ func (h *OrderHandler) DeleteFlg(c *gin.Context) {
 		return
 	}
 
-	deletedOrderJSON, _ := json.Marshal(map[string]interface{}{
+	deletedOrderJSON := map[string]interface{}{
 		"type":    "order_delete",
 		"orderId": id,
-	})
-	h.websocketServer.BroadcastToGroup(int(order.GroupID), string(deletedOrderJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(order.GroupID), deletedOrderJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": "注文の削除フラグが更新されました"})
 }

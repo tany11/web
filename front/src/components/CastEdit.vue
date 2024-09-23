@@ -20,7 +20,7 @@
                             </td>
                             <td>{{ item.CastName }}</td>
                             <td>
-                                <v-btn small color="primary" @click="openModal(item)" class="mr-2">
+                                <v-btn small color="primary" @click="openModal(item.ID)" class="mr-2">
                                     詳細
                                 </v-btn>
                                 <v-btn small color="error" @click="confirmDelete(item)">
@@ -33,7 +33,7 @@
             </v-col>
         </v-row>
 
-        <cast-detail v-if="showModal" :cast="selectedCast" @close="closeModal" />
+        <cast-detail v-if="showModal" :castId="selectedCast" @close="closeModal" @update="fetchCasts" />
 
         <v-dialog v-model="showDeleteDialog" max-width="300px">
             <v-card>
@@ -105,8 +105,8 @@ export default {
             }
         }
 
-        const openModal = (cast) => {
-            selectedCast.value = cast
+        const openModal = (castId) => {
+            selectedCast.value = castId
             showModal.value = true
         }
 
@@ -123,7 +123,9 @@ export default {
         const deleteCast = async () => {
             if (castToDelete.value) {
                 try {
-                    await axios.delete(`${store.state.apiBaseUrl}/cast/${castToDelete.value.ID}`)
+                    await axios.put(`${store.state.apiBaseUrl}/cast/${castToDelete.value.ID}`, {
+                        IsDeleted: '1'
+                    })
                     await fetchCasts() // キャスト一覧を再取得
                 } catch (error) {
                     console.error('キャストの削除に失敗しました', error)
@@ -151,7 +153,8 @@ export default {
             closeModal,
             confirmDelete,
             deleteCast,
-            toggleWorking
+            toggleWorking,
+            fetchCasts // ここでfetchCastsを返す
         }
     }
 }

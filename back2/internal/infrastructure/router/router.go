@@ -28,6 +28,7 @@ func SetupRouter(
 ) {
 	// Apply global middleware
 	engine.Use(RecordUaAndTime)
+	engine.Use(middleware.ErrorHandler()) // 追加
 
 	public := engine.Group("/api/v1")
 	{

@@ -3,8 +3,8 @@ package handler
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/usecase"
-	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -50,11 +50,11 @@ func (h *TipsHandler) Create(c *gin.Context) {
 	}
 
 	// WebSocket通知を送信
-	newMemoJSON, _ := json.Marshal(map[string]interface{}{
+	updatedMemoJSON := map[string]interface{}{
 		"type": "memo_update",
 		"memo": tips,
-	})
-	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(newMemoJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), updatedMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": tips})
 }
@@ -106,11 +106,11 @@ func (h *TipsHandler) Update(c *gin.Context) {
 	}
 
 	// WebSocket通知を送信
-	updatedMemoJSON, _ := json.Marshal(map[string]interface{}{
+	updatedMemoJSON := map[string]interface{}{
 		"type": "memo_update",
 		"memo": tips,
-	})
-	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(updatedMemoJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), updatedMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": tips})
 }
@@ -157,11 +157,11 @@ func (h *TipsHandler) UpdateCompletionFlg(c *gin.Context) {
 	}
 
 	// WebSocket通知を送信
-	updatedMemoJSON, _ := json.Marshal(map[string]interface{}{
+	updatedMemoJSON := map[string]interface{}{
 		"type": "memo_update",
 		"memo": tips,
-	})
-	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(updatedMemoJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), updatedMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": "ヒントの完了フラグが更新されました"})
 }
@@ -187,11 +187,11 @@ func (h *TipsHandler) DeleteFlg(c *gin.Context) {
 	}
 
 	// WebSocket通知を送信
-	deletedMemoJSON, _ := json.Marshal(map[string]interface{}{
+	deletedMemoJSON := map[string]interface{}{
 		"type":   "memo_delete",
 		"memoId": id,
-	})
-	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(deletedMemoJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), deletedMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"data": "ヒントの削除フラグが更新されました"})
 }
@@ -260,20 +260,40 @@ func (h *TipsHandler) UpdateSchedule(c *gin.Context) {
 	fmt.Println("tips", tips)
 
 	// 更新処理
-	err = h.useCase.Update(tips)
-	if err != nil {
+	done := make(chan bool)
+	errChan := make(chan error)
+	go func() {
+		log.Println("UpdateScheduleの操作を開始します")
+		err = h.useCase.Update(tips)
+		if err != nil {
+			log.Printf("UpdateScheduleでエラーが発生しました: %v", err)
+			errChan <- err
+		} else {
+			log.Println("UpdateScheduleの操作が正常に完了しました")
+			done <- true
+		}
+	}()
+
+	select {
+	case <-done:
+		log.Println("UpdateScheduleがタイムアウト内に完了しました")
+		updatedTipsJSON := map[string]interface{}{
+			"type": "memo_update",
+			"memo": tips,
+		}
+		log.Printf("メッセージをブロードキャストします: %+v", updatedTipsJSON)
+		err := h.websocketServer.BroadcastToGroup(int(tips.GroupID), updatedTipsJSON)
+		if err != nil {
+			log.Printf("メッセージのブロードキャスト中にエラーが発生しました: %v", err)
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
+	case err := <-errChan:
+		log.Printf("UpdateSchedule中にエラーが発生しました: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	case <-time.After(10 * time.Second):
+		log.Println("UpdateScheduleの操作がタイムアウトしました")
+		c.JSON(http.StatusRequestTimeout, gin.H{"error": "処理がタイムアウトしました"})
 	}
-
-	// オーダーの更新が成功した場合、WebSocketを通じて通知
-	updatedOrderJSON, _ := json.Marshal(map[string]interface{}{
-		"type":  "order_update",
-		"order": tips,
-	})
-	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(updatedOrderJSON))
-
-	c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
 }
 
 func (h *TipsHandler) UpdateMemo(c *gin.Context) {
@@ -324,11 +344,11 @@ func (h *TipsHandler) UpdateMemo(c *gin.Context) {
 	}
 
 	// メモの更新が成功した場合、WebSocketを通じて通知
-	updatedMemoJSON, _ := json.Marshal(map[string]interface{}{
+	updatedMemoJSON := map[string]interface{}{
 		"type": "memo_update",
 		"memo": tips,
-	})
-	h.websocketServer.BroadcastToGroup(int(tips.GroupID), string(updatedMemoJSON))
+	}
+	h.websocketServer.BroadcastToGroup(int(tips.GroupID), updatedMemoJSON)
 
 	c.JSON(http.StatusOK, gin.H{"message": "スケジュールが更新されました"})
 }

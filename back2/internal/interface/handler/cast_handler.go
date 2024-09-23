@@ -39,11 +39,18 @@ func (h *CastHandler) Create(c *gin.Context) {
 }
 
 func (h *CastHandler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	groupID, _ := strconv.Atoi(c.DefaultQuery("groupID", "1"))
+	groupID, exists := c.Get("group_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "グループIDが見つかりません"})
+		return
+	}
+	groupIDInt, ok := groupID.(float64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "グループIDの型が不正です"})
+		return
+	}
 
-	casts, err := h.useCase.List(groupID, page, pageSize)
+	casts, err := h.useCase.List(int(groupIDInt))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -91,6 +98,8 @@ func (h *CastHandler) Update(c *gin.Context) {
 		return
 	}
 	cast.ID = id
+
+	log.Printf("cast: %v", cast)
 
 	if err := h.useCase.Update(&cast); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

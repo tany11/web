@@ -56,8 +56,8 @@
                                                     min-width="auto">
                                                     <template v-slot:activator="{ props }">
                                                         <v-text-field v-model="startDateFormatted" label="開始日"
-                                                            prepend-icon="mdi-calendar" readonly
-                                                            v-bind="props"></v-text-field>
+                                                            prepend-icon="mdi-calendar" readonly v-bind="props"
+                                                            clearable></v-text-field>
                                                     </template>
                                                     <v-date-picker v-model="startDate"
                                                         @update:model-value="updateStartDate"></v-date-picker>
@@ -69,8 +69,8 @@
                                                     min-width="auto">
                                                     <template v-slot:activator="{ props }">
                                                         <v-text-field v-model="endDateFormatted" label="終了日"
-                                                            prepend-icon="mdi-calendar" readonly
-                                                            v-bind="props"></v-text-field>
+                                                            prepend-icon="mdi-calendar" readonly v-bind="props"
+                                                            clearable></v-text-field>
                                                     </template>
                                                     <v-date-picker v-model="endDate"
                                                         @update:model-value="updateEndDate"></v-date-picker>

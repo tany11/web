@@ -35,13 +35,21 @@ func (h *StaffHandler) Create(c *gin.Context) {
 }
 
 func (h *StaffHandler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	groupID, _ := strconv.Atoi(c.DefaultQuery("groupID", "0"))
+	groupID, exists := c.Get("group_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "グループIDが見つかりません"})
+		return
+	}
 
-	staffs, err := h.useCase.List(groupID, page, pageSize)
+	groupIDInt, ok := groupID.(float64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "グループIDの型が不正です"})
+		return
+	}
+
+	staffs, err := h.useCase.List(int(groupIDInt))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "スタッフの取得中にエラーが発生しました"})
 		return
 	}
 

@@ -44,9 +44,9 @@ func (r *XormCastRepository) GetByCastIID(CastID string) (*entity.Cast, error) {
 	return cast, nil
 }
 
-func (r *XormCastRepository) List(groupID int, offset, limit int) ([]*entity.Cast, error) {
+func (r *XormCastRepository) List(groupID int) ([]*entity.Cast, error) {
 	casts := make([]*entity.Cast, 0)
-	err := r.engine.Where("group_i_d = ?", groupID).Limit(limit, offset).Find(&casts)
+	err := r.engine.Where("group_i_d = ? AND is_deleted = ?", groupID, "0").Find(&casts)
 	return casts, err
 }
 

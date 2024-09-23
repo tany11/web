@@ -11,7 +11,7 @@
                     </v-col>
                     <v-col cols="12" sm="6">
                         <v-select v-model="order.StoreID" :items="filteredStores" item-title="name" item-value="id"
-                            :label="requiredLabel('店名')" :rules="[v => !!v || '店名は必須です']"></v-select>
+                            :label="requiredLabel('店名')" :rules="[v => !!v || '店名は必須です']" clearable></v-select>
                     </v-col>
                 </v-row>
                 <v-row v-else>
@@ -49,7 +49,7 @@
                 <v-text-field v-model="order.ModelName" label="モデル名"></v-text-field>
 
                 <v-select v-model="order.ActualModel" :items="castList" item-title="name" item-value="cast_id"
-                    label="実モデル"></v-select>
+                    label="実モデル" clearable></v-select>
 
                 <v-row>
                     <v-col cols="4" v-if="isNew">
@@ -94,11 +94,22 @@
                 <v-text-field v-model.number="order.Price" label="料金" type="number" prefix="¥" :step="1000"
                     @keydown.down.prevent="adjustValue('Price', 1000)" @keydown.up.prevent="adjustValue('Price', -1000)"
                     @keydown.tab="handleTabPress"></v-text-field>
+                <v-text-field v-model.number="order.OptionPrice100" label="100%バックオプション" type="number" prefix="¥"
+                    :step="1000" @keydown.down.prevent="adjustValue('OptionPrice100', 1000)"
+                    @keydown.up.prevent="adjustValue('OptionPrice100', -1000)"
+                    @keydown.tab="handleTabPress"></v-text-field>
+
+                <v-text-field v-model.number="order.OptionPrice50" label="50%バックオプション" type="number" prefix="¥"
+                    :step="1000" @keydown.down.prevent="adjustValue('OptionPrice50', 1000)"
+                    @keydown.up.prevent="adjustValue('OptionPrice50', -1000)"
+                    @keydown.tab="handleTabPress"></v-text-field>
                 <v-text-field v-model="order.City" label="市区町村" lang="ja" v-ime-on ref="cityInput"></v-text-field>
                 <v-text-field v-model="order.Address" label="住所" lang="ja"></v-text-field>
 
+
+
                 <v-select v-model="order.DriverID" :items="filteredDriverStaffList" item-title="name"
-                    item-value="staff_id" label="送り">
+                    item-value="staff_id" label="送り" clearable>
                     <template v-slot:prepend-inner>
                         <v-text-field v-model="driverFilter" label="フィルター" dense hide-details
                             @input="filterDrivers"></v-text-field>
@@ -115,20 +126,20 @@
                     @keydown.down.prevent="adjustValue('TravelCost', 1000)"
                     @keydown.up.prevent="adjustValue('TravelCost', -1000)"></v-text-field>
 
-                <v-select v-model="order.Media" :items="mediaList" item-title="name" item-value="id"
-                    label="媒体"></v-select>
+                <v-select v-model="order.Media" :items="mediaList" item-title="name" item-value="id" label="媒体"
+                    clearable></v-select>
 
                 <v-textarea v-model="order.Notes" label="備考"></v-textarea>
 
                 <v-select v-model="order.CardstaffID" :items="filteredOfficeStaffList" item-title="name"
-                    item-value="staff_id" label="カード">
+                    item-value="staff_id" label="カード" clearable>
                     <template v-slot:prepend-inner>
                         <v-text-field v-model="cardStaffFilter" label="フィルター" dense hide-details
                             @input="filterOfficeStaff"></v-text-field>
                     </template>
                 </v-select>
                 <v-select v-model="order.OrderStaffID" :items="filteredOfficeStaffList" item-title="name"
-                    item-value="staff_id" label="受注者">
+                    item-value="staff_id" label="受注者" clearable>
                     <template v-slot:prepend-inner>
                         <v-text-field v-model="orderStaffFilter" label="フィルター" dense hide-details
                             @input="filterOfficeStaff"></v-text-field>
@@ -325,7 +336,7 @@ export default {
                 }
 
                 // INT項目の値を整数に変換
-                const intFields = ['CourseMin', 'ExtraTime', 'ExtraCourse', 'Price', 'ReservationFee', 'TransportationFee', 'TravelCost'];
+                const intFields = ['CourseMin', 'ExtraTime', 'ExtraCourse', 'Price', 'OptionPrice100', 'OptionPrice50', 'ReservationFee', 'TransportationFee', 'TravelCost'];
                 intFields.forEach(field => {
                     if (this.order[field] !== undefined) {
                         this.order[field] = Math.floor(Number(this.order[field]));
@@ -357,7 +368,7 @@ export default {
 
             try {
                 // INT項目の値を整数に変換
-                const intFields = ['CourseMin', 'ExtraTime', 'ExtraCourse', 'Price', 'ReservationFee', 'TransportationFee', 'TravelCost'];
+                const intFields = ['CourseMin', 'ExtraTime', 'ExtraCourse', 'Price', 'OptionPrice100', 'OptionPrice50', 'ReservationFee', 'TransportationFee', 'TravelCost'];
                 intFields.forEach(field => {
                     if (this.order[field] !== undefined) {
                         this.order[field] = Math.floor(Number(this.order[field]));

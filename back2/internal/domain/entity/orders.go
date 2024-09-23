@@ -18,6 +18,8 @@ type Orders struct {
 	ExtraCourse       int       //追加コース
 	ExtraTime         int       //延長時間
 	Price             int       //価格
+	OptionPrice100    int       //オプション価格100
+	OptionPrice50     int       //オプション価格50
 	City              string    //市区町村
 	Address           string    //住所
 	DriverID          string    //運転手ID

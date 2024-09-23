@@ -3,7 +3,6 @@ package repository
 import (
 	"back2/internal/domain/entity"
 	"back2/internal/domain/repository"
-	"fmt"
 	"log"
 	"time"
 
@@ -91,7 +90,6 @@ func (r *XormOrderRepository) UpdateCompletionFlg(id int64) error {
 
 func (r *XormOrderRepository) UpdateIsDeleted(id int64) error {
 	order := &entity.Orders{IsDeleted: "1"}
-	fmt.Println("おおおおだああああああーーーーーーーー", order)
 	_, err := r.engine.ID(id).Cols("is_deleted").Update(order)
 	return err
 }
@@ -131,4 +129,10 @@ func (r *XormOrderRepository) ListSchedule(groupID int, startDate, endDate strin
 		And("group_i_d = ?", groupID).
 		Find(&orders)
 	return orders, err
+}
+
+func (r *XormOrderRepository) CalcPayroll(id int64) error {
+	order := &entity.Orders{CompletionFlg: "1"}
+	_, err := r.engine.ID(id).Cols("completion_flg").Update(order)
+	return err
 }

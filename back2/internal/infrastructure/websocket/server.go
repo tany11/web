@@ -173,7 +173,7 @@ func (s *Server) readPump(conn *websocket.Conn) {
 func (s *Server) BroadcastToGroup(groupID int, data interface{}) error {
 	message := Message{
 		GroupID: groupID,
-		Content: data,
+		Content: data, // データをそのまま使用し、追加のエンコーディングを避ける
 	}
 
 	s.broadcast <- message

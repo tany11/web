@@ -15,4 +15,5 @@ type OrderRepository interface {
 	GetTotalPriceAndUseTime(customerID int) (int, int, error)
 	ListSchedule(groupID int, startDate, endDate string) ([]*entity.Orders, error)
 	UpdateSchedule(order *entity.Orders) error
+	CalcPayroll(id int64) error
 }

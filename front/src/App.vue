@@ -2,7 +2,7 @@
   <v-app>
     <v-app-bar v-if="isLoggedIn" app>
       <v-app-bar-nav-icon @click="toggleSidebar"></v-app-bar-nav-icon>
-      <v-toolbar-title>Mr.Huvenrey</v-toolbar-title>
+      <v-toolbar-title>Mr.Fuvenrey</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn icon @click="toggleDarkMode">
         <v-icon>{{ isDarkMode ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>

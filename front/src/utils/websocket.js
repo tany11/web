@@ -37,11 +37,14 @@ export function useWebSocket() {
         socket.value.onmessage = (event) => {
             const data = JSON.parse(event.data);
             console.log('受信したメッセージ:', data);
-            
+
             // メッセージの種類に応じて処理を行う
             if (data.content && typeof data.content === 'object') {
                 if (data.content.type === 'order_update') {
                     store.dispatch('updateOrder', data.content.order);
+                }
+                if (data.content.type === 'memo_update') {
+                    store.dispatch('updateMemo', data.content.memo);
                 }
             }
         };

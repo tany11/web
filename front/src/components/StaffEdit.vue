@@ -1,126 +1,159 @@
 <template>
     <v-container class="staff-edit">
-        <v-row justify="center">
-            <v-col cols="12" sm="8" md="6">
-                <h1 class="text-h4 text-center mb-6">スタッフ編集</h1>
-                <v-form @submit.prevent="submitForm">
-                    <v-row>
-                        <v-col cols="12" sm="6">
-                            <v-text-field v-model="staffLastName" label="スタッフ姓 *" required></v-text-field>
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                            <v-text-field v-model="staffFirstName" label="スタッフ名 *" required></v-text-field>
-                        </v-col>
-                    </v-row>
-
-                    <v-text-field v-model="password" label="パスワード *" type="password" required></v-text-field>
-
-                    <v-text-field v-model="lineId" label="LINE ID *" required></v-text-field>
-
-                    <v-text-field v-model="phoneNumber" label="電話番号 *" type="tel" required></v-text-field>
-
-                    <v-checkbox v-model="officeFlg" label="内勤"></v-checkbox>
-
-                    <v-checkbox v-model="driverFlg" label="ドライバー"></v-checkbox>
-
-                    <v-checkbox v-model="webFlg" label="Webスタッフ"></v-checkbox>
-
-                    <v-btn type="submit" color="primary" block :disabled="!isFormValid" class="mt-4">
-                        登録
-                    </v-btn>
-                </v-form>
-                <v-alert v-if="registrationResult" :type="resultClass" class="mt-4">
-                    {{ registrationResult }}
-                </v-alert>
+        <v-row>
+            <v-col>
+                <h1 class="text-h4 text-center mb-6">スタッフ一覧</h1>
             </v-col>
         </v-row>
+        <v-row>
+            <v-col>
+                <v-data-table :headers="headers" :items="staffs" :items-per-page="10" :loading="loading"
+                    class="elevation-1">
+                    <template v-slot:item="{ item }">
+                        <tr>
+                            <td>{{ item.StaffLastName }} {{ item.StaffFirstName }}</td>
+                            <td>{{ item.PhoneNumber }}</td>
+                            <td>{{ item.LineID }}</td>
+                            <td>
+                                <v-chip small :color="item.OfficeFlg === '1' ? 'primary' : 'grey'"
+                                    text-color="white">内勤</v-chip>
+                                <v-chip small :color="item.DriverFlg === '1' ? 'primary' : 'grey'"
+                                    text-color="white">ドライバー</v-chip>
+                                <v-chip small :color="item.WebFlg === '1' ? 'primary' : 'grey'"
+                                    text-color="white">Webスタッフ</v-chip>
+                            </td>
+                            <td>
+                                <v-btn small color="primary" @click="openModal(item.id)" class="mr-2">
+                                    詳細
+                                </v-btn>
+                                <v-btn small color="error" @click="confirmDelete(item)">
+                                    削除
+                                </v-btn>
+                            </td>
+                        </tr>
+                    </template>
+                </v-data-table>
+            </v-col>
+        </v-row>
+
+        <staff-detail v-if="showModal" :staffId="selectedStaff" @close="closeModal" />
+
+        <v-dialog v-model="showDeleteDialog" max-width="300px">
+            <v-card>
+                <v-card-title>削除の確認</v-card-title>
+                <v-card-text>このスタッフを削除してもよろしいですか？</v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn color="blue darken-1" text @click="showDeleteDialog = false">キャンセル</v-btn>
+                    <v-btn color="blue darken-1" text @click="deleteStaff">削除</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-snackbar v-model="showError" color="error" timeout="3000">
+            {{ errorMessage }}
+        </v-snackbar>
     </v-container>
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useStore } from 'vuex'
+import StaffDetail from './StaffDetail.vue'
 
 export default {
+    components: {
+        StaffDetail
+    },
     setup() {
         const store = useStore()
-        const staffLastName = ref('')
-        const staffFirstName = ref('')
-        const password = ref('')
-        const lineId = ref('')
-        const phoneNumber = ref('')
-        const officeFlg = ref(false)
-        const driverFlg = ref(false)
-        const webFlg = ref(false)
-        const registrationResult = ref('')
-        const resultClass = ref('')
+        const staffs = ref([])
+        const showModal = ref(false)
+        const selectedStaff = ref(null)
+        const loading = ref(false)
+        const showDeleteDialog = ref(false)
+        const staffToDelete = ref(null)
+        const showError = ref(false)
+        const errorMessage = ref('')
 
-        const isFormValid = computed(() => {
-            return staffLastName.value.trim() !== '' &&
-                staffFirstName.value.trim() !== '' &&
-                password.value.trim() !== '' &&
-                lineId.value.trim() !== '' &&
-                phoneNumber.value.trim() !== '' &&
-                (officeFlg.value || driverFlg.value || webFlg.value)
-        })
+        const headers = [
+            { text: 'スタッフ名', value: 'staffName' },
+            { text: '電話番号', value: 'phoneNumber' },
+            { text: 'LINE ID', value: 'lineId' },
+            { text: '役割', value: 'roles', sortable: false },
+            { text: '操作', value: 'actions', sortable: false }
+        ]
 
-        const submitForm = async () => {
-            if (!isFormValid.value) {
-                alert('すべての必須項目を入力してください。')
-                return
+        const fetchStaffs = async () => {
+            loading.value = true
+            try {
+                const response = await axios.get(`${store.state.apiBaseUrl}/staff`)
+                staffs.value = response.data.data
+            } catch (error) {
+                console.error('スタッフ一覧の取得に失敗しました', error)
+                showError.value = true
+                errorMessage.value = 'スタッフ一覧の取得に失敗しました'
+            } finally {
+                loading.value = false
             }
+        }
 
-            const formData = {
-                staffLastName: staffLastName.value,
-                staffFirstName: staffFirstName.value,
-                passwordHash: password.value,
-                lineId: lineId.value,
-                phoneNumber: phoneNumber.value,
-                officeFlg: officeFlg.value ? "1" : "0",
-                driverFlg: driverFlg.value ? "1" : "0",
-                webFlg: webFlg.value ? "1" : "0"
-            }
-            if (confirm('スタッフを登録してもよろしいですか？')) {
+        const openModal = (staffId) => {
+            selectedStaff.value = staffId
+            showModal.value = true
+        }
+
+        const closeModal = () => {
+            showModal.value = false
+            selectedStaff.value = null
+        }
+
+        const confirmDelete = (staff) => {
+            staffToDelete.value = staff
+            showDeleteDialog.value = true
+        }
+
+        const deleteStaff = async () => {
+            if (staffToDelete.value) {
                 try {
-                    const response = await axios.post(`${store.state.apiBaseUrl}/staff`, formData)
-                    console.log('スタッフが登録されました', response.data)
-                    registrationResult.value = 'スタッフが正常に登録されました。'
-                    resultClass.value = 'success'
-                    resetForm()
+                    await axios.put(`${store.state.apiBaseUrl}/staff/${staffToDelete.value.ID}`, {
+                        IsDeleted: '1'
+                    })
+                    await fetchStaffs() // スタッフ一覧を再取得
                 } catch (error) {
-                    console.error('登録エラー', error)
-                    registrationResult.value = 'スタッフの登録に失敗しました。もう一度お試しください。'
-                    resultClass.value = 'error'
+                    console.error('スタッフの削除に失敗しました', error)
+                    showError.value = true
+                    errorMessage.value = 'スタッフの削除に失敗しました'
+                } finally {
+                    showDeleteDialog.value = false
+                    staffToDelete.value = null
                 }
             }
         }
 
-        const resetForm = () => {
-            staffLastName.value = ''
-            staffFirstName.value = ''
-            password.value = ''
-            lineId.value = ''
-            phoneNumber.value = ''
-            officeFlg.value = false
-            driverFlg.value = false
-            webFlg.value = false
-        }
+        onMounted(fetchStaffs)
 
         return {
-            staffLastName,
-            staffFirstName,
-            password,
-            lineId,
-            phoneNumber,
-            officeFlg,
-            driverFlg,
-            webFlg,
-            submitForm,
-            isFormValid,
-            registrationResult,
-            resultClass
+            staffs,
+            showModal,
+            selectedStaff,
+            headers,
+            loading,
+            showDeleteDialog,
+            showError,
+            errorMessage,
+            openModal,
+            closeModal,
+            confirmDelete,
+            deleteStaff
         }
     }
 }
 </script>
+
+<style scoped>
+.v-chip {
+    margin-right: 4px;
+}
+</style>

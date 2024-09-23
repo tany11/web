@@ -44,10 +44,13 @@ func (r *XormStaffRepository) GetByStaffIID(staffID string) (*entity.Staff, erro
 	return staff, nil
 }
 
-func (r *XormStaffRepository) List(groupID, offset, limit int) ([]*entity.Staff, error) {
+func (r *XormStaffRepository) List(groupID int) ([]*entity.Staff, error) {
 	staffs := make([]*entity.Staff, 0)
-	err := r.engine.Where("group_id = ?", groupID).Limit(limit, offset).Find(&staffs)
-	return staffs, err
+	err := r.engine.Where("group_i_d = ? AND is_deleted = ?", groupID, "0").Find(&staffs)
+	if err != nil {
+		return nil, err
+	}
+	return staffs, nil
 }
 
 func (r *XormStaffRepository) Update(staff *entity.Staff) error {

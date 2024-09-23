@@ -1,71 +1,55 @@
 <template>
-    <v-dialog v-model="dialogVisible" max-width="600px">
+    <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
         <v-card>
-            <v-card-title>
-                キャスト詳細
-                <v-spacer></v-spacer>
-                <v-btn icon @click="closeModal">
+            <v-toolbar dark color="primary">
+                <v-btn icon dark @click="closeModal">
                     <v-icon>mdi-close</v-icon>
                 </v-btn>
-            </v-card-title>
+                <v-toolbar-title>キャスト詳細</v-toolbar-title>
+            </v-toolbar>
             <v-card-text>
                 <v-container v-if="loading">
                     <v-row justify="center">
                         <v-progress-circular indeterminate color="primary"></v-progress-circular>
                     </v-row>
                 </v-container>
-                <v-container v-else-if="castDetails">
+                <v-container v-else-if="editedCast">
                     <v-row>
-                        <v-col cols="12">
-                            <div class="text-subtitle-1 font-weight-bold mb-2">基本情報</div>
+                        <v-col cols="12" sm="6">
+                            <v-text-field v-model="editedCast.CastName" label="キャスト名"></v-text-field>
+                            <v-text-field v-model="editedCast.CastID" label="キャストID" readonly></v-text-field>
+                            <v-text-field v-model="editedCast.LineID" label="LINE ID"></v-text-field>
+                            <v-text-field v-model="editedCast.birthdate" label="生年月日" @blur="updateBirthDate"
+                                placeholder="YYYY-MM-DD"></v-text-field>
+                            <v-text-field v-model="editedCast.LastName" label="姓"></v-text-field>
+                            <v-text-field v-model="editedCast.FirstName" label="名"></v-text-field>
+                            <v-text-field v-model="editedCast.effective_date" label="証明書有効期限"
+                                @blur="updateEffectiveDate" placeholder="YYYY-MM-DD"></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="6">
+                            <v-checkbox v-model="editedCast.TattooFlg" label="タトゥー" true-value="1"
+                                false-value="0"></v-checkbox>
+                            <v-text-field v-if="editedCast.TattooFlg === '1'" v-model="editedCast.TattooArea"
+                                label="タトゥーの場所"></v-text-field>
+                            <v-text-field v-model="editedCast.Allergy" label="アレルギー"></v-text-field>
+                            <v-checkbox v-model="editedCast.StretchMarksFlg" label="妊娠線" true-value="1"
+                                false-value="0"></v-checkbox>
+                            <v-checkbox v-model="editedCast.SmokingFlg" label="喫煙" true-value="1"
+                                false-value="0"></v-checkbox>
+                            <v-checkbox v-model="editedCast.ForeignerFlg" label="外国人対応" true-value="1"
+                                false-value="0"></v-checkbox>
                         </v-col>
                     </v-row>
-                    <v-list dense>
-                        <v-list-item>
-                            <v-list-item-title>キャスト名：</v-list-item-title>
-                            <v-list-item-subtitle>{{ castDetails.data.CastName }}</v-list-item-subtitle>
-                        </v-list-item>
-                        <v-list-item>
-                            <v-list-item-title>キャストID：</v-list-item-title>
-                            <v-list-item-subtitle>{{ castDetails.data.CastID }}</v-list-item-subtitle>
-                        </v-list-item>
-                        <v-list-item>
-                            <v-list-item-title>LINE ID：</v-list-item-title>
-                            <v-list-item-subtitle>{{ castDetails.data.LineID }}</v-list-item-subtitle>
-                        </v-list-item>
-                        <v-list-item>
-                            <v-list-item-title>生年月日：</v-list-item-title>
-                            <v-list-item-subtitle>{{ formatDate(castDetails.data.birthdate) }}</v-list-item-subtitle>
-                        </v-list-item>
-                        <v-list-item>
-                            <v-list-item-title>登録日：</v-list-item-title>
-                            <v-list-item-subtitle>{{ formatDate(castDetails.data.CreatedAt) }}</v-list-item-subtitle>
-                        </v-list-item>
-                        <v-list-item>
-                            <v-list-item-title>最終更新日：</v-list-item-title>
-                            <v-list-item-subtitle>{{ formatDate(castDetails.data.UpdatedAt) }}</v-list-item-subtitle>
-                        </v-list-item>
-                    </v-list>
                     <v-row>
                         <v-col cols="12">
-                            <div class="text-subtitle-1 font-weight-bold mb-2">追加情報</div>
+                            <h3>対応可能オプション</h3>
                         </v-col>
                     </v-row>
-                    <v-data-table v-if="castDetails.WorkHistory && castDetails.WorkHistory.length" :headers="headers"
-                        :items="castDetails.WorkHistory" dense>
-                        <template v-slot:item.Date="{ item }">
-                            {{ formatDate(item.Date) }}
-                        </template>
-                        <template v-slot:item.StoreID="{ item }">
-                            {{ getStoreName(item.StoreID) }}
-                        </template>
-                        <template v-slot:item.WorkTime="{ item }">
-                            {{ formatWorkTime(item.StartTime, item.EndTime) }}
-                        </template>
-                    </v-data-table>
-                    <v-alert v-else type="info" dense>
-                        出勤履歴はありません。
-                    </v-alert>
+                    <v-row>
+                        <v-col v-for="(value, key) in editedCast.option_flags" :key="key" cols="12" sm="2">
+                            <v-checkbox v-model="editedCast.option_flags[key]" :label="key"></v-checkbox>
+                        </v-col>
+                    </v-row>
                 </v-container>
                 <v-container v-else>
                     <v-alert type="error" dense>
@@ -73,97 +57,108 @@
                     </v-alert>
                 </v-container>
             </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="blue darken-1" text @click="closeModal">キャンセル</v-btn>
+                <v-btn color="blue darken-1" text @click="save">保存</v-btn>
+            </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import axios from 'axios'
 import { useStore } from 'vuex'
 
 export default {
-    name: 'CastDetail',
-    props: ['cast'],
-    emits: ['close'],
+    props: {
+        castId: {
+            type: Number,
+            required: true
+        }
+    },
+    emits: ['close', 'update'],
     setup(props, { emit }) {
         const store = useStore()
-        const castDetails = ref(null)
-        const storeList = ref([])
-        const dialogVisible = ref(false)
+        const dialog = ref(true)
+        const editedCast = ref(null)
         const loading = ref(false)
+        const formattedBirthDate = ref('')
+        const formattedEffectiveDate = ref('')
 
-        const headers = [
-            { text: '日付', value: 'Date' },
-            { text: '勤務店舗', value: 'StoreID' },
-            { text: '勤務時間', value: 'WorkTime' },
-        ]
-
-        const fetchCastDetail = async () => {
-            if (props.cast) {
-                loading.value = true
-                try {
-                    const response = await axios.get(`${store.state.apiBaseUrl}/cast/${props.cast.ID}`)
-                    castDetails.value = response.data
-                    dialogVisible.value = true
-                } catch (error) {
-                    console.error('キャスト詳細の取得に失敗しました', error)
-                } finally {
-                    loading.value = false
-                }
-            }
-        }
-
-        const fetchStoreList = async () => {
+        const fetchCastDetails = async () => {
+            if (!props.castId) return
+            loading.value = true
             try {
-                const response = await axios.get(`${store.state.apiBaseUrl}/store/dropdown`)
-                storeList.value = response.data.data || []
+                const response = await axios.get(`${store.state.apiBaseUrl}/cast/${props.castId}`)
+                editedCast.value = response.data.data
+                formattedBirthDate.value = formatDisplayDate(editedCast.value.birthdate)
+                formattedEffectiveDate.value = formatDisplayDate(editedCast.value.effective_date)
             } catch (error) {
-                console.error('店舗リストの取得に失敗しました:', error)
+                console.error('キャスト詳細の取得に失敗しました', error)
+            } finally {
+                loading.value = false
             }
         }
 
-        const formatDate = (dateString) => {
-            if (!dateString) return 'N/A'
-            const date = new Date(dateString)
-            return date.toLocaleDateString('ja-JP')
+        const formatDisplayDate = (date) => {
+            if (!date) return ''
+            const d = new Date(date)
+            if (isNaN(d.getTime())) return '' // 無効な日付の場合は空文字を返す
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         }
 
-        const getStoreName = (storeId) => {
-            const store = storeList.value.find(s => s.id === storeId)
-            return store ? store.name : 'Unknown'
+        const updateBirthDate = (value) => {
+            console.log("updateBirthDate", value)
+            const [year, month, day] = value.split('-')
+            editedCast.value.birthdate = new Date(year, month - 1, day)
         }
 
-        const formatWorkTime = (startTime, endTime) => {
-            return `${startTime} - ${endTime}`
+        const updateEffectiveDate = (value) => {
+            console.log("updateEffectiveDate", value)
+            const [year, month, day] = value.split('-')
+            editedCast.value.effective_date = new Date(year, month - 1, day)
+
         }
 
         const closeModal = () => {
-            dialogVisible.value = false
+            dialog.value = false
             emit('close')
         }
 
-        onMounted(() => {
-            fetchStoreList()
+        const save = async () => {
+            try {
+                const castData = { ...editedCast.value }
+                castData.birthdate = updateBirthDate(editedCast.value.birthdate)
+                castData.effective_date = updateEffectiveDate(editedCast.value.effective_date)
+                console.log("castData", castData)
+                await axios.put(`${store.state.apiBaseUrl}/cast/${castData.ID}`, castData)
+                emit('update')
+                closeModal()
+            } catch (error) {
+                console.error('キャストの更新に失敗しました', error)
+            }
+        }
+
+        onMounted(fetchCastDetails)
+
+        watch(() => props.castId, (newCastId) => {
+            if (newCastId) {
+                fetchCastDetails()
+            }
         })
 
-        watch(() => props.cast, (newCast) => {
-            if (newCast) {
-                fetchCastDetail()
-            } else {
-                dialogVisible.value = false
-            }
-        }, { immediate: true })
-
         return {
-            castDetails,
-            dialogVisible,
-            headers,
-            formatDate,
-            getStoreName,
-            formatWorkTime,
+            dialog,
+            editedCast,
+            loading,
             closeModal,
-            loading
+            save,
+            formattedBirthDate,
+            formattedEffectiveDate,
+            updateBirthDate,
+            updateEffectiveDate,
         }
     }
 }
