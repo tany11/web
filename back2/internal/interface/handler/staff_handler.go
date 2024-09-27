@@ -20,6 +20,13 @@ func NewStaffHandler(useCase *usecase.StaffUseCase) *StaffHandler {
 
 func (h *StaffHandler) Create(c *gin.Context) {
 	var staff entity.Staff
+	groupID, exists := c.Get("group_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "グループIDが見つかりません"})
+		return
+	}
+	staff.GroupID = int64(groupID.(float64))
+
 	if err := c.ShouldBindJSON(&staff); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -26,7 +26,7 @@ func (uc *StaffUseCase) Create(staff *entity.Staff) error {
 		return err
 	}
 	staff.PasswordHash = string(hashedPassword)
-	staff.GroupID = 1
+	staff.IsDeleted = "0"
 
 	// Generate unique staff ID
 	staffID, err := uc.generateStaffUniqueRandomID()
