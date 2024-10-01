@@ -19,25 +19,31 @@
                             <v-text-field v-model="editedCast.CastName" label="キャスト名"></v-text-field>
                             <v-text-field v-model="editedCast.CastID" label="キャストID" readonly></v-text-field>
                             <v-text-field v-model="editedCast.LineID" label="LINE ID"></v-text-field>
-                            <v-text-field v-model="editedCast.birthdate" label="生年月日" @blur="updateBirthDate"
-                                placeholder="YYYY-MM-DD"></v-text-field>
+                            
+                            <v-menu v-model="birthDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y min-width="auto">
+                                <template v-slot:activator="{ props }">
+                                    <v-text-field :value="formattedBirthDate" label="生年月日" readonly v-bind="props"></v-text-field>
+                                </template>
+                                <v-date-picker v-model="editedCast.birthdate" @update:model-value="updateBirthDate"></v-date-picker>
+                            </v-menu>
+                            
                             <v-text-field v-model="editedCast.LastName" label="姓"></v-text-field>
                             <v-text-field v-model="editedCast.FirstName" label="名"></v-text-field>
-                            <v-text-field v-model="editedCast.effective_date" label="証明書有効期限"
-                                @blur="updateEffectiveDate" placeholder="YYYY-MM-DD"></v-text-field>
+                            
+                            <v-menu v-model="effectiveDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y min-width="auto">
+                                <template v-slot:activator="{ props }">
+                                    <v-text-field :value="formattedEffectiveDate" label="証明書有効期限" readonly v-bind="props"></v-text-field>
+                                </template>
+                                <v-date-picker v-model="editedCast.effective_date" @update:model-value="updateEffectiveDate"></v-date-picker>
+                            </v-menu>
                         </v-col>
                         <v-col cols="12" sm="6">
-                            <v-checkbox v-model="editedCast.TattooFlg" label="タトゥー" true-value="1"
-                                false-value="0"></v-checkbox>
-                            <v-text-field v-if="editedCast.TattooFlg === '1'" v-model="editedCast.TattooArea"
-                                label="タトゥーの場所"></v-text-field>
+                            <v-checkbox v-model="editedCast.TattooFlg" label="タトゥー" true-value="1" false-value="0"></v-checkbox>
+                            <v-text-field v-if="editedCast.TattooFlg === '1'" v-model="editedCast.TattooArea" label="タトゥーの場所"></v-text-field>
                             <v-text-field v-model="editedCast.Allergy" label="アレルギー"></v-text-field>
-                            <v-checkbox v-model="editedCast.StretchMarksFlg" label="妊娠線" true-value="1"
-                                false-value="0"></v-checkbox>
-                            <v-checkbox v-model="editedCast.SmokingFlg" label="喫煙" true-value="1"
-                                false-value="0"></v-checkbox>
-                            <v-checkbox v-model="editedCast.ForeignerFlg" label="外国人対応" true-value="1"
-                                false-value="0"></v-checkbox>
+                            <v-checkbox v-model="editedCast.StretchMarksFlg" label="妊娠線" true-value="1" false-value="0"></v-checkbox>
+                            <v-checkbox v-model="editedCast.SmokingFlg" label="喫煙" true-value="1" false-value="0"></v-checkbox>
+                            <v-checkbox v-model="editedCast.ForeignerFlg" label="外国人対応" true-value="1" false-value="0"></v-checkbox>
                         </v-col>
                     </v-row>
                     <v-row>
@@ -67,7 +73,7 @@
 </template>
 
 <script>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useStore } from 'vuex'
 
@@ -84,8 +90,35 @@ export default {
         const dialog = ref(true)
         const editedCast = ref(null)
         const loading = ref(false)
-        const formattedBirthDate = ref('')
-        const formattedEffectiveDate = ref('')
+        const birthDateMenu = ref(false)
+        const effectiveDateMenu = ref(false)
+
+        const formatDate = (date) => {
+            if (!date) return null
+            const d = new Date(date)
+            if (isNaN(d.getTime())) return null
+            console.log(d)
+            // この関数は日付オブジェクトをJST（日本標準時）に調整して返します。
+            // Vuetify3ではDate型で渡す必要があるため、文字列ではなくDate型を返します。
+            return new Date(d.getTime() + (9 * 60 * 60 * 1000)); // JSTに調整したDate型を返す
+        }
+
+        const formattedBirthDate = computed(() => formatDate(editedCast.value?.birthdate))
+        const formattedEffectiveDate = computed(() => formatDate(editedCast.value?.effective_date))
+
+        const updateBirthDate = (date) => {
+            if (editedCast.value) {
+                editedCast.value.birthdate = date
+            }
+            birthDateMenu.value = false
+        }
+
+        const updateEffectiveDate = (date) => {
+            if (editedCast.value) {
+                editedCast.value.effective_date = date
+            }
+            effectiveDateMenu.value = false
+        }
 
         const fetchCastDetails = async () => {
             if (!props.castId) return
@@ -93,33 +126,18 @@ export default {
             try {
                 const response = await axios.get(`${store.state.apiBaseUrl}/cast/${props.castId}`)
                 editedCast.value = response.data.data
-                formattedBirthDate.value = formatDisplayDate(editedCast.value.birthdate)
-                formattedEffectiveDate.value = formatDisplayDate(editedCast.value.effective_date)
+                // 日付を適切な形式に変換
+                if (editedCast.value.birthdate) {
+                    editedCast.value.birthdate = new Date(editedCast.value.birthdate)
+                }
+                if (editedCast.value.effective_date) {
+                    editedCast.value.effective_date = new Date(editedCast.value.effective_date)
+                }
             } catch (error) {
                 console.error('キャスト詳細の取得に失敗しました', error)
             } finally {
                 loading.value = false
             }
-        }
-
-        const formatDisplayDate = (date) => {
-            if (!date) return ''
-            const d = new Date(date)
-            if (isNaN(d.getTime())) return '' // 無効な日付の場合は空文字を返す
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-        }
-
-        const updateBirthDate = (value) => {
-            console.log("updateBirthDate", value)
-            const [year, month, day] = value.split('-')
-            editedCast.value.birthdate = new Date(year, month - 1, day)
-        }
-
-        const updateEffectiveDate = (value) => {
-            console.log("updateEffectiveDate", value)
-            const [year, month, day] = value.split('-')
-            editedCast.value.effective_date = new Date(year, month - 1, day)
-
         }
 
         const closeModal = () => {
@@ -130,8 +148,13 @@ export default {
         const save = async () => {
             try {
                 const castData = { ...editedCast.value }
-                castData.birthdate = updateBirthDate(editedCast.value.birthdate)
-                castData.effective_date = updateEffectiveDate(editedCast.value.effective_date)
+                // 日付をISO形式に変換
+                if (castData.birthdate) {
+                    castData.birthdate = new Date(castData.birthdate).toISOString()
+                }
+                if (castData.effective_date) {
+                    castData.effective_date = new Date(castData.effective_date).toISOString()
+                }
                 console.log("castData", castData)
                 await axios.put(`${store.state.apiBaseUrl}/cast/${castData.ID}`, castData)
                 emit('update')
@@ -159,6 +182,8 @@ export default {
             formattedEffectiveDate,
             updateBirthDate,
             updateEffectiveDate,
+            birthDateMenu,
+            effectiveDateMenu,
         }
     }
 }
